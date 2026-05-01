@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-container": "#4f46e5",
+                    "on-background": "#1b1b24",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#1b1b24",
+                    "surface-tint": "#4d44e3",
+                    "surface-variant": "#e4e1ee",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-surface-variant": "#464555",
+                    "error-container": "#ffdad6",
+                    "outline": "#777587",
+                    "surface-container-highest": "#e4e1ee",
+                    "outline-variant": "#c7c4d8",
+                    "on-primary-container": "#dad7ff",
+                    "tertiary": "#41485e",
+                    "secondary-fixed": "#6ffbbe",
+                    "background": "#fcf8ff",
+                    "on-tertiary-container": "#d4dbf5",
+                    "on-secondary-fixed-variant": "#005236",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#eae6f4",
+                    "primary-fixed": "#e2dfff",
+                    "tertiary-fixed": "#dae2fd",
+                    "secondary-container": "#6cf8bb",
+                    "surface": "#fcf8ff",
+                    "surface-bright": "#fcf8ff",
+                    "inverse-primary": "#c3c0ff",
+                    "on-primary-fixed": "#0f0069",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#f3effc",
+                    "secondary-fixed-dim": "#4edea3",
+                    "surface-dim": "#dcd8e5",
+                    "error": "#ba1a1a",
+                    "on-secondary-container": "#00714d",
+                    "tertiary-container": "#586076",
+                    "on-tertiary-fixed": "#131b2e",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-secondary": "#ffffff",
+                    "surface-container": "#f0ecf9",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed": "#002113",
+                    "secondary": "#006c49",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed-dim": "#bec6e0",
+                    "surface-container-low": "#f5f2ff",
+                    "inverse-surface": "#302f39",
+                    "on-tertiary-fixed-variant": "#3f465c",
+                    "primary": "#3525cd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "sm": "8px",
+                    "md": "16px",
+                    "container-max": "1280px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "xl": "48px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "h3": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "tabular-nums": ["Inter"],
+                    "body-md": ["Inter"],
+                    "h1": ["Inter"],
+                    "h2": ["Inter"],
+                    "label-caps": ["Inter"]
+            },
+            "fontSize": {
+                    "h3": ["24px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "tabular-nums": ["16px", {"lineHeight": "1", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "h2": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #fcf8ff;
+            color: #1b1b24;
+        }
+    </style>
+</head>
+<body class="antialiased">
+<!-- Top Navigation Bar -->
+<header class="bg-white sticky top-0 z-50 border-b border-slate-100 shadow-[0px_4px_20px_rgba(0,0,0,0.04)]">
+<div class="flex items-center justify-between px-6 lg:px-12 h-20 w-full max-w-screen-2xl mx-auto">
+<div class="text-2xl font-black tracking-tighter text-indigo-600">TicketRush</div>
+<nav class="hidden md:flex items-center gap-8 h-full">
+<a class="font-body-sm text-slate-600 hover:text-indigo-500 transition-all duration-200" href="#">Home</a>
+<a class="font-body-sm text-indigo-600 border-b-2 border-indigo-600 pb-5 h-full flex items-center mt-5" href="#">Events</a>
+<a class="font-body-sm text-slate-600 hover:text-indigo-500 transition-all duration-200" href="#">My Tickets</a>
+<a class="font-body-sm text-slate-600 hover:text-indigo-500 transition-all duration-200" href="#">Profile</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="font-body-sm text-slate-600 font-medium px-4 py-2 hover:bg-slate-50 transition-all active:scale-95">Login</button>
+<button class="bg-primary px-6 py-2 rounded-lg text-on-primary font-bold active:scale-95 transition-transform">Sign up</button>
+</div>
+</div>
+</header>
+<main class="max-w-screen-2xl mx-auto pb-xl">
+<!-- Hero Section -->
+<section class="relative w-full h-[500px] overflow-hidden">
+<img alt="Summer Music Festival Banner" class="w-full h-full object-cover" data-alt="Cinematic wide shot of a massive outdoor music festival stage at night with purple and pink laser lights and a crowd" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHkATYXJzA6y0djK57hWo9_6tLRibuZV90FGk7Li_UaZ8lSsxgUpFvoHa8ezZm8csxpu7w-fwEVojAvG_eRLB771bghlV8dOqO59Tgpa5eV5G9SGxTsdsY20mdjf19Mpwy-AcEMlqCAahBe8HNSUuvR-M4Uoln3UWgq_5ITdT4L02iCANu4X0yM1S1gZxyHdUFUYz8w7AtpU4GETGU75mmfozAxSre7ArRKXuqHPDR8zwgPf0elpERG00353eAUb2fXwubymH-k3Cy"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 right-0 px-6 lg:px-12 pb-12">
+<div class="max-w-4xl">
+<div class="flex items-center gap-2 mb-4">
+<span class="bg-secondary-container/90 text-on-secondary-container font-label-caps px-3 py-1 rounded-full uppercase tracking-wider">Music Festival</span>
+<span class="bg-primary/90 text-white font-label-caps px-3 py-1 rounded-full uppercase tracking-wider">Live Concert</span>
+</div>
+<h1 class="font-h1 text-white mb-6">Summer Music Festival 2026</h1>
+<div class="flex flex-wrap gap-6 text-white/90">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary-container">calendar_today</span>
+<span class="font-body-md">15 - 17 Tháng 8, 2026</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary-container">schedule</span>
+<span class="font-body-md">16:00 - 23:30</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary-container">location_on</span>
+<span class="font-body-md">Sân vận động Quốc gia Mỹ Đình, Hà Nội</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<div class="px-6 lg:px-12 mt-lg grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Details -->
+<div class="lg:col-span-8 space-y-lg">
+<!-- Description Section -->
+<div class="bg-white p-lg rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)]">
+<h2 class="font-h2 text-on-background mb-md">Mô tả sự kiện</h2>
+<p class="font-body-md text-on-surface-variant mb-4">
+                        Sự kiện âm nhạc lớn nhất mùa hè năm 2026 đã chính thức trở lại. Summer Music Festival mang đến một không gian bùng nổ với hệ thống âm thanh ánh sáng tiêu chuẩn quốc tế, hứa hẹn sẽ là một đêm không thể quên cho những tín đồ yêu nhạc.
+                    </p>
+<p class="font-body-md text-on-surface-variant">
+                        Trải nghiệm 3 ngày hội quân của dàn line-up đình đám, khu vực ẩm thực đa dạng và các hoạt động tương tác độc đáo chỉ có tại TicketRush.
+                    </p>
+</div>
+<!-- Artists Section - Bento Grid Style -->
+<div class="bg-white p-lg rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)]">
+<h2 class="font-h2 text-on-background mb-md">Nghệ sĩ biểu diễn</h2>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-sm">
+<div class="relative aspect-square overflow-hidden rounded-lg group">
+<img alt="Artist 1" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Dynamic portrait of a famous pop singer performing on stage under spotlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA752MRuqZwpLEyCNPtnut8fNBaDrxARSdnBwwaaeefukimPONSWxTuczZSlLgeBENJrrwYhgEJYajGUfDh2vdMj85YtRBzLJ-FNEIo_HUS9VsLpAQb6mZ7kyds5MH3OBJi9jrTyNMROzKvN9y5jMSROPFPOihsnyfMgu5Bjk1eoLZiyt645fI3CFfrY9ggCsqHi0m8guqLC_4X1LB1qQeR8biJH8uELsss07znr-UoTPg7IqghUhEoFdA9VyWNOD4CFVrLpkULwNh6"/>
+<div class="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+<span class="text-white font-label-caps block">Main Headliner</span>
+<span class="text-white font-body-sm font-bold">The Echoes</span>
+</div>
+</div>
+<div class="relative aspect-square overflow-hidden rounded-lg group">
+<img alt="Artist 2" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Cool electronic DJ with headphones working on a controller with neon lights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm-q3ADjnWJMB2B2Dp6tlt52JVeTfKHM-7cmIsInKiMnl2zSiR8ERV9zJpdBS5cOFlM6V4kdIEcjZGd7cmvfUAzkz5NBFRXaVJCVL2tSz4_KOEmOiBMXAuZ-UlVo622ykpto93Fa7hcgTwaxpCF5d-cPX-z0r6jvyQY9z4CQZpdnHZtrm4wPutGjjy1yTtSijlVQ1-Q-W4Zb3OJbu5CUZV6PJS0v4_sH0s-PiUzgi5ISY91-THNlnBMhEEN6u1w6ZvZ11Vz5WNZPgz"/>
+<div class="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+<span class="text-white font-label-caps block">Electronic</span>
+<span class="text-white font-body-sm font-bold">DJ Nova</span>
+</div>
+</div>
+<div class="relative aspect-square overflow-hidden rounded-lg group">
+<img alt="Artist 3" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="A band of guitarists and drummer performing energetically in a rock concert setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNWU0ihN2aYzbtpTqmlwVQVxqrR9obZMrGSaT_2xs2KCumELdT-5MrN3Vrco_UlGPbaehYTVaksGMTb2vkMFXh2pYFdYuHVcvNO96YEs3nofcVbZikuRUNrRAAMtDZVoVUU0VYWjAGKA02cT1J5b8HiYn4EyXGAILR0aHC_OyLBp0Cc3qwqdZawfMJXr25KUHP5YpSD8sQiGb3mUSxbSYce-twrHfBWfvUWzAVHiALuHfJB0_OEeSpJy3rMDCTLzOZT8laVBsOs9VL"/>
+<div class="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+<span class="text-white font-label-caps block">Alternative Rock</span>
+<span class="text-white font-body-sm font-bold">Sun Drifters</span>
+</div>
+</div>
+<div class="relative aspect-square overflow-hidden rounded-lg group">
+<img alt="Artist 4" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" data-alt="Solo female artist playing acoustic guitar in a soft atmospheric stage setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACp_eNJaWjBjN_zQcWBaqTiHE4fOoSFMCRrp8bYig9LbMHZBmPT-JatE_4-DhpSsXr8RoOkfQHq7bMeiMyY8MZ9H54qSm_LwFDfYzCzfyUWtXOJTI02Kj7WkOdYIIaHbF0LGzOd7VmpMYUmrupdI70-N3a8L0BL3o9UTR6pHeuRN2tVa9hL8RTmRKA49sEKiwE27YyyROH3vOnkWrTTlIJyxfruDhT2EGpZWiHz1rye6G9kzIJHVscQqDmSHbPgsifFyaGiSj9b5wD"/>
+<div class="absolute bottom-0 inset-x-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
+<span class="text-white font-label-caps block">Indie Pop</span>
+<span class="text-white font-body-sm font-bold">Linh Anh</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Logistics Section -->
+<div class="bg-white p-lg rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)]">
+<h2 class="font-h2 text-on-background mb-md">Vị trí sự kiện</h2>
+<div class="w-full h-[300px] rounded-lg bg-surface-container overflow-hidden mb-4 border border-outline-variant">
+<img alt="Map" class="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-500" data-alt="Stylized map view of Hanoi city center showing landmarks and street patterns" data-location="Hanoi" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAozOYX4N0BWRzaYxjop_jiIsdgiCg-F-4l-49FZcjKNGuGP3sQhGpthkGbcBYiNNj9TvyBM_UxdAGh7cx2aZnDz-0KYjUS_zVLaeMO5qi-q8ZXc6fmYKHew3XUU27eZKeGk0a2OnCZP4ad1DkQoNqqFpO9B5aJQuhQAdp_ucVzVUpVGAzbXZ_OciELAfsGppsyxSfC6cFhiLufkJzJ2rTZHF60tNvzYyd-M3nFFS4nEVzZ8pKyKEVxUQFpY5AIMN-fQt_eARBnB2MO"/>
+</div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-1">navigation</span>
+<div>
+<p class="font-body-md font-bold text-on-background">Sân vận động Quốc gia Mỹ Đình</p>
+<p class="font-body-sm text-on-surface-variant">Số 1 Lê Đức Thọ, Mỹ Đình, Nam Từ Liêm, Hà Nội</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Ticket Selection -->
+<div class="lg:col-span-4">
+<div class="sticky top-24 bg-white rounded-xl shadow-[0px_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden">
+<div class="p-6 border-b border-slate-100 flex justify-between items-center">
+<h3 class="font-h3 text-on-background">Bảng giá vé</h3>
+<div class="flex items-center gap-1.5 px-3 py-1 bg-secondary-container/20 text-on-secondary-container rounded-full border border-secondary-container/30">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label-caps">Còn vé</span>
+</div>
+</div>
+<div class="p-6 space-y-4">
+<!-- Ticket Tiers -->
+<div class="space-y-3">
+<!-- VIP -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-surface-container border-2 border-primary-container/20 hover:border-primary-container transition-all cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined">diamond</span>
+</div>
+<div>
+<p class="font-body-md font-bold text-on-background">VIP</p>
+<p class="font-body-sm text-on-surface-variant">Sát sân khấu + F&amp;B</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-tabular-nums font-bold text-primary">1.500.000đ</p>
+<p class="font-label-caps text-on-surface-variant">Per ticket</p>
+</div>
+</div>
+<!-- Standard -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-white border border-outline-variant hover:border-primary-container transition-all cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div>
+<p class="font-body-md font-bold text-on-background">Standard</p>
+<p class="font-body-sm text-on-surface-variant">Khu vực trung tâm</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-tabular-nums font-bold text-on-background">850.000đ</p>
+<p class="font-label-caps text-on-surface-variant">Per ticket</p>
+</div>
+</div>
+<!-- Economy -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-white border border-outline-variant hover:border-primary-container transition-all cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
+<span class="material-symbols-outlined">stairs</span>
+</div>
+<div>
+<p class="font-body-md font-bold text-on-background">Economy</p>
+<p class="font-body-sm text-on-surface-variant">Tầng 2 &amp; 3</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-tabular-nums font-bold text-on-background">500.000đ</p>
+<p class="font-label-caps text-on-surface-variant">Per ticket</p>
+</div>
+</div>
+</div>
+<!-- Info Note -->
+<div class="bg-surface-container-low p-4 rounded-lg flex gap-3 border border-outline-variant/30">
+<span class="material-symbols-outlined text-primary-container text-[20px]">info</span>
+<p class="font-body-sm text-on-surface-variant leading-tight">
+                                Vé điện tử QR sẽ được phát hành sau khi thanh toán và được gửi trực tiếp vào mục "My Tickets" của bạn.
+                            </p>
+</div>
+<!-- CTA -->
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary font-bold py-4 rounded-xl shadow-lg shadow-primary-container/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+<span>Chọn ghế</span>
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+<div class="flex items-center justify-center gap-6 pt-4">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-green-600 text-[16px]">verified</span>
+<span class="text-[12px] font-medium text-slate-500">Official Partner</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-green-600 text-[16px]">shield</span>
+<span class="text-[12px] font-medium text-slate-500">Secure Payment</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Similar Events / Footer Preview -->
+<section class="mt-xl px-6 lg:px-12">
+<h2 class="font-h2 text-on-background mb-lg">Sự kiện tương tự</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<!-- Card 1 -->
+<div class="bg-white rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl transition-shadow border border-slate-100">
+<div class="relative h-48">
+<img alt="Techno Night" class="w-full h-full object-cover" data-alt="Techno music club scene with dark blue atmosphere and flashing strobe lights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4xg76SLJj3aA5VyaZL9hdHEjCvF1PtWvKa5F4hBeHXpND40fGsKHJ-Vg8IW-acnRGvoLM2OgQKMCAuVz9BjjitR1xCbT-5KUR4HzyoCONJlc1b2zU2zOgOWyws5Z-TJOFKasSlGQz7IPqSFdYSyJZMOaMaIjv7blw_fAjcdweBhELhr7zywcoB1kR07nugPIHuIv3DYRis83WhV5LMj2wxbwH03spfDGP-oK9GmQ3n-B-MnldOUpdZTQorirFHuYZX0-Vtma3kBtX"/>
+<div class="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full font-label-caps">T.9 2026</div>
+</div>
+<div class="p-6">
+<h3 class="font-body-md font-bold mb-2">Techno Pulse: Underground</h3>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm mb-4">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span>HCMC Convention Center</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-tabular-nums text-primary font-bold">Từ 400.000đ</span>
+<button class="text-primary font-bold font-body-sm border border-primary px-4 py-1.5 rounded-lg hover:bg-primary/5 transition-colors">Xem ngay</button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-white rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl transition-shadow border border-slate-100">
+<div class="relative h-48">
+<img alt="Indie Night" class="w-full h-full object-cover" data-alt="Intimate acoustic concert setting with warm fairy lights and people listening" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB65AUjQVPz9S1lwcYXo4FuHyTAHCTqy_sER_SPlau-7pNOSDbvEB9XBj3sHmuuw-wlsKlbzAR4yfCa_uRsW9Hh2xjqlYCmuLwYtIEhJnegk1CH_FRV1Bmod9CKkVTekuCOxeD5O3_UsMtLE-N4H0ba-RR1VisJcrH0MRNaf4bo-HOglZtkPzgb2L9c63uvrZhafXLz84f2mz4VvtoBM34EmdogY63zLTAuLuEzfy0pKGb-7MNZTBcFSyLBs6Nr7ADx-x0fc7_ZDF5H"/>
+<div class="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full font-label-caps">T.10 2026</div>
+</div>
+<div class="p-6">
+<h3 class="font-body-md font-bold mb-2">Chuyến Đi Của Thanh Xuân</h3>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm mb-4">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span>Da Lat Opera House</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-tabular-nums text-primary font-bold">Từ 350.000đ</span>
+<button class="text-primary font-bold font-body-sm border border-primary px-4 py-1.5 rounded-lg hover:bg-primary/5 transition-colors">Xem ngay</button>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-white rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl transition-shadow border border-slate-100">
+<div class="relative h-48">
+<img alt="Jazz night" class="w-full h-full object-cover" data-alt="Elegant jazz club with a saxophone player in the spotlight and golden ambience" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8qT7moOCI39E2LtBbZntqeirmLMG04DvwePK5gxS-5cxBYz9W0TBAafii-jLEV-9LIo9af6UlGw3sAoFjpuJjXfw8g9oQ2u0d0SUjdH-YMQ3yOTOAd1eDqebAIsaEAmWnq4w7fv-WUfxV3yYtt_k-b3WhwqF0on-VWb2P0jRnpaLv6-4shofis649kxK42wvAAefkNs4ApgA0X9f3sSZDZvOyaZTO2KFl_pQsXARJcD3S09ACkGYQBr1kxc34a30Cz8Ra9Zuymcjf"/>
+<div class="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full font-label-caps">T.12 2026</div>
+</div>
+<div class="p-6">
+<h3 class="font-body-md font-bold mb-2">Blue Note: Jazz &amp; Wine</h3>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm mb-4">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+<span>Sofitel Legend Metropole</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-tabular-nums text-primary font-bold">Từ 1.200.000đ</span>
+<button class="text-primary font-bold font-body-sm border border-primary px-4 py-1.5 rounded-lg hover:bg-primary/5 transition-colors">Xem ngay</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-slate-950 text-white py-xl border-t border-slate-800">
+<div class="max-w-screen-2xl mx-auto px-6 lg:px-12 grid grid-cols-1 md:grid-cols-4 gap-xl">
+<div class="col-span-1 md:col-span-1">
+<div class="text-2xl font-black tracking-tighter text-indigo-400 mb-6">TicketRush</div>
+<p class="text-slate-400 font-body-sm mb-6">Nền tảng quản lý và phân phối vé sự kiện hàng đầu Việt Nam.</p>
+<div class="flex gap-4">
+<span class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center hover:bg-primary transition-colors cursor-pointer"><i class="material-symbols-outlined text-[20px]">public</i></span>
+<span class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center hover:bg-primary transition-colors cursor-pointer"><i class="material-symbols-outlined text-[20px]">chat_bubble</i></span>
+<span class="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center hover:bg-primary transition-colors cursor-pointer"><i class="material-symbols-outlined text-[20px]">alternate_email</i></span>
+</div>
+</div>
+<div>
+<h4 class="font-bold mb-6">Sự kiện</h4>
+<ul class="space-y-4 text-slate-400 font-body-sm">
+<li class="hover:text-white cursor-pointer transition-colors">Âm nhạc</li>
+<li class="hover:text-white cursor-pointer transition-colors">Thể thao</li>
+<li class="hover:text-white cursor-pointer transition-colors">Sân khấu</li>
+<li class="hover:text-white cursor-pointer transition-colors">Hội thảo</li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold mb-6">Hỗ trợ</h4>
+<ul class="space-y-4 text-slate-400 font-body-sm">
+<li class="hover:text-white cursor-pointer transition-colors">Trung tâm trợ giúp</li>
+<li class="hover:text-white cursor-pointer transition-colors">Quy định đổi trả</li>
+<li class="hover:text-white cursor-pointer transition-colors">Chính sách bảo mật</li>
+<li class="hover:text-white cursor-pointer transition-colors">Liên hệ quảng cáo</li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold mb-6">Newsletter</h4>
+<p class="text-slate-400 font-body-sm mb-4">Nhận thông báo về các sự kiện hot nhất ngay lập tức.</p>
+<div class="flex gap-2">
+<input class="bg-slate-900 border-slate-800 rounded-lg flex-1 px-4 text-sm focus:ring-primary focus:border-primary" placeholder="Email của bạn" type="email"/>
+<button class="bg-primary px-4 py-2 rounded-lg font-bold text-sm active:scale-95 transition-transform">Đăng ký</button>
+</div>
+</div>
+</div>
+<div class="max-w-screen-2xl mx-auto px-6 lg:px-12 mt-12 pt-8 border-t border-slate-900 text-center text-slate-500 text-[12px]">
+            © 2026 TicketRush Entertainment Ltd. All rights reserved.
+        </div>
+</footer>
+</body></html>

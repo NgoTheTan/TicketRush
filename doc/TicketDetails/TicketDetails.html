@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Chi tiết vé - TicketRush</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-container": "#4f46e5",
+                    "on-background": "#1b1b24",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#1b1b24",
+                    "surface-tint": "#4d44e3",
+                    "surface-variant": "#e4e1ee",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-surface-variant": "#464555",
+                    "error-container": "#ffdad6",
+                    "outline": "#777587",
+                    "surface-container-highest": "#e4e1ee",
+                    "outline-variant": "#c7c4d8",
+                    "on-primary-container": "#dad7ff",
+                    "tertiary": "#41485e",
+                    "secondary-fixed": "#6ffbbe",
+                    "background": "#fcf8ff",
+                    "on-tertiary-container": "#d4dbf5",
+                    "on-secondary-fixed-variant": "#005236",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#eae6f4",
+                    "primary-fixed": "#e2dfff",
+                    "tertiary-fixed": "#dae2fd",
+                    "secondary-container": "#6cf8bb",
+                    "surface": "#fcf8ff",
+                    "surface-bright": "#fcf8ff",
+                    "inverse-primary": "#c3c0ff",
+                    "on-primary-fixed": "#001a43",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#f3effc",
+                    "secondary-fixed-dim": "#4edea3",
+                    "surface-dim": "#dcd8e5",
+                    "error": "#ba1a1a",
+                    "on-secondary-container": "#00714d",
+                    "tertiary-container": "#586076",
+                    "on-tertiary-fixed": "#131b2e",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-secondary": "#ffffff",
+                    "surface-container": "#f0ecf9",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed": "#002113",
+                    "secondary": "#006c49",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed-dim": "#bec6e0",
+                    "surface-container-low": "#f5f2ff",
+                    "inverse-surface": "#302f39",
+                    "on-tertiary-fixed-variant": "#3f465c",
+                    "primary": "#3525cd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "sm": "8px",
+                    "md": "16px",
+                    "container-max": "1280px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "xl": "48px",
+                    "gutter": "24px"
+            },
+            "fontFamily": {
+                    "h3": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "tabular-nums": ["Inter"],
+                    "body-md": ["Inter"],
+                    "h1": ["Inter"],
+                    "h2": ["Inter"],
+                    "label-caps": ["Inter"]
+            },
+            "fontSize": {
+                    "h3": ["24px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "tabular-nums": ["16px", {"lineHeight": "1", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "h2": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .ticket-perforation {
+            background-image: radial-gradient(circle at 0px 50%, transparent 12px, white 13px);
+            background-size: 100% 100%;
+        }
+        .ticket-edge-left {
+            background-image: radial-gradient(circle at 0px 50%, transparent 12px, white 13px);
+        }
+        .ticket-edge-right {
+            background-image: radial-gradient(circle at 100% 50%, transparent 12px, white 13px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background font-body-md text-on-background">
+<!-- Top Navigation (Shell) -->
+<nav class="bg-white border-b border-slate-100 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] sticky top-0 z-50">
+<div class="flex items-center justify-between px-6 lg:px-12 h-20 w-full max-w-screen-2xl mx-auto">
+<div class="text-2xl font-black tracking-tighter text-indigo-600">TicketRush</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-slate-600 hover:text-indigo-500 font-medium text-sm" href="#">Home</a>
+<a class="text-slate-600 hover:text-indigo-500 font-medium text-sm" href="#">Events</a>
+<a class="text-indigo-600 border-b-2 border-indigo-600 pb-5 translate-y-[10px] font-medium text-sm" href="#">My Tickets</a>
+<a class="text-slate-600 hover:text-indigo-500 font-medium text-sm" href="#">Profile</a>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2.5 rounded-full font-bold text-sm transform transition-transform active:scale-95">
+                Login
+            </button>
+</div>
+</nav>
+<main class="max-w-4xl mx-auto px-4 py-12 flex flex-col items-center">
+<!-- Back Button -->
+<div class="w-full mb-8 flex justify-start">
+<button class="flex items-center gap-2 text-slate-600 hover:text-primary transition-colors group">
+<span class="material-symbols-outlined text-body-lg">arrow_back</span>
+<span class="font-body-md font-medium">Quay lại</span>
+</button>
+</div>
+<!-- Ticket Container -->
+<div class="w-full bg-white rounded-xl shadow-[0px_10px_30px_rgba(0,0,0,0.08)] overflow-hidden flex flex-col md:flex-row relative">
+<!-- Side Event Visual (Desktop Only) -->
+<div class="hidden md:block md:w-1/3 relative">
+<img alt="Concert stage with vibrant lighting and crowd" class="absolute inset-0 w-full h-full object-cover" data-alt="dramatic wide shot of a live music concert stage with purple and blue neon lighting and silhouettes of a cheering crowd" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBgvGzjYXKIXpsDmwV1NCMJm-pWRyZpOnybX1X3UGNb3YpKOb29Xe7eEw0kRP_iJG9ggaqxlAliGMDgtrGP02NjH-7HbyCEbTxVOjzxahuTgmWPoOmRfJUmdDuy3UTs26DsJUgB53XQCo0g4SOeidZresLVe1tesPuqlSnU3eMxdymfYQmmLPSSGXNhfVGJuU5tr4YKi8Ar6OfDdkYLpCerXrg98eKMUA1B-vpDqQmWfWYlNKFjYP_6XWLwab2sjUSHqNAX6r4AMHdc"/>
+<div class="absolute inset-0 bg-indigo-900/40 backdrop-blur-[2px]"></div>
+<div class="absolute inset-0 flex flex-col justify-end p-8 text-white">
+<span class="inline-flex bg-secondary-container/20 backdrop-blur-md text-secondary-container px-3 py-1 rounded-full text-label-caps mb-4 border border-secondary-container/30">
+                        Có hiệu lực
+                    </span>
+<h1 class="font-h2 text-white mb-2">Modern Symphony 2024</h1>
+<p class="font-body-sm text-indigo-100 opacity-90">Ho Chi Minh City, Vietnam</p>
+</div>
+</div>
+<!-- Main Ticket Body -->
+<div class="flex-1 p-8 md:p-12 relative">
+<!-- Mobile Header Image -->
+<div class="md:hidden -mt-12 -mx-8 mb-8 h-48 relative overflow-hidden">
+<img alt="Concert stage" class="w-full h-full object-cover" data-alt="high-energy music festival stage at night with bright spotlights and lasers illuminating a massive crowd" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNgg_yKpgh8Ml6VtkCOQwA1UVLTKAHNRUqmjRz_QHNBNz9MIfmMYSd52v_Bu1Kbsr44kAj5JDo0MPCyT-QkYucRm2XKqrmIoREwpNZ9Ca3BlnDqICPUA4eXB___WBJlvT6x4w1UPoqqhYWoVIj18T00AjfG-oJlUWrLbntWMIVFYgCYR77x8YjrSnvXpB6ItasxHj4iX6q7B95w3J7uimQAQWXK9_Z4CivmYX6le35s2UWw4nV5-DAbIWDofPKIU8p8D1RH0eL_mcx"/>
+<div class="absolute inset-0 bg-gradient-to-t from-white to-transparent"></div>
+</div>
+<div class="flex flex-col md:flex-row justify-between items-start gap-8">
+<!-- Ticket Details -->
+<div class="flex-1 space-y-6">
+<div class="space-y-1">
+<span class="text-label-caps text-outline uppercase tracking-wider">Tên sự kiện</span>
+<h2 class="font-h3 text-on-surface">Modern Symphony 2024</h2>
+</div>
+<div class="grid grid-cols-2 gap-y-6 gap-x-4">
+<div class="space-y-1">
+<span class="text-label-caps text-outline uppercase tracking-wider">Thời gian</span>
+<p class="font-body-md font-semibold">20:00, 25 Th10 2024</p>
+</div>
+<div class="space-y-1">
+<span class="text-label-caps text-outline uppercase tracking-wider">Địa điểm</span>
+<p class="font-body-md font-semibold">Nhà hát Hòa Bình</p>
+</div>
+<div class="space-y-1">
+<span class="text-label-caps text-outline uppercase tracking-wider">Chủ sở hữu</span>
+<p class="font-body-md font-semibold">Nguyễn Văn A</p>
+</div>
+<div class="space-y-1">
+<span class="text-label-caps text-outline uppercase tracking-wider">Trạng thái</span>
+<div>
+<span class="inline-flex bg-secondary-container/10 text-on-secondary-container px-2 py-0.5 rounded text-label-caps font-bold">
+                                        Có hiệu lực
+                                    </span>
+</div>
+</div>
+</div>
+<!-- Seating Bento Section -->
+<div class="bg-surface-container rounded-xl p-4 grid grid-cols-3 gap-2 border border-outline-variant/30">
+<div class="text-center p-2">
+<p class="text-label-caps text-outline mb-1">Khu vực</p>
+<p class="font-h3 text-primary">VIP</p>
+</div>
+<div class="text-center p-2 border-x border-outline-variant/50">
+<p class="text-label-caps text-outline mb-1">Dãy</p>
+<p class="font-h3 text-primary">A</p>
+</div>
+<div class="text-center p-2">
+<p class="text-label-caps text-outline mb-1">Số ghế</p>
+<p class="font-h3 text-primary">12</p>
+</div>
+</div>
+<div class="pt-4 border-t border-dashed border-outline-variant grid grid-cols-2 gap-4">
+<div>
+<p class="text-label-caps text-outline">Mã vé (Ticket ID)</p>
+<p class="font-tabular-nums text-body-sm font-bold text-on-surface">TR-992033481</p>
+</div>
+<div>
+<p class="text-label-caps text-outline">Mã đơn hàng (Order ID)</p>
+<p class="font-tabular-nums text-body-sm font-bold text-on-surface">#ORD-55201</p>
+</div>
+</div>
+</div>
+<!-- QR Section -->
+<div class="w-full md:w-auto flex flex-col items-center bg-white p-6 rounded-2xl border-2 border-indigo-50 shadow-sm">
+<div class="relative w-48 h-48 md:w-56 md:h-56 bg-white p-2 rounded-lg border border-slate-100 flex items-center justify-center">
+<!-- Simulated QR Code Design -->
+<div class="w-full h-full bg-slate-50 relative flex flex-wrap p-1">
+<div class="w-1/4 h-1/4 border-4 border-on-surface m-1"></div>
+<div class="w-full h-full opacity-10 absolute inset-0 bg-repeat" style="background-image: radial-gradient(#000 1px, transparent 0); background-size: 8px 8px;"></div>
+<div class="w-full h-full flex items-center justify-center">
+<div class="w-10 h-10 bg-primary text-white rounded flex items-center justify-center font-black text-xs z-10 shadow-lg">TR</div>
+</div>
+<div class="w-1/4 h-1/4 border-4 border-on-surface m-1 absolute bottom-0 left-0"></div>
+<div class="w-1/4 h-1/4 border-4 border-on-surface m-1 absolute top-0 right-0"></div>
+<!-- Random blocks for QR look -->
+<div class="absolute top-1/2 left-1/3 w-4 h-4 bg-on-surface"></div>
+<div class="absolute bottom-1/4 right-1/3 w-6 h-2 bg-on-surface"></div>
+<div class="absolute top-1/4 right-1/4 w-2 h-8 bg-on-surface"></div>
+<div class="absolute bottom-1/3 left-1/4 w-8 h-2 bg-on-surface"></div>
+</div>
+</div>
+<p class="mt-4 text-center font-body-sm text-outline max-w-[180px]">
+                            Vui lòng xuất trình mã QR này tại cổng check-in
+                        </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="mt-12 flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+<button class="bg-primary text-on-primary px-10 py-4 rounded-full font-bold text-body-md flex items-center justify-center gap-3 transform transition-all active:scale-95 shadow-lg shadow-primary/20 hover:bg-primary-container">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                Tải PDF
+            </button>
+<button class="bg-white text-primary border-2 border-primary px-10 py-4 rounded-full font-bold text-body-md flex items-center justify-center gap-3 transform transition-all active:scale-95 hover:bg-primary/5">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+                Chia sẻ vé
+            </button>
+</div>
+<!-- Helpful Instructions -->
+<div class="mt-16 w-full max-w-2xl bg-indigo-50/50 rounded-2xl p-8 border border-indigo-100/50">
+<h3 class="font-h3 text-indigo-900 mb-4 text-center">Hướng dẫn sử dụng</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="text-center space-y-2">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto text-primary shadow-sm">
+<span class="material-symbols-outlined">brightness_6</span>
+</div>
+<p class="text-body-sm text-indigo-800 font-medium leading-tight">Tăng độ sáng màn hình để quét dễ dàng hơn</p>
+</div>
+<div class="text-center space-y-2">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto text-primary shadow-sm">
+<span class="material-symbols-outlined">timer</span>
+</div>
+<p class="text-body-sm text-indigo-800 font-medium leading-tight">Có mặt tại cổng check-in ít nhất 30 phút</p>
+</div>
+<div class="text-center space-y-2">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto text-primary shadow-sm">
+<span class="material-symbols-outlined">id_card</span>
+</div>
+<p class="text-body-sm text-indigo-800 font-medium leading-tight">Mang theo CCCD/CMND để đối chiếu nếu cần</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Shell (Mobile Only) -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex items-center justify-around h-16 px-4 z-50">
+<div class="flex flex-col items-center text-slate-400">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</div>
+<div class="flex flex-col items-center text-slate-400">
+<span class="material-symbols-outlined">search</span>
+<span class="text-[10px] font-medium">Explore</span>
+</div>
+<div class="flex flex-col items-center text-indigo-600">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+<span class="text-[10px] font-medium">My Tickets</span>
+</div>
+<div class="flex flex-col items-center text-slate-400">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</div>
+</div>
+</body></html>

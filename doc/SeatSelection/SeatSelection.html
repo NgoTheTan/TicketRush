@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sơ đồ chọn ghế - TicketRush</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .seat-matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(20, minmax(0, 1fr));
+            gap: 6px;
+        }
+        @media (max-width: 768px) {
+            .seat-matrix-grid {
+                grid-template-columns: repeat(12, minmax(0, 1fr));
+            }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-container": "#4f46e5",
+                      "on-background": "#1b1b24",
+                      "on-primary": "#ffffff",
+                      "on-surface": "#1b1b24",
+                      "surface-tint": "#4d44e3",
+                      "surface-variant": "#e4e1ee",
+                      "on-primary-fixed-variant": "#3323cc",
+                      "on-surface-variant": "#464555",
+                      "error-container": "#ffdad6",
+                      "outline": "#777587",
+                      "surface-container-highest": "#e4e1ee",
+                      "outline-variant": "#c7c4d8",
+                      "on-primary-container": "#dad7ff",
+                      "tertiary": "#41485e",
+                      "secondary-fixed": "#6ffbbe",
+                      "background": "#fcf8ff",
+                      "on-tertiary-container": "#d4dbf5",
+                      "on-secondary-fixed-variant": "#005236",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-high": "#eae6f4",
+                      "primary-fixed": "#e2dfff",
+                      "tertiary-fixed": "#dae2fd",
+                      "secondary-container": "#6cf8bb",
+                      "surface": "#fcf8ff",
+                      "surface-bright": "#fcf8ff",
+                      "inverse-primary": "#c3c0ff",
+                      "on-primary-fixed": "#0f0069",
+                      "on-error-container": "#93000a",
+                      "inverse-on-surface": "#f3effc",
+                      "secondary-fixed-dim": "#4edea3",
+                      "surface-dim": "#dcd8e5",
+                      "error": "#ba1a1a",
+                      "on-secondary-container": "#00714d",
+                      "tertiary-container": "#586076",
+                      "on-tertiary-fixed": "#131b2e",
+                      "primary-fixed-dim": "#c3c0ff",
+                      "on-secondary": "#ffffff",
+                      "surface-container": "#f0ecf9",
+                      "on-error": "#ffffff",
+                      "on-secondary-fixed": "#002113",
+                      "secondary": "#006c49",
+                      "on-tertiary": "#ffffff",
+                      "tertiary-fixed-dim": "#bec6e0",
+                      "surface-container-low": "#f5f2ff",
+                      "inverse-surface": "#302f39",
+                      "on-tertiary-fixed-variant": "#3f465c",
+                      "primary": "#3525cd"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "unit": "4px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "container-max": "1280px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "xl": "48px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "h3": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "tabular-nums": ["Inter"],
+                      "body-md": ["Inter"],
+                      "h1": ["Inter"],
+                      "h2": ["Inter"],
+                      "label-caps": ["Inter"]
+              },
+              "fontSize": {
+                      "h3": ["24px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600"}],
+                      "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "tabular-nums": ["16px", {"lineHeight": "1", "fontWeight": "500"}],
+                      "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "h2": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased">
+<!-- TopNavBar -->
+<nav class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] sticky top-0 z-50">
+<div class="flex items-center justify-between px-6 lg:px-12 h-20 w-full max-w-screen-2xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black tracking-tighter text-indigo-600 dark:text-indigo-400">TicketRush</span>
+<div class="hidden md:flex gap-6">
+<a class="text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 pb-5 font-medium text-sm" href="#">Events</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 font-medium text-sm transition-all duration-200" href="#">My Tickets</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 font-medium text-sm transition-all duration-200" href="#">Profile</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center bg-surface-container px-4 py-2 rounded-full gap-2 border border-outline-variant">
+<span class="material-symbols-outlined text-outline">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48" placeholder="Tìm kiếm sự kiện..." type="text"/>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-bold transform transition-transform active:scale-95">Login</button>
+</div>
+</div>
+</nav>
+<main class="min-h-screen">
+<!-- Event Info Header -->
+<header class="bg-white px-6 lg:px-12 py-6 border-b border-outline-variant">
+<div class="max-w-screen-2xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-slate-200">
+<img class="w-full h-full object-cover" data-alt="Summer Music Festival 2026 concert stage with vibrant laser lights and massive crowd in silhouette" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3WmcGcg2PQZrZXV7M60-gF1Cm2LW-ULtFTOJUYclC37iuIdu3UqKi2-DEVRl3ocqLRoao48LkUv_EEzZARNQcCB3q7n_XzMPHVk7CRh-tHtqZ5oxdIshSwA_afK6zbshpHaGaQYtxUsjtpWT-0nJmAYMR4VOSYDZ_iHR_CUn4ifoLtAP0NPdOEM0drJChltoT4kGCFu8yxM9c_lj6J1FndNTRbQf5PQlj1XpHy-Vx1RpvXv3VWZ3d9ca_eAhC6tRcN19VTwDr4w0A"/>
+</div>
+<div>
+<h1 class="font-h3 text-h3 text-on-background">Summer Music Festival 2026</h1>
+<p class="text-body-sm text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">calendar_today</span> 15/08/2026 • 19:00 
+                            <span class="mx-2">|</span>
+<span class="material-symbols-outlined text-sm">location_on</span> Sân vận động Mỹ Đình, Hà Nội
+                        </p>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-4">
+<div class="flex items-center bg-secondary-container/20 text-on-secondary-container px-4 py-2 rounded-full border border-secondary-container">
+<span class="material-symbols-outlined text-sm mr-2 animate-pulse" style="font-variation-settings: 'FILL' 1;">sensors</span>
+<span class="font-label-caps">245 người đang xem sự kiện này</span>
+</div>
+<div class="flex items-center bg-error-container text-on-error-container px-4 py-2 rounded-full border border-error">
+<span class="material-symbols-outlined text-sm mr-2">timer</span>
+<span class="font-tabular-nums text-tabular-nums">Thời gian giữ chỗ còn lại: 09:58</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Notification Bar (Alert Mock) -->
+<div class="bg-surface-container-high px-6 py-3 flex justify-center items-center gap-3">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="text-body-sm font-medium">Ghế <span class="font-bold">A12</span> vừa được người khác giữ chỗ. Vui lòng chọn ghế khác.</p>
+</div>
+<div class="max-w-screen-2xl mx-auto flex flex-col lg:flex-row h-[calc(100vh-180px)]">
+<!-- Left: Seat Map Interactive Area -->
+<div class="flex-grow bg-slate-950 p-6 lg:p-12 overflow-auto relative flex flex-col items-center">
+<!-- Stage Area -->
+<div class="w-full max-w-4xl bg-slate-800 h-24 rounded-t-[100px] flex items-center justify-center mb-16 relative overflow-hidden">
+<div class="absolute inset-0 opacity-20 bg-gradient-to-t from-indigo-500 to-transparent"></div>
+<span class="font-h3 text-white tracking-[10px] relative z-10">SÂN KHẤU / STAGE</span>
+</div>
+<!-- Legend -->
+<div class="flex flex-wrap justify-center gap-8 mb-12 text-slate-300">
+<div class="flex items-center gap-2">
+<div class="w-5 h-5 rounded-sm bg-white border border-secondary outline-none"></div>
+<span class="text-xs font-label-caps uppercase">Available</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-5 h-5 rounded-sm bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px] text-white">check</span>
+</div>
+<span class="text-xs font-label-caps uppercase">Selected</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-5 h-5 rounded-sm bg-slate-400 flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px] text-white">lock</span>
+</div>
+<span class="text-xs font-label-caps uppercase">Locked</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-5 h-5 rounded-sm bg-error flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px] text-white">close</span>
+</div>
+<span class="text-xs font-label-caps uppercase">Sold Out</span>
+</div>
+</div>
+<!-- Seat Matrix Zones -->
+<div class="w-full flex flex-col items-center gap-12 pb-24">
+<!-- VIP ZONE -->
+<div class="w-full flex flex-col items-center">
+<span class="text-secondary-fixed text-xs font-bold tracking-widest mb-4 bg-secondary-fixed/10 px-3 py-1 rounded">ZONE VIP - 2.500.000đ</span>
+<div class="seat-matrix-grid">
+<!-- Generation of 40 seats for VIP -->
+<div class="w-6 h-6 rounded bg-primary flex items-center justify-center cursor-pointer transition-all active:scale-90" title="Selected A10">
+<span class="material-symbols-outlined text-[14px] text-white">check</span>
+</div>
+<div class="w-6 h-6 rounded bg-primary flex items-center justify-center cursor-pointer transition-all active:scale-90" title="Selected A11">
+<span class="material-symbols-outlined text-[14px] text-white">check</span>
+</div>
+<div class="w-6 h-6 rounded bg-error flex items-center justify-center" title="Sold Out">
+<span class="material-symbols-outlined text-[14px] text-white">close</span>
+</div>
+<!-- Repeats of placeholder seats -->
+<div class="w-6 h-6 rounded bg-white border border-outline-variant cursor-pointer hover:bg-primary-container/20 transition-all"></div>
+<div class="w-6 h-6 rounded bg-white border border-outline-variant cursor-pointer hover:bg-primary-container/20 transition-all"></div>
+<div class="w-6 h-6 rounded bg-slate-400 flex items-center justify-center" title="Locked">
+<span class="material-symbols-outlined text-[14px] text-white">lock</span>
+</div>
+<!-- Simple Loop Simulation -->
+<div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div>
+<div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div>
+<div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div>
+<div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div>
+</div>
+</div>
+<!-- STANDARD ZONE -->
+<div class="w-full flex flex-col items-center">
+<span class="text-indigo-400 text-xs font-bold tracking-widest mb-4 bg-indigo-400/10 px-3 py-1 rounded">ZONE STANDARD - 1.200.000đ</span>
+<div class="seat-matrix-grid">
+<div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div>
+<div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div>
+<div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div>
+<div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div>
+<div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div><div class="w-6 h-6 rounded bg-white border border-outline-variant"></div>
+</div>
+</div>
+<!-- ECONOMY ZONE -->
+<div class="w-full flex flex-col items-center">
+<span class="text-slate-400 text-xs font-bold tracking-widest mb-4 bg-slate-400/10 px-3 py-1 rounded">ZONE ECONOMY - 600.000đ</span>
+<div class="seat-matrix-grid opacity-60">
+<div class="w-6 h-6 rounded bg-error flex items-center justify-center"><span class="material-symbols-outlined text-[14px] text-white">close</span></div>
+<div class="w-6 h-6 rounded bg-error flex items-center justify-center"><span class="material-symbols-outlined text-[14px] text-white">close</span></div>
+<div class="w-6 h-6 rounded bg-error flex items-center justify-center"><span class="material-symbols-outlined text-[14px] text-white">close</span></div>
+<div class="w-6 h-6 rounded bg-error flex items-center justify-center"><span class="material-symbols-outlined text-[14px] text-white">close</span></div>
+<div class="w-6 h-6 rounded bg-error flex items-center justify-center"><span class="material-symbols-outlined text-[14px] text-white">close</span></div>
+<div class="w-6 h-6 rounded bg-error flex items-center justify-center"><span class="material-symbols-outlined text-[14px] text-white">close</span></div>
+<div class="w-6 h-6 rounded bg-error flex items-center justify-center"><span class="material-symbols-outlined text-[14px] text-white">close</span></div>
+<div class="w-6 h-6 rounded bg-error flex items-center justify-center"><span class="material-symbols-outlined text-[14px] text-white">close</span></div>
+</div>
+<div class="mt-4 px-4 py-1 bg-error/10 text-error rounded-full text-xs font-semibold">Hết vé / Sold Out</div>
+</div>
+</div>
+</div>
+<!-- Right: Selection Summary -->
+<aside class="w-full lg:w-96 bg-white border-l border-outline-variant p-6 flex flex-col">
+<h2 class="font-h2 text-h2 mb-6">Thông tin đặt vé</h2>
+<div class="flex-grow flex flex-col gap-4 overflow-y-auto pr-2">
+<!-- Seat Card 1 -->
+<div class="bg-surface-container rounded-xl p-4 border border-outline-variant relative group">
+<div class="flex justify-between items-start mb-2">
+<div>
+<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded text-[10px] font-bold uppercase mb-1 inline-block">Zone VIP</span>
+<p class="font-bold text-body-lg">Hàng A - Ghế 10</p>
+</div>
+<button class="text-outline hover:text-error transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<p class="text-primary font-bold">2.500.000 VNĐ</p>
+</div>
+<!-- Seat Card 2 -->
+<div class="bg-surface-container rounded-xl p-4 border border-outline-variant relative group">
+<div class="flex justify-between items-start mb-2">
+<div>
+<span class="bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded text-[10px] font-bold uppercase mb-1 inline-block">Zone VIP</span>
+<p class="font-bold text-body-lg">Hàng A - Ghế 11</p>
+</div>
+<button class="text-outline hover:text-error transition-colors">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<p class="text-primary font-bold">2.500.000 VNĐ</p>
+</div>
+</div>
+<!-- Footer Summary -->
+<div class="mt-8 border-t border-outline-variant pt-6">
+<div class="flex justify-between items-center mb-2">
+<span class="text-on-surface-variant">Tạm tính (2 ghế)</span>
+<span class="font-tabular-nums font-semibold">5.000.000 VNĐ</span>
+</div>
+<div class="flex justify-between items-center mb-6">
+<span class="text-on-surface-variant">Phí dịch vụ</span>
+<span class="font-tabular-nums font-semibold">45.000 VNĐ</span>
+</div>
+<div class="flex justify-between items-end mb-8">
+<span class="text-body-lg font-bold">Tổng cộng</span>
+<div class="text-right">
+<span class="text-h2 font-h2 text-primary-container block leading-none">5.045.000đ</span>
+<span class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Đã bao gồm VAT</span>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary py-4 rounded-xl font-bold text-body-lg shadow-xl hover:bg-primary-container transition-all active:scale-95 transform">
+                        Tiếp tục thanh toán
+                    </button>
+<p class="text-center mt-4 text-[11px] text-on-surface-variant flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-xs">verified_user</span> Giao dịch an toàn và bảo mật
+                    </p>
+</div>
+</aside>
+</div>
+</main>
+<!-- Bottom Mobile Nav (Fallback for Mobile) -->
+<div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-outline-variant grid grid-cols-4 h-16 z-50">
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px]">Trang chủ</span>
+</div>
+<div class="flex flex-col items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+<span class="text-[10px]">Đặt vé</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">history</span>
+<span class="text-[10px]">Lịch sử</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px]">Cá nhân</span>
+</div>
+</div>
+</body></html>

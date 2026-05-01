@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Đặt vé thành công - TicketRush</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#dad7ff",
+                        "surface-tint": "#4d44e3",
+                        "surface-dim": "#dcd8e5",
+                        "surface": "#fcf8ff",
+                        "secondary-fixed": "#6ffbbe",
+                        "primary-container": "#4f46e5",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#0f0069",
+                        "on-tertiary-container": "#d4dbf5",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#6cf8bb",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#464555",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#131b2e",
+                        "on-surface": "#1b1b24",
+                        "outline-variant": "#c7c4d8",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f3effc",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#dae2fd",
+                        "surface-container-highest": "#e4e1ee",
+                        "on-secondary-fixed": "#002113",
+                        "inverse-surface": "#302f39",
+                        "inverse-primary": "#c3c0ff",
+                        "surface-container-low": "#f5f2ff",
+                        "on-secondary-container": "#00714d",
+                        "secondary-fixed-dim": "#4edea3",
+                        "primary-fixed": "#e2dfff",
+                        "surface-container": "#f0ecf9",
+                        "on-primary": "#ffffff",
+                        "background": "#fcf8ff",
+                        "secondary": "#006c49",
+                        "tertiary": "#41485e",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "outline": "#777587",
+                        "surface-bright": "#fcf8ff",
+                        "surface-container-high": "#eae6f4",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-secondary-fixed-variant": "#005236",
+                        "tertiary-container": "#586076",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "primary": "#3525cd",
+                        "on-background": "#1b1b24",
+                        "surface-variant": "#e4e1ee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xl": "48px",
+                        "unit": "4px",
+                        "gutter": "24px",
+                        "container-max": "1280px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "tabular-nums": ["Inter"],
+                        "h2": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "h1": ["Inter"],
+                        "h3": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "tabular-nums": ["16px", { "lineHeight": "1", "fontWeight": "500" }],
+                        "h2": ["30px", { "lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "h1": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "h3": ["24px", { "lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex items-center justify-center p-gutter font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- Success Splash Card (Level 2 Elevation Context) -->
+<main class="w-full max-w-3xl bg-surface-container-lowest rounded-xl shadow-[0px_10px_30px_rgba(0,0,0,0.08)] border border-outline-variant overflow-hidden flex flex-col">
+<!-- Header Section -->
+<div class="px-xl pt-xl pb-lg flex flex-col items-center text-center relative overflow-hidden">
+<!-- Decorative background elements -->
+<div class="absolute top-[-50px] w-full h-[200px] bg-gradient-to-b from-secondary-container/20 to-transparent pointer-events-none rounded-full blur-3xl"></div>
+<div class="w-20 h-20 bg-secondary-container text-on-secondary-container rounded-full flex items-center justify-center mb-md shadow-sm z-10">
+<span class="material-symbols-outlined text-h1" style="font-size: 40px; font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<h1 class="font-h2 text-h2 text-on-surface mb-xs z-10">Đặt vé thành công!</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant z-10">Cảm ơn bạn đã lựa chọn TicketRush. Thư xác nhận đã được gửi đến email của bạn.</p>
+</div>
+<!-- Order Summary Content (Ticket Stub Layout) -->
+<div class="px-xl pb-lg">
+<div class="bg-surface-container-low border border-outline-variant rounded-lg flex flex-col md:flex-row relative">
+<!-- Left Details -->
+<div class="flex-1 p-lg flex flex-col gap-md">
+<!-- Order ID -->
+<div class="flex justify-between items-center pb-sm border-b border-outline-variant/50">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Mã đơn hàng</span>
+<span class="font-tabular-nums text-tabular-nums text-primary font-bold">ORD-55201</span>
+</div>
+<!-- Event Details Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-md mt-sm">
+<div class="col-span-1 sm:col-span-2">
+<span class="block font-label-caps text-label-caps text-on-surface-variant mb-xs uppercase">Sự kiện</span>
+<span class="block font-body-md text-body-md text-on-surface font-semibold">Giao Hưởng Mùa Thu: The Classic Night</span>
+</div>
+<div>
+<span class="block font-label-caps text-label-caps text-on-surface-variant mb-xs uppercase">Thời gian</span>
+<div class="flex items-center gap-xs text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-outline">calendar_today</span>
+<span class="font-body-sm text-body-sm font-medium">19:30 - 24/11/2024</span>
+</div>
+</div>
+<div>
+<span class="block font-label-caps text-label-caps text-on-surface-variant mb-xs uppercase">Địa điểm</span>
+<div class="flex items-center gap-xs text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-outline">location_on</span>
+<span class="font-body-sm text-body-sm font-medium">Nhà Hát Lớn Hà Nội</span>
+</div>
+</div>
+</div>
+<!-- Seats Info -->
+<div class="mt-xs bg-surface p-md rounded-md border border-surface-variant">
+<span class="block font-label-caps text-label-caps text-on-surface-variant mb-sm uppercase">Hạng vé &amp; Ghế ngồi</span>
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-primary mt-xs">chair</span>
+<div>
+<span class="block font-body-md text-body-md text-on-surface font-bold">VIP A - Hàng D</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant mt-xs">Ghế: 12, 13</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Stub (Price & QR) -->
+<div class="w-full md:w-[240px] p-lg border-t md:border-t-0 md:border-l border-dashed border-outline-variant flex flex-col justify-between items-center bg-surface-container/50 relative">
+<!-- Fake Notch Cutouts for Ticket aesthetic -->
+<div class="hidden md:block absolute top-[-10px] left-[-10px] w-5 h-5 bg-surface-container-lowest rounded-full border-b border-r border-outline-variant transform rotate-45"></div>
+<div class="hidden md:block absolute bottom-[-10px] left-[-10px] w-5 h-5 bg-surface-container-lowest rounded-full border-t border-r border-outline-variant transform -rotate-45"></div>
+<div class="text-center w-full mb-md">
+<span class="block font-label-caps text-label-caps text-on-surface-variant mb-xs uppercase">Tổng thanh toán</span>
+<span class="block font-h3 text-h3 text-primary">5.045.000đ</span>
+</div>
+<div class="bg-surface-container-lowest p-sm rounded-md border border-outline-variant shadow-sm w-[120px] h-[120px] flex items-center justify-center">
+<!-- Simulated QR Code placeholder using a crisp geometric pattern representation -->
+<div class="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cGF0aCBkPSJNMCAwaDQwdjQwaC00MHpNNjAgMGg0MHY0MGgtNDB6TTAgNjBoNDB2NDBoLTQwek0yMCAyMGgtdjIwLTBoMjB2MjB6TTYwIDYwaDQwdjQwaC00MHpNMTAgMTBoMjB2MjBoLTIwek03MCAxMGgyMHYyMGgtMjB6TTEwIDcwaDIwdjIwaC0yMHpNNzAgNzBoMjB2MjBoLTIwek00NSA0NWgxMHYxMGgtMTB6IiBmaWxsPSIjMWIxYjI0Ii8+PC9zdmc+')] bg-no-repeat bg-center bg-cover opacity-80" data-alt="high contrast black and white abstract geometric pattern representing a digital qr code on a white background"></div>
+</div>
+<span class="font-body-sm text-body-sm text-outline mt-sm text-center">Quét để nhận vé cứng</span>
+</div>
+</div>
+</div>
+<!-- Action Area -->
+<div class="px-xl pb-xl pt-sm flex flex-col sm:flex-row gap-md justify-center items-center">
+<!-- Vietnamese context: Extra padding px-8 applied for longer localized strings -->
+<button class="w-full sm:w-auto bg-primary text-on-primary font-body-md text-body-md font-semibold rounded-full px-8 py-[12px] hover:bg-primary-fixed-variant hover:shadow-[0px_4px_20px_rgba(0,0,0,0.12)] transition-all duration-200 flex justify-center items-center gap-sm">
+<span class="material-symbols-outlined" style="font-size: 20px;">confirmation_number</span>
+                Xem vé của tôi
+            </button>
+<button class="w-full sm:w-auto bg-transparent border border-primary text-primary font-body-md text-body-md font-semibold rounded-full px-8 py-[12px] hover:bg-surface-container hover:text-primary-fixed-variant transition-colors duration-200 flex justify-center items-center">
+                Khám phá sự kiện khác
+            </button>
+</div>
+</main>
+</body></html>
