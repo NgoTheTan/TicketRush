@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TicketRush Admin - Cấu hình sơ đồ ghế</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#4f46e5",
+                        "on-background": "#1b1b24",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#1b1b24",
+                        "surface-tint": "#4d44e3",
+                        "surface-variant": "#e4e1ee",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-surface-variant": "#464555",
+                        "error-container": "#ffdad6",
+                        "outline": "#777587",
+                        "surface-container-highest": "#e4e1ee",
+                        "outline-variant": "#c7c4d8",
+                        "on-primary-container": "#dad7ff",
+                        "tertiary": "#41485e",
+                        "secondary-fixed": "#6ffbbe",
+                        "background": "#fcf8ff",
+                        "on-tertiary-container": "#d4dbf5",
+                        "on-secondary-fixed-variant": "#005236",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#eae6f4",
+                        "primary-fixed": "#e2dfff",
+                        "tertiary-fixed": "#dae2fd",
+                        "secondary-container": "#6cf8bb",
+                        "surface": "#fcf8ff",
+                        "surface-bright": "#fcf8ff",
+                        "inverse-primary": "#c3c0ff",
+                        "on-primary-fixed": "#0f0069",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f3effc",
+                        "secondary-fixed-dim": "#4edea3",
+                        "surface-dim": "#dcd8e5",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#00714d",
+                        "tertiary-container": "#586076",
+                        "on-tertiary-fixed": "#131b2e",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#f0ecf9",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#002113",
+                        "secondary": "#006c49",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "surface-container-low": "#f5f2ff",
+                        "inverse-surface": "#302f39",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "primary": "#3525cd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "container-max": "1280px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "xl": "48px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "h3": ["Inter"], "body-sm": ["Inter"], "body-lg": ["Inter"], "tabular-nums": ["Inter"], "body-md": ["Inter"], "h1": ["Inter"], "h2": ["Inter"], "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h3": ["24px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "tabular-nums": ["16px", {"lineHeight": "1", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "h2": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .seat-grid-container {
+            display: grid;
+            grid-template-columns: repeat(20, minmax(0, 1fr));
+            gap: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 font-body-md text-on-surface overflow-hidden flex h-screen">
+<!-- SideNavBar Anchor -->
+<aside class="bg-slate-950 font-['Inter'] text-sm tracking-wide border-r border-slate-800 flex flex-col h-full py-6 w-64 shrink-0">
+<div class="px-6 mb-8">
+<h1 class="text-xl font-bold text-white">TicketRush Admin</h1>
+<p class="text-xs text-slate-500 uppercase tracking-widest mt-1">Event Management</p>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="text-slate-400 flex items-center px-6 py-3 hover:bg-slate-900 cursor-pointer transition-all active:opacity-80">
+<span class="material-symbols-outlined mr-3" data-icon="dashboard">dashboard</span>
+<span>Overview</span>
+</div>
+<div class="text-slate-400 flex items-center px-6 py-3 hover:bg-slate-900 cursor-pointer transition-all active:opacity-80">
+<span class="material-symbols-outlined mr-3" data-icon="event_seat">event_seat</span>
+<span>Events</span>
+</div>
+<!-- Active Tab: Seat Layout -->
+<div class="bg-indigo-600/10 text-indigo-400 border-r-4 border-indigo-500 flex items-center px-6 py-3 cursor-pointer transition-all active:opacity-80">
+<span class="material-symbols-outlined mr-3" data-icon="layers">layers</span>
+<span>Seat Layout</span>
+</div>
+<div class="text-slate-400 flex items-center px-6 py-3 hover:bg-slate-900 cursor-pointer transition-all active:opacity-80">
+<span class="material-symbols-outlined mr-3" data-icon="receipt_long">receipt_long</span>
+<span>Orders</span>
+</div>
+<div class="text-slate-400 flex items-center px-6 py-3 hover:bg-slate-900 cursor-pointer transition-all active:opacity-80">
+<span class="material-symbols-outlined mr-3" data-icon="leaderboard">leaderboard</span>
+<span>Statistics</span>
+</div>
+</nav>
+<div class="mt-auto px-6 border-t border-slate-800 pt-6">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs">AD</div>
+<div>
+<p class="text-white text-xs font-semibold">Admin User</p>
+<p class="text-slate-500 text-[10px]">Super Admin</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col h-full bg-slate-950 overflow-hidden">
+<!-- Top Header -->
+<header class="h-20 border-b border-slate-800 flex items-center justify-between px-lg shrink-0">
+<div class="flex items-center gap-md">
+<div class="relative">
+<select class="bg-slate-900 border-slate-700 text-white rounded-lg px-md py-sm pr-10 appearance-none focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-body-sm w-80">
+<option>Đại nhạc hội "Spring Melody 2024"</option>
+<option>Rap Việt All-Star Concert</option>
+<option>Tech Summit Vietnam</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+<div class="flex items-center gap-sm bg-indigo-500/10 text-indigo-400 px-md py-sm rounded-full border border-indigo-500/20">
+<span class="material-symbols-outlined text-[18px]" data-icon="info" data-weight="fill" style="font-variation-settings: 'FILL' 1;">info</span>
+<span class="text-body-sm font-medium tracking-tight">Đã tạo 150 ghế cho khu VIP</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="bg-indigo-600 text-white px-lg py-sm rounded-lg font-bold hover:bg-indigo-700 transition-all flex items-center gap-2 text-body-sm active:scale-95 transform">
+<span class="material-symbols-outlined" data-icon="save">save</span>
+                    Lưu cấu hình
+                </button>
+</div>
+</header>
+<!-- Tooling & Preview Grid -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Left Panel: Configuration -->
+<div class="w-[400px] border-r border-slate-800 flex flex-col p-lg gap-lg overflow-y-auto scrollbar-hide">
+<div class="space-y-sm">
+<h3 class="text-h3 text-white font-h3 mb-sm">Quản lý khu vực</h3>
+<p class="text-body-sm text-slate-400">Thiết lập các khu vực ghế ngồi cho sự kiện.</p>
+</div>
+<!-- Zone Tabs -->
+<div class="flex gap-xs p-1 bg-slate-900 rounded-lg">
+<button class="flex-1 py-sm px-md text-body-sm rounded font-medium bg-indigo-600 text-white shadow-lg">VIP</button>
+<button class="flex-1 py-sm px-md text-body-sm rounded font-medium text-slate-400 hover:text-white transition-colors">Standard</button>
+<button class="flex-1 py-sm px-md text-body-sm rounded font-medium text-slate-400 hover:text-white transition-colors">Economy</button>
+</div>
+<!-- Config Form -->
+<div class="space-y-md">
+<div class="grid grid-cols-2 gap-md">
+<div class="space-y-xs">
+<label class="text-label-caps text-slate-500 uppercase">Số hàng ghế</label>
+<input class="w-full bg-slate-900 border-slate-700 text-white rounded-lg p-sm focus:ring-1 focus:ring-primary outline-none" type="number" value="10"/>
+</div>
+<div class="space-y-xs">
+<label class="text-label-caps text-slate-500 uppercase">Ghế mỗi hàng</label>
+<input class="w-full bg-slate-900 border-slate-700 text-white rounded-lg p-sm focus:ring-1 focus:ring-primary outline-none" type="number" value="15"/>
+</div>
+</div>
+<div class="space-y-xs">
+<label class="text-label-caps text-slate-500 uppercase">Giá vé (VNĐ)</label>
+<div class="relative">
+<input class="w-full bg-slate-900 border-slate-700 text-white rounded-lg p-sm pr-12 focus:ring-1 focus:ring-primary outline-none tabular-nums" type="text" value="2,500,000"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">VNĐ</span>
+</div>
+</div>
+<div class="space-y-xs">
+<label class="text-label-caps text-slate-500 uppercase">Màu sắc khu vực</label>
+<div class="flex gap-sm">
+<button class="w-8 h-8 rounded-full bg-indigo-500 ring-2 ring-white ring-offset-2 ring-offset-slate-950"></button>
+<button class="w-8 h-8 rounded-full bg-emerald-500"></button>
+<button class="w-8 h-8 rounded-full bg-amber-500"></button>
+<button class="w-8 h-8 rounded-full bg-rose-500"></button>
+<button class="w-8 h-8 rounded-full bg-sky-500"></button>
+<button class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-white" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="pt-md border-t border-slate-800 flex flex-col gap-sm">
+<button class="w-full bg-slate-800 text-white py-sm rounded-lg font-semibold hover:bg-slate-700 transition-all flex items-center justify-center gap-2 text-body-sm">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+                        Thêm khu vực
+                    </button>
+<button class="w-full bg-secondary text-on-secondary py-sm rounded-lg font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 text-body-sm shadow-xl shadow-secondary/20">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+                        Tạo sơ đồ ma trận
+                    </button>
+</div>
+<!-- Zone Stats List -->
+<div class="mt-auto pt-lg">
+<h4 class="text-label-caps text-slate-500 mb-md uppercase tracking-widest">Tóm tắt sơ đồ</h4>
+<div class="space-y-sm">
+<div class="flex justify-between items-center p-sm bg-slate-900/50 rounded-lg border border-slate-800">
+<div class="flex items-center gap-sm">
+<div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+<span class="text-body-sm text-slate-300">Khu VIP</span>
+</div>
+<span class="text-body-sm font-tabular-nums text-white">150 ghế</span>
+</div>
+<div class="flex justify-between items-center p-sm bg-slate-900/50 rounded-lg border border-slate-800">
+<div class="flex items-center gap-sm">
+<div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+<span class="text-body-sm text-slate-300">Standard</span>
+</div>
+<span class="text-body-sm font-tabular-nums text-white">450 ghế</span>
+</div>
+<div class="flex justify-between items-center p-sm bg-slate-900/50 rounded-lg border border-slate-800 opacity-50">
+<div class="flex items-center gap-sm">
+<div class="w-2 h-2 rounded-full bg-slate-600"></div>
+<span class="text-body-sm text-slate-300">Economy</span>
+</div>
+<span class="text-body-sm font-tabular-nums text-white">-- ghế</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel: Matrix Preview -->
+<div class="flex-1 flex flex-col bg-slate-900/30 p-xl overflow-auto items-center justify-center relative">
+<!-- Grid Controls Overlay -->
+<div class="absolute top-md right-md flex items-center gap-sm">
+<button class="p-sm bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined" data-icon="zoom_in">zoom_in</span>
+</button>
+<button class="p-sm bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined" data-icon="zoom_out">zoom_out</span>
+</button>
+<div class="h-8 w-px bg-slate-700 mx-xs"></div>
+<button class="p-sm bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="center_focus_weak">center_focus_weak</span>
+<span class="text-xs font-medium">Căn giữa</span>
+</button>
+</div>
+<!-- The Stage (Placeholder for context) -->
+<div class="w-2/3 h-12 bg-slate-800 border-2 border-indigo-500/30 rounded-t-[100px] mb-xl flex items-center justify-center relative shadow-[0_-20px_50px_rgba(79,70,229,0.1)]">
+<span class="text-label-caps text-slate-500 font-bold tracking-[0.2em] uppercase">Sân Khấu Chính</span>
+</div>
+<!-- Seat Matrix Container -->
+<div class="w-fit p-lg bg-slate-900/40 rounded-xl border border-slate-800 backdrop-blur-sm shadow-2xl">
+<div class="seat-grid-container">
+<!-- Simulated Seats Grid -->
+<!-- Row A -->
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-transparent"></div> <!-- Gap -->
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-transparent"></div> <!-- Gap -->
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400 cursor-pointer hover:scale-125 transition-transform"></div>
+<!-- Row B (Repeated Pattern for illustration) -->
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-transparent"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-transparent"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<div class="w-4 h-4 rounded-sm bg-indigo-500 ring-1 ring-indigo-400"></div>
+<!-- Rows of Standard Zone (Emerald) -->
+<!-- Row C to L (Abstracted) -->
+<div class="w-4 h-4 rounded-sm bg-emerald-500/20 border border-emerald-500/40" style="grid-column: span 20; height: 100px; display: flex; align-items: center; justify-content: center; margin-top: 20px;">
+<span class="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">Standard Zone Preview (450 Seats)</span>
+</div>
+</div>
+</div>
+<!-- Legend -->
+<div class="mt-xl flex items-center gap-lg px-xl py-md bg-slate-900 border border-slate-800 rounded-full">
+<div class="flex items-center gap-sm">
+<div class="w-3 h-3 rounded-sm bg-indigo-500"></div>
+<span class="text-xs text-slate-400">VIP</span>
+</div>
+<div class="flex items-center gap-sm">
+<div class="w-3 h-3 rounded-sm bg-emerald-500"></div>
+<span class="text-xs text-slate-400">Standard</span>
+</div>
+<div class="flex items-center gap-sm">
+<div class="w-3 h-3 rounded-sm bg-slate-700"></div>
+<span class="text-xs text-slate-400">Hết chỗ</span>
+</div>
+<div class="flex items-center gap-sm">
+<div class="w-3 h-3 rounded-sm border border-dashed border-slate-600"></div>
+<span class="text-xs text-slate-400">Lối đi</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Success Toast (Injected style behavior for demo) -->
+<div class="fixed bottom-lg right-lg bg-slate-900 border border-emerald-500/30 text-white px-lg py-md rounded-xl shadow-2xl flex items-center gap-md transform translate-y-0 transition-all duration-300">
+<div class="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500">
+<span class="material-symbols-outlined" data-icon="check_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div>
+<p class="text-body-sm font-bold">Cập nhật thành công</p>
+<p class="text-[12px] text-slate-400">Sơ đồ ghế cho khu VIP đã được lưu.</p>
+</div>
+<button class="ml-auto text-slate-500 hover:text-white">
+<span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+</button>
+</div>
+</body></html>
