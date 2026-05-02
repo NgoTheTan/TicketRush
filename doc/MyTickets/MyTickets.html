@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vé của tôi - TicketRush</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#4f46e5",
+                        "on-background": "#1b1b24",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#1b1b24",
+                        "surface-tint": "#4d44e3",
+                        "surface-variant": "#e4e1ee",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-surface-variant": "#464555",
+                        "error-container": "#ffdad6",
+                        "outline": "#777587",
+                        "surface-container-highest": "#e4e1ee",
+                        "outline-variant": "#c7c4d8",
+                        "on-primary-container": "#dad7ff",
+                        "tertiary": "#41485e",
+                        "secondary-fixed": "#6ffbbe",
+                        "background": "#fcf8ff",
+                        "on-tertiary-container": "#d4dbf5",
+                        "on-secondary-fixed-variant": "#005236",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#eae6f4",
+                        "primary-fixed": "#e2dfff",
+                        "tertiary-fixed": "#dae2fd",
+                        "secondary-container": "#6cf8bb",
+                        "surface": "#fcf8ff",
+                        "surface-bright": "#fcf8ff",
+                        "inverse-primary": "#c3c0ff",
+                        "on-primary-fixed": "#002113",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f3effc",
+                        "secondary-fixed-dim": "#4edea3",
+                        "surface-dim": "#dcd8e5",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#00714d",
+                        "tertiary-container": "#586076",
+                        "on-tertiary-fixed": "#131b2e",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#f0ecf9",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#002113",
+                        "secondary": "#006c49",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "surface-container-low": "#f5f2ff",
+                        "inverse-surface": "#302f39",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "primary": "#3525cd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "container-max": "1280px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "xl": "48px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "h3": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "tabular-nums": ["Inter"],
+                        "body-md": ["Inter"],
+                        "h1": ["Inter"],
+                        "h2": ["Inter"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h3": ["24px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "tabular-nums": ["16px", {"lineHeight": "1", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "h2": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ticket-perforation {
+            background-image: radial-gradient(circle at 0px 50%, transparent 10px, white 10px);
+            background-size: 100% 20px;
+        }
+    </style>
+</head>
+<body class="bg-background font-body-md text-on-background min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] sticky top-0 z-50">
+<nav class="flex items-center justify-between px-6 lg:px-12 h-20 w-full max-screen-2xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black tracking-tighter text-indigo-600 dark:text-indigo-400">TicketRush</span>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 font-['Inter'] antialiased text-sm font-medium transition-all duration-200" href="#">Home</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 font-['Inter'] antialiased text-sm font-medium transition-all duration-200" href="#">Events</a>
+<a class="text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 pb-5 font-['Inter'] antialiased text-sm font-medium" href="#">My Tickets</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 font-['Inter'] antialiased text-sm font-medium transition-all duration-200" href="#">Profile</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary text-sm w-64" placeholder="Tìm kiếm sự kiện..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold overflow-hidden border-2 border-white shadow-sm">
+<img class="w-full h-full object-cover" data-alt="professional headshot of a smiling young man with neat hair and clean background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_Jx_77bAFC53EFKI5z3llqhKGEc0-GQjcN2HZREH1wcscT0OvIfgOxU4chk2nJgo7nz-MaObVwnVWawkf0TNLqfatC8qAoaY8eazlDPWfF1vRVIMCh6B6bccZmTHCnTQ79K3XgQ9bx5vNLUrHBlw42pYm9Rn-zuuEH0xsILJIR3S8pDbYFKCNkCEMl09pK3kbvHQk8gHj7AO4TCbiGAyMBQGgvqE15vUEPWjfeH5pCuiZl9nEevC4BdtLtLsNuUB_pyYnZptzqha-"/>
+</div>
+</div>
+</div>
+</nav>
+</header>
+<main class="max-w-screen-xl mx-auto px-6 py-12">
+<div class="flex flex-col gap-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-h1 text-h1 text-on-background mb-2">Vé của tôi</h1>
+<p class="text-on-surface-variant font-body-lg">Quản lý các vé đã mua và chuẩn bị cho sự kiện sắp tới.</p>
+</div>
+<div class="flex bg-surface-container p-1 rounded-lg self-start">
+<button class="px-6 py-2 bg-white shadow-sm rounded-md font-medium text-primary text-sm">Sắp diễn ra</button>
+<button class="px-6 py-2 text-on-surface-variant font-medium text-sm hover:text-primary transition-colors">Đã kết thúc</button>
+</div>
+</div>
+<!-- Tickets Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+<!-- Ticket Card 1 -->
+<div class="bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col md:flex-row border border-outline-variant/30 group">
+<div class="w-full md:w-1/3 relative h-48 md:h-auto overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="vibrant outdoor music festival stage with colorful lights and a cheering crowd at night" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6DnCkNsr1f1uymMRUuVd4Grgx1W9EsK1EStP3sJMl9b0HTFccE_QSqfAqWaHZs-XWoC3UJ1liYdbKd6bSsK7TR_Xme0tOtymXCf9OgdVrntd_bhO_JzEPwCIhK_9tftK_45yuHeor8FIHnKt7oTyl8dU_ZPfws480-xOgv_qxOZ1_Gctk0MH_iP_BtWSsxJSU_bk4nGCLIdlWDAhyb_tMcIrtEFDxGHYnT8bBSozUuTVs1LOj3-vKZkqanhpKnlgXsBfIwC4Nd6MI"/>
+<div class="absolute top-3 left-3">
+<span class="bg-secondary-container/90 backdrop-blur-sm text-on-secondary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Music Festival</span>
+</div>
+</div>
+<div class="flex-1 p-6 flex flex-col justify-between relative">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-h3 text-h3 text-on-background mb-1">Summer Sonic 2024</h3>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="font-tabular-nums">24 Tháng 08, 2024 • 19:00</span>
+</div>
+</div>
+<div class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                Đã phát hành
+                            </div>
+</div>
+<div class="grid grid-cols-3 gap-4 border-y border-dashed border-outline-variant py-4 my-2">
+<div>
+<p class="text-[10px] uppercase font-bold text-outline tracking-widest mb-1">Khu vực</p>
+<p class="font-bold text-primary">VIP A1</p>
+</div>
+<div>
+<p class="text-[10px] uppercase font-bold text-outline tracking-widest mb-1">Hàng</p>
+<p class="font-bold text-on-background">H05</p>
+</div>
+<div>
+<p class="text-[10px] uppercase font-bold text-outline tracking-widest mb-1">Ghế</p>
+<p class="font-bold text-on-background">24</p>
+</div>
+</div>
+<div class="flex items-center gap-4 mt-4">
+<button class="flex-1 bg-primary text-on-primary font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 active:scale-95 transform transition-transform text-sm">
+<span class="material-symbols-outlined text-[20px]">qr_code_2</span>
+                                Xem chi tiết mã QR
+                            </button>
+<button class="p-3 border border-outline-variant text-on-surface-variant rounded-lg hover:bg-slate-50 transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<!-- QR Preview Section (Right side/Desktop) -->
+<div class="hidden md:flex w-24 bg-surface-container-low border-l border-dashed border-outline-variant items-center justify-center p-4">
+<div class="flex flex-col items-center gap-2">
+<div class="bg-white p-2 rounded shadow-sm opacity-60">
+<span class="material-symbols-outlined text-[48px] text-on-surface-variant">qr_code_2</span>
+</div>
+<span class="text-[10px] font-bold text-outline uppercase vertical-text rotate-180 tracking-widest" style="writing-mode: vertical-rl;">TICKET#8821</span>
+</div>
+</div>
+</div>
+<!-- Ticket Card 2 -->
+<div class="bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col md:flex-row border border-outline-variant/30 group">
+<div class="w-full md:w-1/3 relative h-48 md:h-auto overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="professional basketball game in a modern arena with bright stadium lights and crowded stands" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPt5CxCzGepstXGBEWvjk6ffP09r7J5pMNGokuFOfaMUqSLc8HRyt3G97cQf9D1k_Fg45yBNxFoMB_rextkInBMbG6b8m2jJpgEZzkWzldsN4a3gB8GMcXkEkuxxoZtqAvvkNmFddF8XcbFlRdETq6LI4m1O4fuQchP4mKibiJAqp5aByS7MvdZ292LV7XvlrEC1OCKooi4XCMQ6ZG_kAWfTY9nhP0WB6Ef04Qe8WyvqM0-7txePUDKrsNnWIn-Qjoe-QGRYW4rGaU"/>
+<div class="absolute top-3 left-3">
+<span class="bg-primary-container/90 backdrop-blur-sm text-on-primary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Sports Event</span>
+</div>
+</div>
+<div class="flex-1 p-6 flex flex-col justify-between relative">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-h3 text-h3 text-on-background mb-1">VBA Finals 2024</h3>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span class="font-tabular-nums">15 Tháng 09, 2024 • 18:30</span>
+</div>
+</div>
+<div class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                Đã phát hành
+                            </div>
+</div>
+<div class="grid grid-cols-3 gap-4 border-y border-dashed border-outline-variant py-4 my-2">
+<div>
+<p class="text-[10px] uppercase font-bold text-outline tracking-widest mb-1">Khu vực</p>
+<p class="font-bold text-primary">Stand B</p>
+</div>
+<div>
+<p class="text-[10px] uppercase font-bold text-outline tracking-widest mb-1">Hàng</p>
+<p class="font-bold text-on-background">G12</p>
+</div>
+<div>
+<p class="text-[10px] uppercase font-bold text-outline tracking-widest mb-1">Ghế</p>
+<p class="font-bold text-on-background">102</p>
+</div>
+</div>
+<div class="flex items-center gap-4 mt-4">
+<button class="flex-1 bg-primary text-on-primary font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 active:scale-95 transform transition-transform text-sm">
+<span class="material-symbols-outlined text-[20px]">qr_code_2</span>
+                                Xem chi tiết mã QR
+                            </button>
+<button class="p-3 border border-outline-variant text-on-surface-variant rounded-lg hover:bg-slate-50 transition-colors">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+<div class="hidden md:flex w-24 bg-surface-container-low border-l border-dashed border-outline-variant items-center justify-center p-4">
+<div class="flex flex-col items-center gap-2">
+<div class="bg-white p-2 rounded shadow-sm opacity-60">
+<span class="material-symbols-outlined text-[48px] text-on-surface-variant">qr_code_2</span>
+</div>
+<span class="text-[10px] font-bold text-outline uppercase vertical-text rotate-180 tracking-widest" style="writing-mode: vertical-rl;">TICKET#9942</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Empty State (Hidden by default, shown if no tickets) -->
+<div class="hidden flex-col items-center justify-center py-20 text-center">
+<div class="w-24 h-24 bg-surface-container-highest rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-[48px] text-outline">confirmation_number</span>
+</div>
+<h2 class="font-h2 text-h2 text-on-background mb-2">Chưa có vé nào</h2>
+<p class="text-on-surface-variant max-w-md mx-auto mb-8">Bạn chưa mua vé cho sự kiện nào. Hãy khám phá các sự kiện hấp dẫn đang diễn ra!</p>
+<button class="bg-primary text-on-primary font-bold px-8 py-3 rounded-full hover:shadow-lg transition-all active:scale-95">
+                    Khám phá sự kiện
+                </button>
+</div>
+<!-- Secondary Actions -->
+<div class="mt-12 bg-white rounded-xl p-8 border border-outline-variant/30 flex flex-col md:flex-row items-center justify-between gap-6">
+<div class="flex items-center gap-6">
+<div class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[32px]">contact_support</span>
+</div>
+<div>
+<h4 class="font-h3 text-lg text-on-background mb-1">Cần hỗ trợ về vé?</h4>
+<p class="text-on-surface-variant text-sm">Nếu bạn gặp vấn đề với mã QR hoặc không nhận được vé, hãy liên hệ với chúng tôi.</p>
+</div>
+</div>
+<div class="flex gap-4 w-full md:w-auto">
+<button class="flex-1 md:flex-initial px-6 py-3 border border-outline text-on-surface font-semibold rounded-lg hover:bg-slate-50 transition-colors text-sm">Trung tâm trợ giúp</button>
+<button class="flex-1 md:flex-initial px-6 py-3 bg-secondary text-on-secondary font-semibold rounded-lg hover:opacity-90 transition-all text-sm">Liên hệ hỗ trợ</button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component - Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex justify-around items-center h-20 px-4 z-50">
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">Trang chủ</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">search</span>
+<span class="text-[10px] font-medium">Tìm kiếm</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-indigo-600">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+<span class="text-[10px] font-bold">Vé của tôi</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium">Cá nhân</span>
+</button>
+</nav>
+<footer class="bg-white border-t border-slate-100 py-12 px-6 mt-20 hidden md:block">
+<div class="max-w-screen-xl mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
+<div class="max-w-xs">
+<span class="text-xl font-black tracking-tighter text-indigo-600 mb-4 block">TicketRush</span>
+<p class="text-on-surface-variant text-sm">Nền tảng đặt vé hàng đầu Việt Nam. Mang đến trải nghiệm mua vé nhanh chóng và an toàn nhất.</p>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-12">
+<div class="flex flex-col gap-3">
+<h5 class="font-bold text-sm uppercase tracking-wider text-on-background">Sản phẩm</h5>
+<a class="text-on-surface-variant text-sm hover:text-primary transition-colors" href="#">Sự kiện mới</a>
+<a class="text-on-surface-variant text-sm hover:text-primary transition-colors" href="#">Vé hot</a>
+<a class="text-on-surface-variant text-sm hover:text-primary transition-colors" href="#">Khuyến mãi</a>
+</div>
+<div class="flex flex-col gap-3">
+<h5 class="font-bold text-sm uppercase tracking-wider text-on-background">Công ty</h5>
+<a class="text-on-surface-variant text-sm hover:text-primary transition-colors" href="#">Về chúng tôi</a>
+<a class="text-on-surface-variant text-sm hover:text-primary transition-colors" href="#">Tuyển dụng</a>
+<a class="text-on-surface-variant text-sm hover:text-primary transition-colors" href="#">Liên hệ</a>
+</div>
+<div class="flex flex-col gap-3">
+<h5 class="font-bold text-sm uppercase tracking-wider text-on-background">Pháp lý</h5>
+<a class="text-on-surface-variant text-sm hover:text-primary transition-colors" href="#">Điều khoản</a>
+<a class="text-on-surface-variant text-sm hover:text-primary transition-colors" href="#">Bảo mật</a>
+</div>
+</div>
+</div>
+<div class="max-w-screen-xl mx-auto border-t border-slate-50 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-outline">
+<span>© 2024 TicketRush. All rights reserved.</span>
+<div class="flex gap-6">
+<a class="hover:text-primary" href="#">Facebook</a>
+<a class="hover:text-primary" href="#">Instagram</a>
+<a class="hover:text-primary" href="#">Twitter</a>
+</div>
+</div>
+</footer>
+</body></html>

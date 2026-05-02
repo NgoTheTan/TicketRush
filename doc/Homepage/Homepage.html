@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#4f46e5",
+                        "on-background": "#1b1b24",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#1b1b24",
+                        "surface-tint": "#4d44e3",
+                        "surface-variant": "#e4e1ee",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-surface-variant": "#464555",
+                        "error-container": "#ffdad6",
+                        "outline": "#777587",
+                        "surface-container-highest": "#e4e1ee",
+                        "outline-variant": "#c7c4d8",
+                        "on-primary-container": "#dad7ff",
+                        "tertiary": "#41485e",
+                        "secondary-fixed": "#6ffbbe",
+                        "background": "#fcf8ff",
+                        "on-tertiary-container": "#d4dbf5",
+                        "on-secondary-fixed-variant": "#005236",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#eae6f4",
+                        "primary-fixed": "#e2dfff",
+                        "tertiary-fixed": "#dae2fd",
+                        "secondary-container": "#6cf8bb",
+                        "surface": "#fcf8ff",
+                        "surface-bright": "#fcf8ff",
+                        "inverse-primary": "#c3c0ff",
+                        "on-primary-fixed": "#0f0069",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f3effc",
+                        "secondary-fixed-dim": "#4edea3",
+                        "surface-dim": "#dcd8e5",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#00714d",
+                        "tertiary-container": "#586076",
+                        "on-tertiary-fixed": "#131b2e",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#f0ecf9",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#002113",
+                        "secondary": "#006c49",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "surface-container-low": "#f5f2ff",
+                        "inverse-surface": "#302f39",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "primary": "#3525cd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "container-max": "1280px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "xl": "48px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "h3": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "tabular-nums": ["Inter"],
+                        "body-md": ["Inter"],
+                        "h1": ["Inter"],
+                        "h2": ["Inter"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h3": ["24px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "tabular-nums": ["16px", {"lineHeight": "1", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "h2": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="bg-background font-body-md text-on-background antialiased">
+<!-- TopNavBar (Shared Component) -->
+<header class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] sticky top-0 z-50">
+<div class="flex items-center justify-between px-6 lg:px-12 h-20 w-full max-w-screen-2xl mx-auto">
+<div class="flex items-center gap-12">
+<a class="text-2xl font-black tracking-tighter text-indigo-600 dark:text-indigo-400" href="#">TicketRush</a>
+<nav class="hidden md:flex items-center gap-8 font-['Inter'] antialiased text-sm font-medium">
+<a class="text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 pb-5" href="#">Home</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition-all duration-200" href="#">Events</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition-all duration-200" href="#">My Tickets</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition-all duration-200" href="#">Profile</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<button class="hidden lg:flex items-center gap-2 text-slate-400 px-4 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl transition-all duration-200 border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span>Tìm sự kiện...</span>
+</button>
+<button class="bg-primary text-on-primary px-8 py-3 rounded-full font-bold active:scale-95 transform transition-transform shadow-lg shadow-primary/20">Login</button>
+</div>
+</div>
+</header>
+<main class="max-w-screen-2xl mx-auto">
+<!-- Hero Section -->
+<section class="relative px-6 lg:px-12 pt-8 pb-16">
+<div class="relative overflow-hidden rounded-xl h-[600px] flex items-center shadow-xl">
+<img class="absolute inset-0 w-full h-full object-cover" data-alt="Cinematic wide shot of a massive music festival stage at night with purple neon lights and a cheering crowd" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9leApRuYDeoMN4tBL6Q8Dq_TqhtPsOBfLXIS3d2uEPZ74tw-tb5Mp3imLBu7jdlojXdyC5G4ZQR8C0bs5SVMDNNdxfcHifgbURIaNiaO4aqH_LVhBnGRd2vc1AEw8EzU8LrdPUubpnu0slSGhR90s1GIqP7H4h1l1F3x06nNPDHjwswi0Pdx_Ipbe4cWcaO6bJVIrWfXoilBMne7P4XPVThKQP_lCsCB1YM7CyRWhITw33arbDTnhdiK9JLpfUoD_vDd009ooKTE9"/>
+<div class="absolute inset-0 bg-gradient-to-r from-on-background/90 via-on-background/40 to-transparent"></div>
+<div class="relative z-10 px-12 max-w-2xl text-white">
+<span class="inline-block bg-primary px-4 py-1 rounded-full text-label-caps mb-6 uppercase tracking-widest">Sự kiện tiêu biểu</span>
+<h1 class="font-h1 text-h1 mb-4 leading-tight">Summer Music Festival 2026</h1>
+<p class="text-body-lg font-body-lg mb-8 opacity-90">Lễ hội âm nhạc lớn nhất Đông Nam Á trở lại với dàn line-up huyền thoại. Sẵn sàng cho một mùa hè bùng nổ.</p>
+<div class="flex gap-4 mb-10">
+<div class="bg-white/10 backdrop-blur-md px-6 py-4 rounded-xl border border-white/20 text-center min-w-[80px]">
+<div class="font-tabular-nums text-2xl font-bold">12</div>
+<div class="text-[10px] uppercase opacity-70">Ngày</div>
+</div>
+<div class="bg-white/10 backdrop-blur-md px-6 py-4 rounded-xl border border-white/20 text-center min-w-[80px]">
+<div class="font-tabular-nums text-2xl font-bold">08</div>
+<div class="text-[10px] uppercase opacity-70">Giờ</div>
+</div>
+<div class="bg-white/10 backdrop-blur-md px-6 py-4 rounded-xl border border-white/20 text-center min-w-[80px]">
+<div class="font-tabular-nums text-2xl font-bold">45</div>
+<div class="text-[10px] uppercase opacity-70">Phút</div>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="bg-primary hover:bg-primary-container text-on-primary px-10 py-4 rounded-full font-bold text-lg flex items-center gap-2 transition-all active:scale-95 shadow-xl shadow-primary/30">
+                            Mua vé ngay
+                            <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<button class="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/30 px-10 py-4 rounded-full font-bold text-lg transition-all">
+                            Xem chi tiết
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Search & Filters -->
+<section class="px-6 lg:px-12 -mt-16 relative z-20">
+<div class="bg-white rounded-xl shadow-[0px_10px_30px_rgba(0,0,0,0.08)] p-6 flex flex-col lg:flex-row gap-4 border border-slate-100">
+<div class="flex-1 flex items-center gap-3 bg-slate-50 px-4 py-4 rounded-lg border border-slate-200">
+<span class="material-symbols-outlined text-slate-400">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-md" placeholder="Tìm kiếm sự kiện, nghệ sĩ, địa điểm..." type="text"/>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:w-1/2">
+<div class="flex items-center gap-3 bg-slate-50 px-4 py-4 rounded-lg border border-slate-200 cursor-pointer">
+<span class="material-symbols-outlined text-slate-400">calendar_month</span>
+<select class="bg-transparent border-none focus:ring-0 w-full font-body-sm appearance-none">
+<option>Thời gian</option>
+<option>Hôm nay</option>
+<option>Cuối tuần này</option>
+<option>Tháng này</option>
+</select>
+</div>
+<div class="flex items-center gap-3 bg-slate-50 px-4 py-4 rounded-lg border border-slate-200 cursor-pointer">
+<span class="material-symbols-outlined text-slate-400">location_on</span>
+<select class="bg-transparent border-none focus:ring-0 w-full font-body-sm appearance-none">
+<option>Địa điểm</option>
+<option>TP. Hồ Chí Minh</option>
+<option>Hà Nội</option>
+<option>Đà Nẵng</option>
+</select>
+</div>
+<div class="flex items-center gap-3 bg-slate-50 px-4 py-4 rounded-lg border border-slate-200 cursor-pointer">
+<span class="material-symbols-outlined text-slate-400">category</span>
+<select class="bg-transparent border-none focus:ring-0 w-full font-body-sm appearance-none">
+<option>Thể loại</option>
+<option>Concert</option>
+<option>Kịch nói</option>
+<option>Workshop</option>
+</select>
+</div>
+</div>
+<button class="bg-on-background text-white px-10 py-4 rounded-lg font-bold hover:bg-slate-800 transition-colors">Tìm kiếm</button>
+</div>
+</section>
+<!-- Featured Events (Asymmetric Bento Grid) -->
+<section class="px-6 lg:px-12 py-20">
+<div class="flex justify-between items-end mb-10">
+<div>
+<span class="text-primary font-bold tracking-widest text-label-caps uppercase block mb-2">Đề xuất cho bạn</span>
+<h2 class="font-h2 text-h2 text-on-background">Sự kiện nổi bật</h2>
+</div>
+<a class="text-primary font-bold flex items-center gap-2 hover:underline" href="#">
+                    Xem tất cả
+                    <span class="material-symbols-outlined">chevron_right</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 h-[600px]">
+<!-- Large Feature -->
+<div class="md:col-span-7 relative rounded-xl overflow-hidden group shadow-lg">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Crowded concert venue with thousands of fans glowing under red stage lights and laser beams" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6wjA4_wxdStmfPmnXmVVEm4jR-mqXKF5kIEG7TJiS75ryzhSXdXVxTNReer6CPl8QhveZbxBb3zp_zfjL_o7ouxT2u24NrcmLmHNcJG6QsJtTdQWYfeDpgnaDTi6w3sPt9veFPM_M0vzMwU81XKgHY-nzGGK-Q3Qjm-fkYcu7X-O1UuMtkmlJHHmeHX0WUkTNT43YkeS8PafHOP9IlAdCI5uPewpFpt6m2kEUOOpJWN9WsAY-FyFkzd6NNtD5nbqiTOwRVhQ2a5ov"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20"></div>
+<div class="absolute top-6 left-6 flex gap-2">
+<span class="bg-secondary text-on-secondary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Đang bán</span>
+</div>
+<div class="absolute bottom-8 left-8 right-8 text-white">
+<p class="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs">V-Pop Special</p>
+<h3 class="text-3xl font-bold mb-4">The Show: Modern Legend 2026</h3>
+<div class="flex flex-wrap gap-6 text-sm opacity-90">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-base">calendar_today</span> 15.08.2026</span>
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-base">location_on</span> SVĐ Quân Khu 7, TP.HCM</span>
+</div>
+</div>
+</div>
+<!-- Secondary Features -->
+<div class="md:col-span-5 grid grid-rows-2 gap-6">
+<div class="relative rounded-xl overflow-hidden group shadow-lg">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Intimate jazz club performance with warm golden lighting and silhouettes of musicians" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD37IRwuKaAoohHsMk1ia1Ocsrp4nQNtSAZEvQGHFmXqXGSmmEluckG06zRKVOM0hFPSc4by8PdsMy6SE5zBBZMtDB56uNmKs7Twg6mS2EblZmWdg_5RmutHmwXwGlSXB2SfhPiXu07zr3ZCayXj82gV6LanG5pM9uwrijskiX3uFUyCIH_zqRsv3xkzupVHhC0b15oYqzHzgE1mrp-A9gRcNYo236qCPdVkbY8Gz8Sw-297slW2SgZ1UT_OmPiA0yyqBcmyTSjqh8N"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+<div class="absolute bottom-6 left-6 text-white">
+<h4 class="text-xl font-bold">Midnight Jazz Night</h4>
+<p class="text-sm opacity-80">Từ 450.000đ</p>
+</div>
+</div>
+<div class="relative rounded-xl overflow-hidden group shadow-lg">
+<img class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Dynamic electronic music event with neon blue and pink geometric lighting patterns" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4d4C9AfuOd9nPQI_OB0QMNI84NWTgYnMYEYAEsTA6K_Q7qM2pZt8ZgZhZJZFYeDWpSXS4dmPR1ipMhpdESpL0Wreu6vK7TmhmABt-VFoKW4f9fGk3FcymUu3KESJFiM9KWJLi2Hmxl6cGCq--H5kP4IKtrqz23IwkipLZ4FZrVINmqWXhpZ-1MZpQ9nn-XzEwNI0ZNL25hEYSp4FVCaLaNjrIlWqhXNIWGvIg2vRnZo2iYvoWGQYKSebtniLjBGa5NjtKSkdxyOwl"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+<div class="absolute bottom-6 left-6 text-white">
+<h4 class="text-xl font-bold">EDM World Tour</h4>
+<p class="text-sm opacity-80">Từ 1.200.000đ</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Event Grid -->
+<section class="px-6 lg:px-12 py-10 bg-slate-50/50 border-t border-slate-100">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+<h2 class="font-h2 text-h2 text-on-background">Khám phá sự kiện</h2>
+<div class="flex gap-2 p-1 bg-white border border-slate-200 rounded-lg">
+<button class="p-2 bg-indigo-50 text-indigo-600 rounded">
+<span class="material-symbols-outlined">grid_view</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+<span class="material-symbols-outlined">view_list</span>
+</button>
+</div>
+</div>
+<!-- Grid View -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+<!-- Card 1 -->
+<div class="flex flex-col bg-white rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 group">
+<div class="relative aspect-[4/5] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Outdoor art festival with colorful installations and people walking around in daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyDXQ-5RmTlMhkL_hLqIVmCQrazluCtS8THBtsCCNYjA9qp4Ruq4cDyn4qKfyOc-FNelhI57HtevC-8XJ1NJR6AdlrSiEQngjdKOyctbvhYq983sg8pObuZtwWf9-J_lx-PKnbEIXeaiHTlCf0iWuHngUUIumVmGbFHBYjbqR-pSKk_NVEKr_d8EDi_Vx1q2H-CskiDDexQniiY9xjOli5SrNxn6L1X7qpCaSl-KQOeDPbO_uGTqf6XFrPjLDxhvI3U49iWYo390hW"/>
+<div class="absolute top-4 left-4">
+<span class="bg-secondary-container/90 backdrop-blur-md text-on-secondary-container px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Đang mở bán</span>
+</div>
+<button class="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md p-2 rounded-full text-on-background shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="favorite" data-weight="fill">favorite</span>
+</button>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<p class="text-indigo-600 font-bold text-xs uppercase mb-2">Triển lãm Nghệ Thuật</p>
+<h3 class="font-h3 text-xl mb-4 line-clamp-2">Sắc Màu Thành Phố 2026: Đêm Hội Ánh Sáng</h3>
+<div class="space-y-3 mb-6 flex-1">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg opacity-60">calendar_today</span>
+<span class="text-body-sm">22.09.2026 • 19:00</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg opacity-60">location_on</span>
+<span class="text-body-sm line-clamp-1">Trung tâm Triển lãm SECC, Q.7</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-slate-100">
+<div>
+<span class="text-[10px] text-slate-400 uppercase font-bold block">Giá từ</span>
+<span class="text-lg font-black text-on-background">500.000đ</span>
+</div>
+<button class="bg-primary text-on-primary px-4 py-2 rounded font-bold text-sm hover:bg-primary-container transition-colors">Xem chi tiết</button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="flex flex-col bg-white rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 group">
+<div class="relative aspect-[4/5] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Grand theater interior with ornate gold detailing and red velvet seats" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACOaf4syma9Tx3ihfujhFZTDafbDwJX4Ule9JTHnOQ00tXlNsTqmd47yIMDBUzdhdkwLFk-KELlvaoXdl5oV6-YkwhJRpnkQmiLlAjarpCkZLSoLcLphVLONv5jr8E1i2RrZ5OPWnVTzuPYt7eBnJR0Zw5Nh2s3mO6emh7ZALb3tym43g780lNAF3smH-mnVs_dleIro_IVMxoI0hVGQW7hFvfZLG6UisvF6AMFpXRMAgCGnq45XkRxzkOW9L5YILcAJGkuGpXr15Q"/>
+<div class="absolute top-4 left-4">
+<span class="bg-secondary-container/90 backdrop-blur-md text-on-secondary-container px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Đang mở bán</span>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<p class="text-indigo-600 font-bold text-xs uppercase mb-2">Kịch Nói</p>
+<h3 class="font-h3 text-xl mb-4 line-clamp-2">Cánh Đồng Bất Tận: Vở Diễn Thế Kỷ</h3>
+<div class="space-y-3 mb-6 flex-1">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg opacity-60">calendar_today</span>
+<span class="text-body-sm">05.10.2026 • 20:00</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg opacity-60">location_on</span>
+<span class="text-body-sm line-clamp-1">Nhà Hát Lớn Hà Nội</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-slate-100">
+<div>
+<span class="text-[10px] text-slate-400 uppercase font-bold block">Giá từ</span>
+<span class="text-lg font-black text-on-background">750.000đ</span>
+</div>
+<button class="bg-primary text-on-primary px-4 py-2 rounded font-bold text-sm hover:bg-primary-container transition-colors">Xem chi tiết</button>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="flex flex-col bg-white rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 group">
+<div class="relative aspect-[4/5] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="People interacting at a creative workshop with colorful tools and materials on a long wooden table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP8EYVuBb658tiIn3EHK5oxwoU_Sw2k6G9ev8MdLYhzivM2RzeVBxifOM-wBuG4_r5zPlCEMK0YMlJboH_sqbiNZ58uAbzNHiXdyFFO6oLJOjxzMMTAfQV2J87XOQ1Jbe4oLaXNoaFtt97LCAEO6jzzEQ5xiyybpmbgk1iutR7b_frBIhKkwrtDVPWkGJUxAmaO5VC3mPHY3r6pb0gIFgT0Z_XPjqvN6DBDWTC8ym2MqcfQ2bGtMcaxOlb5tC3XCstfHYmVFrSxVah"/>
+<div class="absolute top-4 left-4">
+<span class="bg-secondary-container/90 backdrop-blur-md text-on-secondary-container px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Đang mở bán</span>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<p class="text-indigo-600 font-bold text-xs uppercase mb-2">Workshop</p>
+<h3 class="font-h3 text-xl mb-4 line-clamp-2">Lớp Học Nấu Ăn: Ẩm Thực Fusion Á-Âu</h3>
+<div class="space-y-3 mb-6 flex-1">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg opacity-60">calendar_today</span>
+<span class="text-body-sm">12.11.2026 • 10:00</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg opacity-60">location_on</span>
+<span class="text-body-sm line-clamp-1">Creative Hub, Q.2</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-slate-100">
+<div>
+<span class="text-[10px] text-slate-400 uppercase font-bold block">Giá từ</span>
+<span class="text-lg font-black text-on-background">1.500.000đ</span>
+</div>
+<button class="bg-primary text-on-primary px-4 py-2 rounded font-bold text-sm hover:bg-primary-container transition-colors">Xem chi tiết</button>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="flex flex-col bg-white rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 group">
+<div class="relative aspect-[4/5] overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Dynamic indie rock band performing on a small stage with atmospheric smoke and backlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXDw3oj0xx7LPF24JxZOP-0f1TWfxq4eP57owteemhERb78FzQEcyBdLkeO7bqltNZ7XFopOFZzj3Z7mDjz7ghJZPePdhte95vx9fDP1b6okYZWaTlkGEaCjTEPGnqqAHNd592nXM4JiRx2TD9iDrgXchew0vzEQJOv1zrBk7qR7kpQk3gw7cHPg8YtSVDC-y2uxQo1Hk1ip9aXM9EpQR_sUNbbu7NFq-xuEPFTu6wympLSyAsTb8I9rZy9Upwsg6KxFt73Tc1PR40"/>
+<div class="absolute top-4 left-4">
+<span class="bg-tertiary-fixed/90 backdrop-blur-md text-on-tertiary-fixed px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Sắp diễn ra</span>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<p class="text-indigo-600 font-bold text-xs uppercase mb-2">Concert</p>
+<h3 class="font-h3 text-xl mb-4 line-clamp-2">Indie Night: Chill cùng Da LAB</h3>
+<div class="space-y-3 mb-6 flex-1">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg opacity-60">calendar_today</span>
+<span class="text-body-sm">24.12.2026 • 19:30</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg opacity-60">location_on</span>
+<span class="text-body-sm line-clamp-1">Phố Đi Bộ Nguyễn Huệ</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-slate-100">
+<div>
+<span class="text-[10px] text-slate-400 uppercase font-bold block">Giá từ</span>
+<span class="text-lg font-black text-on-background">350.000đ</span>
+</div>
+<button class="bg-slate-200 text-slate-600 px-4 py-2 rounded font-bold text-sm cursor-not-allowed">Chưa mở bán</button>
+</div>
+</div>
+</div>
+</div>
+<!-- View More -->
+<div class="mt-20 flex justify-center">
+<button class="bg-white border-2 border-primary text-primary px-12 py-4 rounded-full font-bold hover:bg-primary hover:text-white transition-all duration-300">
+                    Xem thêm sự kiện
+                </button>
+</div>
+</section>
+<!-- Newsletter / Community Section -->
+<section class="px-6 lg:px-12 py-20">
+<div class="bg-indigo-900 rounded-[2rem] overflow-hidden relative p-12 lg:p-20 text-white flex flex-col lg:flex-row items-center gap-16">
+<div class="absolute top-0 right-0 w-1/3 h-full bg-primary/20 blur-3xl rounded-full translate-x-1/2 -translate-y-1/2"></div>
+<div class="absolute bottom-0 left-0 w-1/4 h-1/2 bg-secondary/10 blur-3xl rounded-full -translate-x-1/2 translate-y-1/2"></div>
+<div class="flex-1 relative z-10">
+<h2 class="text-4xl lg:text-5xl font-black mb-6 leading-tight">Đừng bỏ lỡ bất kỳ khoảnh khắc nào!</h2>
+<p class="text-xl text-indigo-100 opacity-80 mb-10 max-w-lg">Nhận thông báo sớm nhất về các sự kiện hot, ưu đãi độc quyền và mã giảm giá dành riêng cho bạn.</p>
+<div class="flex flex-col sm:flex-row gap-4 max-w-md">
+<input class="flex-1 px-6 py-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Nhập email của bạn" type="email"/>
+<button class="bg-white text-indigo-900 px-8 py-4 rounded-xl font-bold hover:bg-indigo-50 transition-colors">Đăng ký ngay</button>
+</div>
+</div>
+<div class="lg:w-1/3 relative z-10 hidden lg:block">
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10 text-center">
+<span class="material-symbols-outlined text-4xl text-indigo-300 mb-2">confirmation_number</span>
+<div class="text-2xl font-bold">1M+</div>
+<div class="text-xs text-indigo-200">Vé đã bán</div>
+</div>
+<div class="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10 text-center translate-y-8">
+<span class="material-symbols-outlined text-4xl text-indigo-300 mb-2">groups</span>
+<div class="text-2xl font-bold">500k+</div>
+<div class="text-xs text-indigo-200">Thành viên</div>
+</div>
+<div class="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10 text-center">
+<span class="material-symbols-outlined text-4xl text-indigo-300 mb-2">event_available</span>
+<div class="text-2xl font-bold">12k+</div>
+<div class="text-xs text-indigo-200">Sự kiện</div>
+</div>
+<div class="bg-white/5 backdrop-blur-sm p-6 rounded-2xl border border-white/10 text-center translate-y-8">
+<span class="material-symbols-outlined text-4xl text-indigo-300 mb-2">verified</span>
+<div class="text-2xl font-bold">100%</div>
+<div class="text-xs text-indigo-200">Tin cậy</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-white border-t border-slate-200 pt-20 pb-10">
+<div class="max-w-screen-2xl mx-auto px-6 lg:px-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
+<div>
+<a class="text-3xl font-black tracking-tighter text-indigo-600 mb-6 block" href="#">TicketRush</a>
+<p class="text-slate-500 mb-8 max-w-xs">Nền tảng đặt vé sự kiện hàng đầu Việt Nam, mang đến những trải nghiệm giải trí tuyệt vời nhất.</p>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all" href="#"><span class="material-symbols-outlined">social_leaderboard</span></a>
+<a class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all" href="#"><span class="material-symbols-outlined">camera</span></a>
+<a class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all" href="#"><span class="material-symbols-outlined">mail</span></a>
+</div>
+</div>
+<div>
+<h4 class="font-bold text-lg mb-6">Về TicketRush</h4>
+<ul class="space-y-4 text-slate-600">
+<li><a class="hover:text-primary transition-colors" href="#">Về chúng tôi</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Tin tức</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Tuyển dụng</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Liên hệ</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-lg mb-6">Chính sách</h4>
+<ul class="space-y-4 text-slate-600">
+<li><a class="hover:text-primary transition-colors" href="#">Điều khoản sử dụng</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Chính sách bảo mật</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Chính sách hoàn tiền</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Quy định bán vé</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-lg mb-6">Tải ứng dụng</h4>
+<p class="text-slate-500 mb-6">Trải nghiệm đặt vé mượt mà trên điện thoại.</p>
+<div class="space-y-3">
+<button class="bg-on-background text-white w-full px-6 py-3 rounded-lg flex items-center gap-3 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">phone_iphone</span>
+<div class="text-left">
+<div class="text-[10px] uppercase opacity-70 leading-none">Download on</div>
+<div class="text-sm font-bold leading-none">App Store</div>
+</div>
+</button>
+<button class="bg-on-background text-white w-full px-6 py-3 rounded-lg flex items-center gap-3 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">android</span>
+<div class="text-left">
+<div class="text-[10px] uppercase opacity-70 leading-none">Get it on</div>
+<div class="text-sm font-bold leading-none">Google Play</div>
+</div>
+</button>
+</div>
+</div>
+</div>
+<div class="max-w-screen-2xl mx-auto px-6 lg:px-12 pt-10 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+<p class="text-slate-400 text-sm">© 2026 TicketRush. All rights reserved. Powered by Entertainment Group.</p>
+<div class="flex items-center gap-4">
+<img class="h-6 grayscale opacity-50" data-alt="Visa logo graphic with clean blue text on white background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeZXQQJnV4fmcvRanuRTtvaQxZhm6-ePmhjUvhWbSEYzee7sXXTfX0DxBp_UTW2KwNZf_RmZ5e5HVFQpQc_kEyEGworcjOFNVU_rzEnSPguEeY8dyCfEkhtSvR_mfMbPMBl4ndBNaI2t8RUrxXMOTIJtEccuSe7Ku9pAK8TwVjiCxMmUGtuWGRn5M2QuE-7NO1iAgU0W6krsvah-E8jqWm0juRdjyVSd6bTlCf0nstyg8k1a_8YKdsf1v0jbs7sQp8StNGXq59BV_9"/>
+<img class="h-6 grayscale opacity-50" data-alt="Mastercard logo graphic with overlapping red and orange circles" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcbmEd9QJpiuY6KdwnKL7ByOhOZJhz4W0Nr1C9XaU7Df2sfr-dea0qP4EpziHp3jI32LNq03xqpS1cYfe2VRoK7u0yU_6Pg6gIy8AS7gNNjAegXXej6RefV4yY2Kfg_eak277VakcOzQAKnQwJJv0gfyyKSOhW5iQWkWOeFwV-lf0q-InQtyjOT4Ev0pDPx9nxvAH7pdJ3Dc3vhs2z0azVveFNL6wbkW2QIuASBPxnwcYW7Q73KQQVBnj3tVqmLniisCIAjcq_qQBM"/>
+<img class="h-6 grayscale opacity-50" data-alt="Momo e-wallet logo with pink and white branding" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCa-rT2P1P4_7sKjL-tKow60kO53P7Ml9qCWaXxYC46zBWXcepQcFoYddBLmni6tTICJRXRhvNiGjsugfV2EzsaFKwCXMb_qH72EZo-cHVFaP8dIPTcEy2ROAc0VUmqrhI4h0r7_d7N50gqiIG0yZXmKZIUfMVdDJeCwXRymPL1bcHGko2kSSQWzJVDu6OIXenKVdCDEcchRDx3YloHP9uCej-UO-Mwli73nLeXJLh0w4KSegw39qAzJ_92MZ1AMOR1jhGsiVJtTt7e"/>
+</div>
+</div>
+</footer>
+</body></html>

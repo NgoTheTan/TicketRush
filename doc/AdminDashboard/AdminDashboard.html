@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TicketRush Admin - Realtime Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#4f46e5",
+                        "on-background": "#1b1b24",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#1b1b24",
+                        "surface-tint": "#4d44e3",
+                        "surface-variant": "#e4e1ee",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-surface-variant": "#464555",
+                        "error-container": "#ffdad6",
+                        "outline": "#777587",
+                        "surface-container-highest": "#e4e1ee",
+                        "outline-variant": "#c7c4d8",
+                        "on-primary-container": "#dad7ff",
+                        "tertiary": "#41485e",
+                        "secondary-fixed": "#6ffbbe",
+                        "background": "#fcf8ff",
+                        "on-tertiary-container": "#d4dbf5",
+                        "on-secondary-fixed-variant": "#005236",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#eae6f4",
+                        "primary-fixed": "#e2dfff",
+                        "tertiary-fixed": "#dae2fd",
+                        "secondary-container": "#6cf8bb",
+                        "surface": "#fcf8ff",
+                        "surface-bright": "#fcf8ff",
+                        "inverse-primary": "#c3c0ff",
+                        "on-primary-fixed": "#0f0069",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f3effc",
+                        "secondary-fixed-dim": "#4edea3",
+                        "surface-dim": "#dcd8e5",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#00714d",
+                        "tertiary-container": "#586076",
+                        "on-tertiary-fixed": "#131b2e",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#f0ecf9",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#002113",
+                        "secondary": "#006c49",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "surface-container-low": "#f5f2ff",
+                        "inverse-surface": "#302f39",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "primary": "#3525cd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "container-max": "1280px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "xl": "48px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "h3": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "tabular-nums": ["Inter"],
+                        "body-md": ["Inter"],
+                        "h1": ["Inter"],
+                        "h2": ["Inter"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h3": ["24px", {"lineHeight": "1.4", "letterSpacing": "0", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "tabular-nums": ["16px", {"lineHeight": "1", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "h1": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "h2": ["30px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background antialiased flex h-screen overflow-hidden">
+<!-- Sidebar Section -->
+<aside class="bg-slate-950 text-indigo-400 font-['Inter'] text-sm tracking-wide docked left-0 h-screen w-64 border-r border-slate-800 flex flex-col py-6 shrink-0 z-50">
+<div class="px-6">
+<h1 class="text-xl font-bold text-white mb-2">TicketRush Admin</h1>
+<p class="text-xs text-slate-500 mb-8 font-medium">Event Management</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="bg-indigo-600/10 text-indigo-400 border-r-4 border-indigo-500 flex items-center px-6 py-3 cursor-pointer transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="dashboard">dashboard</span>
+<span>Overview</span>
+</a>
+<a class="text-slate-400 flex items-center px-6 py-3 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="event_seat">event_seat</span>
+<span>Events</span>
+</a>
+<a class="text-slate-400 flex items-center px-6 py-3 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="layers">layers</span>
+<span>Seat Layout</span>
+</a>
+<a class="text-slate-400 flex items-center px-6 py-3 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="receipt_long">receipt_long</span>
+<span>Orders</span>
+</a>
+<a class="text-slate-400 flex items-center px-6 py-3 hover:bg-slate-900 hover:text-white transition-colors cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="leaderboard">leaderboard</span>
+<span>Statistics</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<div class="p-4 rounded-xl bg-slate-900 border border-slate-800">
+<p class="text-xs text-slate-500 uppercase font-bold tracking-widest mb-2">Live Server</p>
+<div class="flex items-center space-x-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+</span>
+<span class="text-xs text-slate-300 font-mono">TR-X1 Node Active</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+<!-- Header -->
+<header class="h-20 border-b border-slate-100 flex items-center justify-between px-8 bg-white sticky top-0 z-40">
+<div>
+<h2 class="text-h3 font-h3 text-on-surface">Command Center</h2>
+<div class="flex items-center space-x-2">
+<span class="material-symbols-outlined text-xs text-primary" data-icon="sensors">sensors</span>
+<p class="text-body-sm text-on-surface-variant font-medium">Live Monitoring: 2024 International Music Fest</p>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<div class="flex space-x-2 bg-surface-container rounded-full p-1 border border-outline-variant">
+<button class="px-4 py-1.5 bg-white shadow-sm rounded-full text-xs font-bold text-primary">Realtime</button>
+<button class="px-4 py-1.5 text-xs font-medium text-on-surface-variant hover:text-on-surface">Past 24h</button>
+</div>
+<div class="h-10 w-10 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-8 space-y-8 max-w-[1600px] mx-auto w-full">
+<!-- Realtime Stat Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+<!-- Stat Card 1 -->
+<div class="bg-white p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-slate-50">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-primary-container/10 rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="payments">payments</span>
+</div>
+<span class="text-xs font-bold text-secondary flex items-center">
+<span class="material-symbols-outlined text-xs mr-0.5" data-icon="trending_up">trending_up</span> 12%
+                        </span>
+</div>
+<p class="text-label-caps text-on-surface-variant mb-1 uppercase">Doanh thu đã bán</p>
+<h4 class="text-h3 font-tabular-nums text-on-surface">1.248.300.000đ</h4>
+</div>
+<!-- Stat Card 2 -->
+<div class="bg-white p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-slate-50">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-emerald-100 rounded-lg">
+<span class="material-symbols-outlined text-emerald-600" data-icon="pie_chart">pie_chart</span>
+</div>
+</div>
+<p class="text-label-caps text-on-surface-variant mb-1 uppercase">Tỷ lệ lấp đầy</p>
+<div class="flex items-end space-x-2">
+<h4 class="text-h3 font-tabular-nums text-on-surface">87.4%</h4>
+<div class="mb-1.5 flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-emerald-500" style="width: 87.4%"></div>
+</div>
+</div>
+</div>
+<!-- Stat Card 3 -->
+<div class="bg-white p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-slate-50">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-amber-100 rounded-lg">
+<span class="material-symbols-outlined text-amber-600" data-icon="lock_clock">lock_clock</span>
+</div>
+</div>
+<p class="text-label-caps text-on-surface-variant mb-1 uppercase">Ghế đang giữ</p>
+<h4 class="text-h3 font-tabular-nums text-on-surface">412</h4>
+</div>
+<!-- Stat Card 4 -->
+<div class="bg-white p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-slate-50">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-indigo-100 rounded-lg">
+<span class="material-symbols-outlined text-indigo-600" data-icon="confirmation_number">confirmation_number</span>
+</div>
+</div>
+<p class="text-label-caps text-on-surface-variant mb-1 uppercase">Vé đã bán</p>
+<h4 class="text-h3 font-tabular-nums text-on-surface">2.430</h4>
+</div>
+<!-- Stat Card 5 -->
+<div class="bg-white p-6 rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-slate-50">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-slate-100 rounded-lg">
+<span class="material-symbols-outlined text-slate-600" data-icon="event_seat">event_seat</span>
+</div>
+</div>
+<p class="text-label-caps text-on-surface-variant mb-1 uppercase">Ghế còn trống</p>
+<h4 class="text-h3 font-tabular-nums text-on-surface">350</h4>
+</div>
+</div>
+<!-- Main Dashboard Layout Grid -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Zone-wise Fill Rate (Bento Large) -->
+<div class="col-span-12 lg:col-span-8 bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-slate-50 overflow-hidden flex flex-col">
+<div class="p-6 border-b border-slate-50 flex justify-between items-center">
+<div>
+<h3 class="text-body-lg font-bold text-on-surface">Zone-wise Fill Rate</h3>
+<p class="text-body-sm text-on-surface-variant">Real-time status per stadium sector</p>
+</div>
+<span class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold">Updated: Just now</span>
+</div>
+<div class="p-6 flex-1">
+<div class="space-y-6">
+<!-- Zone Row -->
+<div>
+<div class="flex justify-between text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+<span>VIP - Floor Diamond</span>
+<span>98%</span>
+</div>
+<div class="w-full h-10 flex space-x-0.5">
+<div class="flex-1 bg-indigo-600 rounded-sm"></div>
+<div class="flex-1 bg-indigo-600 rounded-sm"></div>
+<div class="flex-1 bg-indigo-600 rounded-sm"></div>
+<div class="flex-1 bg-indigo-600 rounded-sm"></div>
+<div class="flex-1 bg-indigo-600 rounded-sm"></div>
+<div class="flex-1 bg-indigo-600 rounded-sm"></div>
+<div class="flex-1 bg-indigo-600 rounded-sm"></div>
+<div class="flex-1 bg-indigo-600 rounded-sm"></div>
+<div class="flex-1 bg-indigo-600 rounded-sm"></div>
+<div class="flex-1 bg-indigo-100 rounded-sm animate-pulse"></div>
+</div>
+</div>
+<!-- Zone Row -->
+<div>
+<div class="flex justify-between text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+<span>Gold - Stand A</span>
+<span>72%</span>
+</div>
+<div class="w-full h-10 flex space-x-0.5">
+<div class="flex-[72] bg-primary-container rounded-sm"></div>
+<div class="flex-[28] bg-slate-100 rounded-sm"></div>
+</div>
+</div>
+<!-- Zone Row -->
+<div>
+<div class="flex justify-between text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+<span>Standard - Stand B/C</span>
+<span>45%</span>
+</div>
+<div class="w-full h-10 flex space-x-0.5">
+<div class="flex-[45] bg-primary-container/60 rounded-sm"></div>
+<div class="flex-[55] bg-slate-100 rounded-sm"></div>
+</div>
+</div>
+<!-- Zone Row -->
+<div>
+<div class="flex justify-between text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+<span>Platinum Box</span>
+<span>100% SOLD</span>
+</div>
+<div class="w-full h-10 flex space-x-0.5">
+<div class="w-full bg-slate-900 rounded-sm"></div>
+</div>
+</div>
+</div>
+<!-- Visual Seating Mockup -->
+<div class="mt-8 relative h-64 bg-slate-50 rounded-xl overflow-hidden border border-slate-100 group">
+<img alt="Interior architectural view of a massive stadium arena seating plan with complex geometric patterns" class="w-full h-full object-cover opacity-20 filter grayscale" data-alt="architectural blue print of a stadium seating arrangement seen from top down with technical detail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPiIZVh7nz2BTNMWOvBMVlM74XB0U53XXGi4VSmghrViiCJjDSzTM8Egmif3PscfdAAI8L51UKW5Zl6UDM-GFY1PzbSE6E_BxFcaTrD0t24L7fS2pSqndKGumO-CsRQ8FqcGacLO9GTnqOp3cGMNmHapfQsSx6q8HVxZJDppzBSnywiB73X-9IDF1emc3ll6UMvoBwVcZef1-RGgQ1kOSsoxTwzPkiZSvMa-Xs8-_BBy6X6lvEhwxq-Y5CbyeKv_D3YWLwL6FQWTex"/>
+<div class="absolute inset-0 p-8 flex items-center justify-center">
+<div class="grid grid-cols-12 gap-2 w-full h-full">
+<!-- This represents a stylized "live" seat map -->
+<div class="col-span-1 bg-indigo-500/80 rounded shadow-sm"></div>
+<div class="col-span-1 bg-indigo-500/80 rounded shadow-sm"></div>
+<div class="col-span-1 bg-indigo-500/80 rounded shadow-sm"></div>
+<div class="col-span-1 bg-amber-500/60 rounded shadow-sm animate-pulse"></div>
+<div class="col-span-1 bg-slate-200 rounded shadow-sm"></div>
+<div class="col-span-1 bg-indigo-500/80 rounded shadow-sm"></div>
+<div class="col-span-1 bg-slate-200 rounded shadow-sm"></div>
+<div class="col-span-1 bg-slate-200 rounded shadow-sm"></div>
+<div class="col-span-1 bg-indigo-500/80 rounded shadow-sm"></div>
+<div class="col-span-1 bg-indigo-500/80 rounded shadow-sm"></div>
+<div class="col-span-1 bg-indigo-500/80 rounded shadow-sm"></div>
+<div class="col-span-1 bg-indigo-500/80 rounded shadow-sm"></div>
+<div class="col-span-2 bg-indigo-600/80 rounded shadow-sm"></div>
+<div class="col-span-2 bg-slate-200 rounded shadow-sm"></div>
+<div class="col-span-2 bg-indigo-600/80 rounded shadow-sm"></div>
+<div class="col-span-2 bg-indigo-600/80 rounded shadow-sm"></div>
+<div class="col-span-2 bg-amber-500/60 rounded shadow-sm animate-pulse"></div>
+<div class="col-span-2 bg-indigo-600/80 rounded shadow-sm"></div>
+</div>
+</div>
+<div class="absolute bottom-4 right-4">
+<button class="px-4 py-2 bg-white/90 backdrop-blur rounded-lg text-xs font-bold text-indigo-600 border border-indigo-100 shadow-lg">Open Detailed Map</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Audience Demographics & Activity (Right Sidebar) -->
+<div class="col-span-12 lg:col-span-4 space-y-8">
+<!-- Demographics Card -->
+<div class="bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-slate-50 p-6">
+<h3 class="text-body-lg font-bold text-on-surface mb-6">Audience Insights</h3>
+<div class="space-y-6">
+<!-- Gender split -->
+<div>
+<p class="text-xs font-bold uppercase text-on-surface-variant mb-3">Gender Distribution</p>
+<div class="flex items-center space-x-2">
+<div class="h-8 bg-indigo-500 rounded-lg flex-1 flex items-center justify-center text-[10px] text-white font-bold">Female (64%)</div>
+<div class="h-8 bg-indigo-300 rounded-lg flex-[0.36] flex items-center justify-center text-[10px] text-indigo-900 font-bold">Male (36%)</div>
+</div>
+</div>
+<!-- Age split -->
+<div>
+<p class="text-xs font-bold uppercase text-on-surface-variant mb-3">Age Groups</p>
+<div class="space-y-3">
+<div class="flex items-center">
+<span class="w-12 text-[10px] font-bold text-on-surface-variant">18-24</span>
+<div class="flex-1 h-2 bg-slate-100 rounded-full mx-2">
+<div class="h-full bg-primary rounded-full" style="width: 45%"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface">45%</span>
+</div>
+<div class="flex items-center">
+<span class="w-12 text-[10px] font-bold text-on-surface-variant">25-34</span>
+<div class="flex-1 h-2 bg-slate-100 rounded-full mx-2">
+<div class="h-full bg-primary rounded-full" style="width: 32%"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface">32%</span>
+</div>
+<div class="flex items-center">
+<span class="w-12 text-[10px] font-bold text-on-surface-variant">35+</span>
+<div class="flex-1 h-2 bg-slate-100 rounded-full mx-2">
+<div class="h-full bg-primary rounded-full" style="width: 23%"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface">23%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Live Activity Feed -->
+<div class="bg-slate-950 text-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] p-6 overflow-hidden relative">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-body-lg font-bold">Live Activity</h3>
+<div class="flex items-center space-x-2">
+<div class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+<span class="text-[10px] uppercase font-bold tracking-tighter text-slate-400">Stream Live</span>
+</div>
+</div>
+<div class="space-y-4 font-['Inter'] relative">
+<!-- Live Event 1 -->
+<div class="flex items-start space-x-3 pb-4 border-b border-slate-800">
+<div class="h-8 w-8 rounded bg-indigo-500/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-indigo-400 text-sm" data-icon="shopping_cart">shopping_cart</span>
+</div>
+<div class="min-w-0">
+<p class="text-xs text-slate-300 truncate"><span class="font-bold text-white">Nguyễn Trần Minh Anh</span> purchased 2x VIP Floor</p>
+<div class="flex items-center space-x-2 mt-1">
+<span class="text-[10px] text-slate-500">2 mins ago</span>
+<span class="text-[10px] font-bold text-emerald-400">5.400.000đ</span>
+</div>
+</div>
+</div>
+<!-- Live Event 2 -->
+<div class="flex items-start space-x-3 pb-4 border-b border-slate-800">
+<div class="h-8 w-8 rounded bg-amber-500/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-amber-400 text-sm" data-icon="timer">timer</span>
+</div>
+<div class="min-w-0">
+<p class="text-xs text-slate-300 truncate"><span class="font-bold text-white">Guest #4192</span> holding 4 seats in Stand A</p>
+<div class="flex items-center space-x-2 mt-1">
+<span class="text-[10px] text-slate-500">Just now</span>
+<span class="text-[10px] font-bold text-amber-400">Expiring in 08:45</span>
+</div>
+</div>
+</div>
+<!-- Live Event 3 -->
+<div class="flex items-start space-x-3 pb-4 border-b border-slate-800">
+<div class="h-8 w-8 rounded bg-indigo-500/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-indigo-400 text-sm" data-icon="shopping_cart">shopping_cart</span>
+</div>
+<div class="min-w-0">
+<p class="text-xs text-slate-300 truncate"><span class="font-bold text-white">Lê Hoàng Nam</span> purchased 1x Standard</p>
+<div class="flex items-center space-x-2 mt-1">
+<span class="text-[10px] text-slate-500">5 mins ago</span>
+<span class="text-[10px] font-bold text-emerald-400">850.000đ</span>
+</div>
+</div>
+</div>
+<!-- Live Event 4 -->
+<div class="flex items-start space-x-3 opacity-50">
+<div class="h-8 w-8 rounded bg-slate-800 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-slate-500 text-sm" data-icon="person_add">person_add</span>
+</div>
+<div class="min-w-0">
+<p class="text-xs text-slate-300 truncate"><span class="font-bold text-white">Admin</span> created new manual reservation</p>
+<div class="flex items-center space-x-2 mt-1">
+<span class="text-[10px] text-slate-500">12 mins ago</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-4 border-t border-slate-800">
+<button class="w-full py-2 text-xs font-bold text-slate-400 hover:text-white transition-colors flex items-center justify-center group">
+                                View all activity logs
+                                <span class="material-symbols-outlined text-xs ml-1 transition-transform group-hover:translate-x-1" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Detailed Data Table Section -->
+<div class="bg-white rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] border border-slate-50 overflow-hidden">
+<div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+<h3 class="text-body-lg font-bold text-on-surface">Recent Orders Tracking</h3>
+<div class="flex space-x-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-xs w-64 focus:ring-1 focus:ring-primary focus:outline-none" placeholder="Mã đơn hàng, tên..." type="text"/>
+</div>
+<button class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center">
+<span class="material-symbols-outlined text-xs mr-2" data-icon="download">download</span> Xuất Excel
+                        </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left font-['Inter']">
+<thead>
+<tr class="bg-slate-50 border-b border-slate-100">
+<th class="px-8 py-4 text-label-caps text-on-surface-variant uppercase">Mã Đơn</th>
+<th class="px-8 py-4 text-label-caps text-on-surface-variant uppercase">Khách hàng</th>
+<th class="px-8 py-4 text-label-caps text-on-surface-variant uppercase">Thời gian</th>
+<th class="px-8 py-4 text-label-caps text-on-surface-variant uppercase">Số lượng</th>
+<th class="px-8 py-4 text-label-caps text-on-surface-variant uppercase">Tổng tiền</th>
+<th class="px-8 py-4 text-label-caps text-on-surface-variant uppercase">Trạng thái</th>
+<th class="px-8 py-4 text-label-caps text-on-surface-variant uppercase text-right">Hành động</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-50">
+<tr class="hover:bg-slate-50/50 transition-colors group">
+<td class="px-8 py-4 text-body-sm font-bold text-indigo-600">#TR-89231</td>
+<td class="px-8 py-4 text-body-sm text-on-surface">Phạm Thị Bích Ngọc</td>
+<td class="px-8 py-4 text-body-sm text-on-surface-variant">14:23, 24/05/2024</td>
+<td class="px-8 py-4 text-body-sm text-on-surface">2x Platinum</td>
+<td class="px-8 py-4 text-body-sm font-bold text-on-surface">4.500.000đ</td>
+<td class="px-8 py-4">
+<span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase">Đang bán</span>
+</td>
+<td class="px-8 py-4 text-right">
+<button class="p-2 text-slate-400 hover:text-indigo-600">
+<span class="material-symbols-outlined text-sm" data-icon="visibility">visibility</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors group">
+<td class="px-8 py-4 text-body-sm font-bold text-indigo-600">#TR-89230</td>
+<td class="px-8 py-4 text-body-sm text-on-surface">Vũ Hoàng Long</td>
+<td class="px-8 py-4 text-body-sm text-on-surface-variant">14:18, 24/05/2024</td>
+<td class="px-8 py-4 text-body-sm text-on-surface">1x Gold</td>
+<td class="px-8 py-4 text-body-sm font-bold text-on-surface">1.250.000đ</td>
+<td class="px-8 py-4">
+<span class="px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-bold uppercase">Đang giữ</span>
+</td>
+<td class="px-8 py-4 text-right">
+<button class="p-2 text-slate-400 hover:text-indigo-600">
+<span class="material-symbols-outlined text-sm" data-icon="visibility">visibility</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors group">
+<td class="px-8 py-4 text-body-sm font-bold text-indigo-600">#TR-89229</td>
+<td class="px-8 py-4 text-body-sm text-on-surface">Trần Minh Quân</td>
+<td class="px-8 py-4 text-body-sm text-on-surface-variant">14:10, 24/05/2024</td>
+<td class="px-8 py-4 text-body-sm text-on-surface">4x Standard</td>
+<td class="px-8 py-4 text-body-sm font-bold text-on-surface">3.400.000đ</td>
+<td class="px-8 py-4">
+<span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase">Đang bán</span>
+</td>
+<td class="px-8 py-4 text-right">
+<button class="p-2 text-slate-400 hover:text-indigo-600">
+<span class="material-symbols-outlined text-sm" data-icon="visibility">visibility</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-8 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs text-on-surface-variant font-medium">
+<span>Showing 1-10 of 2,430 transactions</span>
+<div class="flex space-x-2">
+<button class="h-8 w-8 flex items-center justify-center rounded border border-slate-200 bg-white hover:bg-slate-50"><span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span></button>
+<button class="h-8 w-8 flex items-center justify-center rounded border border-indigo-600 bg-indigo-600 text-white font-bold">1</button>
+<button class="h-8 w-8 flex items-center justify-center rounded border border-slate-200 bg-white hover:bg-slate-50">2</button>
+<button class="h-8 w-8 flex items-center justify-center rounded border border-slate-200 bg-white hover:bg-slate-50">3</button>
+<button class="h-8 w-8 flex items-center justify-center rounded border border-slate-200 bg-white hover:bg-slate-50"><span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span></button>
+</div>
+</div>
+</div>
+</div>
+<footer class="mt-auto py-6 px-8 border-t border-slate-100 text-center">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">© 2024 TicketRush Intelligence System • Precision Ticketing Solutions</p>
+</footer>
+</main>
+</body></html>
