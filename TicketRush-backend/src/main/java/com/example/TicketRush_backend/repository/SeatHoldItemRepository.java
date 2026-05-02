@@ -1,11 +1,11 @@
 package com.example.TicketRush_backend.repository;
 
-import com.example.TicketRush_backend.entity.SeatHoldItem;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
+import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.example.TicketRush_backend.entity.SeatHoldItem;
 
 public interface SeatHoldItemRepository extends JpaRepository<SeatHoldItem, Long> {
 
@@ -15,8 +15,12 @@ public interface SeatHoldItemRepository extends JpaRepository<SeatHoldItem, Long
     Optional<SeatHoldItem> findByHoldIdAndSeatId(Long holdId, Long seatId);
 
     /**
-     * Đếm số ghế đang hold trong một hold session (giới hạn tối đa 2).
+     * Lấy danh sách ghế còn lại trong hold, dùng để build response sau hold/release.
      */
-    @Query("SELECT COUNT(i) FROM SeatHoldItem i WHERE i.hold.id = :holdId")
-    int countByHoldId(@Param("holdId") Long holdId);
+    List<SeatHoldItem> findByHoldIdOrderBySeatIdAsc(Long holdId);
+
+    /**
+     * Đếm số ghế còn lại trong hold.
+     */
+    int countByHoldId(Long holdId);
 }

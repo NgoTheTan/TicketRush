@@ -200,7 +200,10 @@ public class SeatService {
         seat.setHeldUntil(expiresAt);
         eventSeatRepository.save(seat);
 
-        // Build response
+        // Flush để response đọc lại dữ liệu hold item mới nhất
+        seatHoldItemRepository.flush();
+
+        // Build response từ DB mới nhất, không dùng hold.getItems() stale
         return buildHoldResponse(hold, seat, price);
     }
 
@@ -210,39 +213,39 @@ public class SeatService {
      * User bỏ chọn ghế thủ công. Chỉ owner của ghế mới được release.
      */
     @Transactional
-    public HoldResponse releaseSeat(Long eventId, Long seatId, Long userId) {
-        // SELECT FOR UPDATE để tránh race với scheduler
+        public HoldResponse releaseSeat(Long eventId, Long seatId, Long userId) {
+        // SELECT FOR UPDATE để tránh race với scheduler / checkout
         EventSeat seat = eventSeatRepository.findByIdForUpdate(seatId)
                 .orElseThrow(() -> new AppException(ErrorCode.SEAT_NOT_FOUND));
 
         if (!seat.getEvent().getId().equals(eventId)) {
-            throw new AppException(ErrorCode.SEAT_NOT_FOUND);
+                throw new AppException(ErrorCode.SEAT_NOT_FOUND);
         }
 
         if (seat.getStatus() != SeatStatus.LOCKED) {
-            throw new AppException(ErrorCode.SEAT_NOT_FOUND);
+                throw new AppException(ErrorCode.SEAT_NOT_FOUND);
         }
 
         if (seat.getHeldBy() == null || !seat.getHeldBy().getId().equals(userId)) {
-            throw new AppException(ErrorCode.SEAT_NOT_OWNED_BY_USER);
+                throw new AppException(ErrorCode.SEAT_NOT_OWNED_BY_USER);
         }
 
-        // Tìm hold của user để xóa item
+        // Tìm ACTIVE hold hiện tại của user trong event
         SeatHold hold = seatHoldRepository
                 .findByUserIdAndEventIdAndStatus(userId, eventId, HoldStatus.ACTIVE)
                 .orElseThrow(() -> new AppException(ErrorCode.HOLD_NOT_FOUND));
 
-        // Xóa SeatHoldItem
-        seatHoldItemRepository.findByHoldIdAndSeatId(hold.getId(), seatId)
-                .ifPresent(seatHoldItemRepository::delete);
+        // Tìm đúng item cần release
+        SeatHoldItem item = seatHoldItemRepository
+                .findByHoldIdAndSeatId(hold.getId(), seatId)
+                .orElseThrow(() -> new AppException(ErrorCode.HOLD_NOT_FOUND));
 
-        // Nếu không còn item nào → đánh dấu hold là RELEASED
-        int remaining = seatHoldItemRepository.countByHoldId(hold.getId());
-        if (remaining == 0) {
-            hold.setStatus(HoldStatus.RELEASED);
-            hold.setReleasedAt(Instant.now());
-            seatHoldRepository.save(hold);
-        }
+        // Quan trọng: remove khỏi collection đang managed để tránh hold.getItems() còn stale
+        hold.getItems().removeIf(i -> i.getId() != null && i.getId().equals(item.getId()));
+
+        // Xóa hold item khỏi DB
+        seatHoldItemRepository.delete(item);
+        seatHoldItemRepository.flush();
 
         // Release ghế
         seat.setStatus(SeatStatus.AVAILABLE);
@@ -250,9 +253,19 @@ public class SeatService {
         seat.setHeldUntil(null);
         eventSeatRepository.save(seat);
 
-        // Reload hold để lấy items còn lại
-        return buildReleaseResponse(hold, remaining);
-    }
+        // Đếm lại từ DB sau khi đã flush delete
+        int remaining = seatHoldItemRepository.countByHoldId(hold.getId());
+
+        // Nếu không còn ghế nào trong hold thì mới release toàn bộ hold
+        if (remaining == 0) {
+                hold.setStatus(HoldStatus.RELEASED);
+                hold.setReleasedAt(Instant.now());
+                seatHoldRepository.save(hold);
+        }
+
+        // Build response từ DB mới nhất
+        return buildReleaseResponse(hold);
+}
 
     // ── Active Hold ────────────────────────────────────────────
 
@@ -293,7 +306,9 @@ public class SeatService {
     // ── Helpers ───────────────────────────────────────────────
 
     private HoldResponse buildHoldResponse(SeatHold hold, EventSeat justHeld, BigDecimal price) {
-        List<HoldResponse.HeldSeatDetail> allSeats = hold.getItems().stream()
+        List<SeatHoldItem> items = seatHoldItemRepository.findByHoldIdOrderBySeatIdAsc(hold.getId());
+
+        List<HoldResponse.HeldSeatDetail> allSeats = items.stream()
                 .map(item -> HoldResponse.HeldSeatDetail.builder()
                         .seatId(item.getSeat().getId())
                         .zoneName(item.getSeat().getZone().getName())
@@ -303,7 +318,7 @@ public class SeatService {
                         .build())
                 .toList();
 
-        BigDecimal total = hold.getItems().stream()
+        BigDecimal total = items.stream()
                 .map(SeatHoldItem::getPriceSnapshot)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -323,10 +338,12 @@ public class SeatService {
                 .allSelectedSeats(allSeats)
                 .totalAmount(total)
                 .build();
-    }
+        }
 
-    private HoldResponse buildReleaseResponse(SeatHold hold, int remainingCount) {
-        List<HoldResponse.HeldSeatDetail> allSeats = hold.getItems().stream()
+    private HoldResponse buildReleaseResponse(SeatHold hold) {
+        List<SeatHoldItem> items = seatHoldItemRepository.findByHoldIdOrderBySeatIdAsc(hold.getId());
+
+        List<HoldResponse.HeldSeatDetail> allSeats = items.stream()
                 .map(item -> HoldResponse.HeldSeatDetail.builder()
                         .seatId(item.getSeat().getId())
                         .zoneName(item.getSeat().getZone().getName())
@@ -336,7 +353,7 @@ public class SeatService {
                         .build())
                 .toList();
 
-        BigDecimal total = hold.getItems().stream()
+        BigDecimal total = items.stream()
                 .map(SeatHoldItem::getPriceSnapshot)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -348,8 +365,9 @@ public class SeatService {
                 .holdId(hold.getId())
                 .expiresAt(hold.getExpiresAt())
                 .remainingSeconds(Math.max(0, remainingSecs))
+                .heldSeat(null)
                 .allSelectedSeats(allSeats)
                 .totalAmount(total)
                 .build();
-    }
+        }
 }
