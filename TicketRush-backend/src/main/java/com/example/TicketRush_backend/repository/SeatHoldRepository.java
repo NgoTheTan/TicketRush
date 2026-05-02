@@ -1,14 +1,13 @@
 package com.example.TicketRush_backend.repository;
 
-import com.example.TicketRush_backend.entity.SeatHold;
-import com.example.TicketRush_backend.enums.HoldStatus;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.example.TicketRush_backend.entity.SeatHold;
+import com.example.TicketRush_backend.enums.HoldStatus;
 
 public interface SeatHoldRepository extends JpaRepository<SeatHold, Long> {
 
@@ -22,6 +21,8 @@ public interface SeatHoldRepository extends JpaRepository<SeatHold, Long> {
     /**
      * Scheduler: tìm tất cả ACTIVE holds đã hết hạn.
      */
-    @Query("SELECT h FROM SeatHold h WHERE h.status = 'ACTIVE' AND h.expiresAt < :now")
-    List<SeatHold> findExpiredActiveHolds(@Param("now") Instant now);
+    List<SeatHold> findByStatusAndExpiresAtBefore(
+            HoldStatus status,
+            Instant now
+    );
 }

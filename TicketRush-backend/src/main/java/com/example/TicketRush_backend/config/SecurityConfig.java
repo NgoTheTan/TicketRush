@@ -1,7 +1,8 @@
 package com.example.TicketRush_backend.config;
 
-import com.example.TicketRush_backend.security.JwtAuthFilter;
-import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,8 +20,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.List;
+import com.example.TicketRush_backend.security.JwtAuthFilter;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
@@ -40,24 +42,27 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET,
-                        "/api/v1/events", "/api/v1/events/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET,
-                        "/api/v1/queue/*/status").permitAll()
+                .requestMatchers(
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/register"
+                ).permitAll()
 
-                // Admin-only
+                .requestMatchers(HttpMethod.GET, "/api/v1/events").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/events/*").permitAll()
+
+                // Seat map + Sprint 2 customer actions
+                .requestMatchers(HttpMethod.GET, "/api/v1/events/*/seats").hasRole("CUSTOMER")
+                .requestMatchers(HttpMethod.POST, "/api/v1/events/*/seats/*/hold").hasRole("CUSTOMER")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/events/*/seats/*/hold").hasRole("CUSTOMER")
+                .requestMatchers(HttpMethod.POST, "/api/v1/holds/*/release").hasRole("CUSTOMER")
+                .requestMatchers(HttpMethod.POST, "/api/v1/orders").hasRole("CUSTOMER")
+                .requestMatchers(HttpMethod.GET, "/api/v1/checkout/*/summary").hasRole("CUSTOMER")
+                .requestMatchers(HttpMethod.POST, "/api/v1/checkout/*/confirm").hasRole("CUSTOMER")
+                .requestMatchers("/api/v1/me/**").hasRole("CUSTOMER")
+                .requestMatchers("/api/v1/auth/me").authenticated()
+
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
-                // Customer authenticated routes (seat, hold, order, checkout, ticket)
-                .requestMatchers("/api/v1/events/*/seats/**").hasRole("CUSTOMER")
-                .requestMatchers("/api/v1/holds/**").hasRole("CUSTOMER")
-                .requestMatchers("/api/v1/orders/**").hasRole("CUSTOMER")
-                .requestMatchers("/api/v1/checkout/**").hasRole("CUSTOMER")
-                .requestMatchers("/api/v1/tickets/**").hasRole("CUSTOMER")
-
-                // Everything else requires authentication
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

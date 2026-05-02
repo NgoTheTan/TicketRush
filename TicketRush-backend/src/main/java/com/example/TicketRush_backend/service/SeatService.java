@@ -1,25 +1,41 @@
 package com.example.TicketRush_backend.service;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.TicketRush_backend.common.AppException;
 import com.example.TicketRush_backend.common.ErrorCode;
 import com.example.TicketRush_backend.dto.hold.ActiveHoldResponse;
 import com.example.TicketRush_backend.dto.hold.HoldResponse;
 import com.example.TicketRush_backend.dto.seat.SeatMapResponse;
-import com.example.TicketRush_backend.entity.*;
+import com.example.TicketRush_backend.entity.Event;
+import com.example.TicketRush_backend.entity.EventSeat;
+import com.example.TicketRush_backend.entity.SeatHold;
+import com.example.TicketRush_backend.entity.SeatHoldItem;
+import com.example.TicketRush_backend.entity.SeatZone;
+import com.example.TicketRush_backend.entity.User;
 import com.example.TicketRush_backend.enums.EventStatus;
 import com.example.TicketRush_backend.enums.HoldStatus;
 import com.example.TicketRush_backend.enums.SeatStatus;
-import com.example.TicketRush_backend.repository.*;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.example.TicketRush_backend.repository.EventRepository;
+import com.example.TicketRush_backend.repository.EventSeatRepository;
+import com.example.TicketRush_backend.repository.SeatHoldItemRepository;
+import com.example.TicketRush_backend.repository.SeatHoldRepository;
+import com.example.TicketRush_backend.repository.SeatZoneRepository;
+import com.example.TicketRush_backend.repository.UserRepository;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -140,7 +156,8 @@ public class SeatService {
         }
 
         // 4. Kiểm tra giới hạn 2 ghế
-        int currentHeldCount = eventSeatRepository.countLockedByUserInEvent(eventId, userId);
+        int currentHeldCount = eventSeatRepository
+        .countByEventIdAndHeldByIdAndStatus(eventId, userId, SeatStatus.LOCKED);
         if (currentHeldCount >= MAX_SEATS_PER_HOLD) {
             throw new AppException(ErrorCode.SEAT_HOLD_LIMIT_EXCEEDED,
                     Map.of("currentHeldCount", currentHeldCount, "maxAllowed", MAX_SEATS_PER_HOLD));
