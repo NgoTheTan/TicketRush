@@ -16,6 +16,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Optional<Order> findByIdAndUserId(Long id, Long userId);
 
+    /**
+     * Tìm Order theo holdId — dùng trong checkout confirm flow.
+     */
+    Optional<Order> findByHoldId(Long holdId);
+
     @Query("SELECT o FROM Order o WHERE o.status = :status AND o.event.id = :eventId")
     Page<Order> findByStatusAndEventId(@Param("status") OrderStatus status,
                                        @Param("eventId") Long eventId,

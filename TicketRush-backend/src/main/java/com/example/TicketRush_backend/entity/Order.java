@@ -76,6 +76,11 @@ public class Order {
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
+    // Liên kết với SeatHold để checkout có thể tìm order theo holdId
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hold_id")
+    private SeatHold hold;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();

@@ -42,11 +42,20 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/queue/*/status").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                        "/api/v1/events", "/api/v1/events/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                        "/api/v1/queue/*/status").permitAll()
 
                 // Admin-only
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+
+                // Customer authenticated routes (seat, hold, order, checkout, ticket)
+                .requestMatchers("/api/v1/events/*/seats/**").hasRole("CUSTOMER")
+                .requestMatchers("/api/v1/holds/**").hasRole("CUSTOMER")
+                .requestMatchers("/api/v1/orders/**").hasRole("CUSTOMER")
+                .requestMatchers("/api/v1/checkout/**").hasRole("CUSTOMER")
+                .requestMatchers("/api/v1/tickets/**").hasRole("CUSTOMER")
 
                 // Everything else requires authentication
                 .anyRequest().authenticated()
