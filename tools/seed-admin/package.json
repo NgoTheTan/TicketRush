@@ -1,0 +1,14 @@
+{
+  "name": "ticketrush-seed-admin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "seed:admin": "node seed-admin.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1"
+  }
+}
