@@ -15,6 +15,7 @@ import BookingSuccessPage from './pages/BookingSuccessPage.jsx';
 import MyTicketsPage from './pages/MyTicketsPage.jsx';
 import TicketDetailsPage from './pages/TicketDetailsPage.jsx';
 import VirtualWaitingRoomPage from './pages/VirtualWaitingRoomPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 
 // Admin pages
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
@@ -50,6 +51,7 @@ function Router() {
   if (path === '/register') return <SignUpPage />;
   if (path === '/booking-success') return <RequireAuth><BookingSuccessPage /></RequireAuth>;
   if (path === '/my-tickets') return <RequireAuth><MyTicketsPage /></RequireAuth>;
+  if (path === '/profile') return <RequireAuth><ProfilePage /></RequireAuth>;
 
   // Admin routes
   if (path === '/admin/dashboard') return <RequireAdmin><AdminDashboardPage /></RequireAdmin>;

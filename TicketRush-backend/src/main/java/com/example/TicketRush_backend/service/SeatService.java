@@ -34,7 +34,6 @@ import com.example.TicketRush_backend.repository.SeatHoldItemRepository;
 import com.example.TicketRush_backend.repository.SeatHoldRepository;
 import com.example.TicketRush_backend.repository.SeatZoneRepository;
 import com.example.TicketRush_backend.repository.UserRepository;
-import com.example.TicketRush_backend.service.SeatBroadcastService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -158,8 +157,7 @@ public class SeatService {
         }
 
         // 4. Kiểm tra giới hạn 2 ghế
-        int currentHeldCount = eventSeatRepository
-        .countByEventIdAndHeldByIdAndStatus(eventId, userId, SeatStatus.LOCKED);
+        int currentHeldCount = eventSeatRepository.countLockedByUserInEvent(eventId, userId);
         if (currentHeldCount >= MAX_SEATS_PER_HOLD) {
             throw new AppException(ErrorCode.SEAT_HOLD_LIMIT_EXCEEDED,
                     Map.of("currentHeldCount", currentHeldCount, "maxAllowed", MAX_SEATS_PER_HOLD));

@@ -43,7 +43,10 @@ export default function Header() {
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
             <>
-              <span className="hidden md:block text-sm text-slate-600 max-w-[120px] truncate">{user?.fullName}</span>
+              <button onClick={() => navigate('/profile')}
+                className="hidden md:block text-sm text-slate-600 max-w-[120px] truncate hover:text-indigo-600 transition-colors">
+                {user?.fullName}
+              </button>
               {isAdmin && <span className="hidden md:block px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs font-semibold">Admin</span>}
               <button onClick={handleLogout}
                 className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg transition-colors">

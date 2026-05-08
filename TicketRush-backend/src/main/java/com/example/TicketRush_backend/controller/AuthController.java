@@ -4,6 +4,7 @@ import com.example.TicketRush_backend.common.ApiResponse;
 import com.example.TicketRush_backend.dto.auth.AuthResponse;
 import com.example.TicketRush_backend.dto.auth.LoginRequest;
 import com.example.TicketRush_backend.dto.auth.RegisterRequest;
+import com.example.TicketRush_backend.dto.auth.UpdateProfileRequest;
 import com.example.TicketRush_backend.entity.User;
 import com.example.TicketRush_backend.security.SecurityUtils;
 import com.example.TicketRush_backend.service.AuthService;
@@ -58,5 +59,18 @@ public class AuthController {
         );
 
         return ResponseEntity.ok(ApiResponse.ok(userInfo));
+    }
+
+    /**
+     * PUT /api/v1/auth/me
+     * Cập nhật thông tin cá nhân + đổi mật khẩu (tùy chọn).
+     * Access: Authenticated (CUSTOMER or ADMIN)
+     */
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<Void>> updateProfile(
+            @Valid @RequestBody UpdateProfileRequest req) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        authService.updateProfile(userId, req);
+        return ResponseEntity.ok(ApiResponse.noContent());
     }
 }
