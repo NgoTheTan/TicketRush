@@ -1,23 +1,5 @@
 package com.example.TicketRush_backend.service;
 
-import com.example.TicketRush_backend.common.AppException;
-import com.example.TicketRush_backend.common.ErrorCode;
-import com.example.TicketRush_backend.dto.checkout.CheckoutResponse;
-import com.example.TicketRush_backend.dto.order.OrderResponse;
-import com.example.TicketRush_backend.entity.*;
-import com.example.TicketRush_backend.enums.HoldStatus;
-import com.example.TicketRush_backend.enums.OrderStatus;
-import com.example.TicketRush_backend.enums.SeatStatus;
-import com.example.TicketRush_backend.enums.TicketStatus;
-import com.example.TicketRush_backend.repository.*;
-import com.example.TicketRush_backend.entity.CustomerProfile;
-import com.example.TicketRush_backend.service.SeatBroadcastService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -25,6 +7,34 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.TicketRush_backend.common.AppException;
+import com.example.TicketRush_backend.common.ErrorCode;
+import com.example.TicketRush_backend.dto.checkout.CheckoutResponse;
+import com.example.TicketRush_backend.dto.order.OrderResponse;
+import com.example.TicketRush_backend.entity.CustomerProfile;
+import com.example.TicketRush_backend.entity.EventSeat;
+import com.example.TicketRush_backend.entity.Order;
+import com.example.TicketRush_backend.entity.OrderItem;
+import com.example.TicketRush_backend.entity.SeatHold;
+import com.example.TicketRush_backend.entity.SeatHoldItem;
+import com.example.TicketRush_backend.entity.Ticket;
+import com.example.TicketRush_backend.enums.HoldStatus;
+import com.example.TicketRush_backend.enums.OrderStatus;
+import com.example.TicketRush_backend.enums.SeatStatus;
+import com.example.TicketRush_backend.enums.TicketStatus;
+import com.example.TicketRush_backend.repository.CustomerProfileRepository;
+import com.example.TicketRush_backend.repository.EventSeatRepository;
+import com.example.TicketRush_backend.repository.OrderRepository;
+import com.example.TicketRush_backend.repository.SeatHoldRepository;
+import com.example.TicketRush_backend.repository.TicketRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -196,11 +206,51 @@ public class OrderService {
     // ── Admin ──────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public Page<OrderResponse> listOrders(String search, OrderStatus status,
-                                          Long eventId, Pageable pageable) {
-        return orderRepository.findByFilters(search, status, eventId, pageable)
-                .map(this::buildOrderResponse);
+        public Page<OrderResponse> listOrders(String search, OrderStatus status,
+                                      Long eventId, Pageable pageable) {
+    /*
+     * Không dùng query kiểu:
+     *   (:status IS NULL OR o.status = :status)
+     *   (:eventId IS NULL OR o.event.id = :eventId)
+     *
+     * Với PostgreSQL + prepared statement, các parameter null trong biểu thức
+     * "? IS NULL" có thể gây lỗi:
+     *   ERROR: could not determine data type of parameter
+     *
+     * Vì vậy tách query theo từng trường hợp có/không có status/eventId.
+     */
+    String safeSearch = search == null ? "" : search.trim();
+
+    Page<Order> orders;
+
+    if (status != null && eventId != null) {
+        orders = orderRepository.searchOrdersByStatusAndEvent(
+                safeSearch,
+                status,
+                eventId,
+                pageable
+        );
+    } else if (status != null) {
+        orders = orderRepository.searchOrdersByStatus(
+                safeSearch,
+                status,
+                pageable
+        );
+    } else if (eventId != null) {
+        orders = orderRepository.searchOrdersByEvent(
+                safeSearch,
+                eventId,
+                pageable
+        );
+    } else {
+        orders = orderRepository.searchOrders(
+                safeSearch,
+                pageable
+        );
     }
+
+    return orders.map(this::buildOrderResponse);
+} // end of fix 
 
     @Transactional(readOnly = true)
     public OrderResponse getOrderAdmin(Long orderId) {

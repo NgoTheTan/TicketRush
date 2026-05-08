@@ -26,26 +26,96 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                                        @Param("eventId") Long eventId,
                                        Pageable pageable);
 
+    // ── Admin: Order management filters ───────────────────────
+    //
+    // Không dùng query kiểu:
+    //   (:status IS NULL OR o.status = :status)
+    //   (:eventId IS NULL OR o.event.id = :eventId)
+    //
+    // Lý do: PostgreSQL/JDBC có thể không suy luận được kiểu dữ liệu
+    // của parameter null trong biểu thức "? IS NULL", gây lỗi:
+    //   ERROR: could not determine data type of parameter
+    //
+    // Vì vậy tách query theo 4 trường hợp:
+    //   1. chỉ search
+    //   2. search + status
+    //   3. search + event
+    //   4. search + status + event
+    //
+    // keyword luôn được OrderService chuẩn hóa null -> "".
+    // LIKE '%%' tương đương không lọc theo keyword.
+
     @Query("""
         SELECT o FROM Order o
-        WHERE (:search IS NULL OR CAST(o.orderCode AS string) LIKE CONCAT('%', :search, '%'))
-          AND (:status IS NULL OR o.status = :status)
-          AND (:eventId IS NULL OR o.event.id = :eventId)
+        JOIN o.user u
+        WHERE (
+            LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        )
+        ORDER BY o.createdAt DESC
     """)
-    Page<Order> findByFilters(@Param("search")  String search,
-                              @Param("status")  OrderStatus status,
-                              @Param("eventId") Long eventId,
-                              Pageable pageable);
+    Page<Order> searchOrders(
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT o FROM Order o
+        JOIN o.user u
+        WHERE (
+            LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        )
+        AND o.status = :status
+        ORDER BY o.createdAt DESC
+    """)
+    Page<Order> searchOrdersByStatus(
+            @Param("keyword") String keyword,
+            @Param("status") OrderStatus status,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT o FROM Order o
+        JOIN o.user u
+        WHERE (
+            LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        )
+        AND o.event.id = :eventId
+        ORDER BY o.createdAt DESC
+    """)
+    Page<Order> searchOrdersByEvent(
+            @Param("keyword") String keyword,
+            @Param("eventId") Long eventId,
+            Pageable pageable
+    );
+
+    @Query("""
+        SELECT o FROM Order o
+        JOIN o.user u
+        WHERE (
+            LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        )
+        AND o.status = :status
+        AND o.event.id = :eventId
+        ORDER BY o.createdAt DESC
+    """)
+    Page<Order> searchOrdersByStatusAndEvent(
+            @Param("keyword") String keyword,
+            @Param("status") OrderStatus status,
+            @Param("eventId") Long eventId,
+            Pageable pageable
+    );
 
     // ── Sprint 4: Dashboard analytics ─────────────────────────
 
-    /** Tổng doanh thu cho event (chỉ tính PAID — BR-07) */
-    // @Query("""
-    //     SELECT COALESCE(SUM(o.totalAmount), 0)
-    //     FROM Order o
-    //     WHERE o.event.id = :eventId AND o.status = 'PAID'
-    // """)
-    // BigDecimal sumRevenueByEventId(@Param("eventId") Long eventId);
+    /** Tổng doanh thu cho event, chỉ tính PAID. */
     @Query("""
         SELECT COALESCE(SUM(o.totalAmount), 0)
         FROM Order o
@@ -56,10 +126,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("status") OrderStatus status
     );
 
-
     /**
-     * Doanh thu theo giờ (trunc to hour of paid_at) cho một event.
-     * Trả về Object[]{hour (Instant), revenue (BigDecimal), ticketCount (Long)}
+     * Doanh thu theo giờ cho một event.
+     * Trả về Object[]{hour, revenue, ticketCount}.
      */
     @Query(value = """
         SELECT DATE_TRUNC('hour', o.paid_at) AS hour,
@@ -75,18 +144,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Object[]> findRevenueByHour(@Param("eventId") Long eventId);
 
     /**
-     * Đơn hàng gần nhất của event (PAID only) — dùng cho recent orders section.
+     * Đơn hàng gần nhất của event, PAID only.
      */
-    // @Query("""
-    //     SELECT o FROM Order o
-    //     WHERE o.event.id = :eventId AND o.status = 'PAID'
-    //     ORDER BY o.paidAt DESC
-    // """)
-    // List<Order> findRecentPaidOrders(@Param("eventId") Long eventId, Pageable pageable);
     @Query("""
-    SELECT o FROM Order o
-    WHERE o.event.id = :eventId AND o.status = :status
-    ORDER BY o.paidAt DESC
+        SELECT o FROM Order o
+        WHERE o.event.id = :eventId AND o.status = :status
+        ORDER BY o.paidAt DESC
     """)
     List<Order> findRecentPaidOrders(
             @Param("eventId") Long eventId,
