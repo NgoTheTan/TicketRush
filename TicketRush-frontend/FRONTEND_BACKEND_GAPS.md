@@ -1,112 +1,81 @@
 # FRONTEND_BACKEND_GAPS.md
 # TicketRush — Frontend ↔ Backend Integration Status
 
-> Cập nhật: Sprint 2 backend complete + Frontend implementation  
-> Sprint 3 (WebSocket, Scheduler, Queue) và Sprint 4 (Dashboard Analytics) CHƯA được implement ở backend.
+> Cập nhật: Sprint 3 backend complete  
+> Sprint 4 (Dashboard Analytics) CHƯA được implement ở backend.
 
 ---
 
-## ✅ Màn hình đã tích hợp API thật (100% real)
+## ✅ Sprint 1 + 2 — Đã tích hợp API thật
 
-| Màn hình | API sử dụng | Ghi chú |
+| Màn hình | API | Ghi chú |
 |---|---|---|
-| **SignIn** | `POST /api/v1/auth/login` | Lưu JWT vào localStorage |
-| **SignUp** | `POST /api/v1/auth/register` | Tạo User + CustomerProfile |
-| **Homepage** | `GET /api/v1/events` | Pagination, search |
-| **EventDetails** | `GET /api/v1/events/{id}` | Zones + seat summary |
-| **SeatSelection** | `GET /api/v1/events/{id}/seats` `POST .../hold` `DELETE .../hold` | Hold với SELECT FOR UPDATE |
-| **OrderConfirmation** | `POST /api/v1/orders` `POST /api/v1/checkout/{holdId}/confirm` | 2-step checkout |
-| **BookingSuccess** | State từ checkout response | Không cần API riêng |
-| **MyTickets** | `GET /api/v1/tickets/my` | ✅ Dùng đúng endpoint |
-| **TicketDetails** | `GET /api/v1/tickets/{id}` | QR render từ ticketCode UUID |
-| **Admin - EventManagement** | `GET /api/v1/admin/events` `PATCH .../status` | List + status change |
-| **Admin - CreateEvent** | `POST /api/v1/admin/events` | Redirect về seat config |
-| **Admin - SeatLayoutConfig** | `GET/POST /api/v1/admin/events/{id}/seat-zones` | Sinh ghế tự động |
-| **Admin - OrderManagement** | `GET /api/v1/admin/orders` | Filter by status/search |
+| SignIn | `POST /api/v1/auth/login` | JWT localStorage |
+| SignUp | `POST /api/v1/auth/register` | User + CustomerProfile |
+| Homepage | `GET /api/v1/events` | Pagination, search |
+| EventDetails | `GET /api/v1/events/{id}` | Zones + seat summary |
+| SeatSelection | `GET/POST/DELETE /api/v1/events/{id}/seats/...` | Hold với SELECT FOR UPDATE |
+| OrderConfirmation | `POST /api/v1/orders` + `POST /api/v1/checkout/{holdId}/confirm` | 2-step checkout |
+| BookingSuccess | State từ checkout response | — |
+| MyTickets | `GET /api/v1/tickets/my` | ✅ Đúng endpoint |
+| TicketDetails | `GET /api/v1/tickets/{id}` | QR từ ticketCode UUID |
+| Admin EventManagement | `GET /api/v1/admin/events` + `PATCH .../status` | — |
+| Admin CreateEvent | `POST /api/v1/admin/events` | — |
+| Admin SeatLayoutConfig | `GET/POST /api/v1/admin/events/{id}/seat-zones` | — |
+| Admin OrderManagement | `GET /api/v1/admin/orders` | — |
 
 ---
 
-## 🟡 Màn hình dùng MOCK (chờ backend Sprint 3/4)
+## ✅ Sprint 3 — Đã implement backend, cần tích hợp frontend
 
-### VirtualWaitingRoom
-- **Mock mode:** `VITE_ENABLE_MOCK_QUEUE=true`
-- **Endpoint dự kiến (Sprint 3):**
-  - `POST /api/v1/queue/{eventId}/join` → `{ sessionId, queueToken, position, estimatedWaitSeconds }`
-  - `GET /api/v1/queue/position/{token}` → `{ status, position, estimatedWaitSeconds }` (polling mỗi 3s)
-  - `GET /api/v1/queue/{eventId}/status` → `{ queueActive: boolean }`
-- **Frontend service:** `src/api/services.js::queueService`
-
-### AdminDashboard — Analytics section
-- **Mock mode:** `VITE_ENABLE_MOCK_DASHBOARD=true`
-- **Endpoint dự kiến (Sprint 4):**
-  - `GET /api/v1/admin/dashboard/{eventId}` → Revenue, fillRate, revenueByHour, audienceByAge, audienceByGender, recentOrders
-- **Frontend service:** Cần tạo `dashboardService.js` khi Sprint 4 có backend
-
----
-
-## ⚠️ Backend endpoints còn thiếu (cần bổ sung)
-
-### 1. WebSocket seat updates (Sprint 3)
-- **Cần thêm:** Spring WebSocket STOMP config
-- **Topic:** `/topic/seats/{eventId}`
-- **Payload:** `{ type: 'SEAT_LOCKED' | 'SEAT_AVAILABLE' | 'SEAT_SOLD', seatId, status }`
-- **Frontend:** Khi backend có, thêm vào `SeatSelectionPage`:
+### WebSocket Seat Updates
+- **Backend:** Spring WebSocket STOMP tại `/ws`
+- **Topics:** `/topic/seats/{eventId}` → payload `{ type, eventId, seatId, status, timestamp }`
+- **Events:** `SEAT_LOCKED`, `SEAT_AVAILABLE`, `SEAT_SOLD`
+- **Frontend cần làm:** Kết nối STOMP trong `SeatSelectionPage` để nhận updates realtime
   ```js
-  // TODO Sprint 3: Subscribe to /topic/seats/{eventId}
-  // Update seat status realtime without full reload
+  // TODO: Connect via @stomp/stompjs
+  // stompClient.subscribe('/topic/seats/' + eventId, (msg) => {
+  //   const update = JSON.parse(msg.body);
+  //   // update local seat map state: update.seatId → update.status
+  // });
   ```
 
-### 2. Scheduler auto-release (Sprint 3)
-- Backend cần `@Scheduled` job release `EventSeat` hết hạn `held_until`
-- Frontend hiện xử lý UI-only khi countdown = 0 (reload seat map)
+### Scheduler Auto-release
+- **Backend:** `SeatReleaseScheduler` chạy mỗi 30s — BR-04 hoàn toàn đúng
+- **Frontend:** Không cần thay đổi — UI countdown đã xử lý đúng
 
-### 3. Dashboard analytics (Sprint 4)
-- `GET /api/v1/admin/dashboard/{eventId}` chưa có
-- Frontend đang dùng mock cho revenue, fillRate, audience charts
-
-### 4. Ticket detail endpoint (hiện có)
-- `GET /api/v1/tickets/{ticketId}` đã có — frontend đang gọi thật
-
-### 5. Profile update (chưa có)
-- Frontend hiện chỉ đọc profile từ `/api/v1/auth/me`
-- Endpoint update profile `PUT /api/v1/profile` chưa được implement
+### Virtual Queue
+- **Backend APIs đã có:**
+  - `GET /api/v1/queue/{eventId}/status` — PUBLIC
+  - `POST /api/v1/queue/{eventId}/join` — CUSTOMER
+  - `GET /api/v1/queue/position/{token}` — CUSTOMER (polling 3s)
+  - `PATCH /api/v1/admin/events/{eventId}/queue?active=true|false` — ADMIN
+- **Frontend:** `VirtualWaitingRoomPage` đã dùng `queueService` — đã update sang real API
+- **`VITE_ENABLE_MOCK_QUEUE` đã set = false**
 
 ---
 
-## 📋 DTO frontend mong muốn (cho reference khi implement Sprint 3/4)
+## 🟡 Sprint 4 — Backend chưa implement
 
-### QueueJoinResponse
-```json
-{
-  "sessionId": 500,
-  "queueToken": "uuid",
-  "position": 284,
-  "estimatedWaitSeconds": 360
-}
-```
+### AdminDashboard Analytics
+- **Mock mode:** `VITE_ENABLE_MOCK_DASHBOARD=true`
+- **Endpoint dự kiến:**
+  - `GET /api/v1/admin/dashboard/{eventId}` → revenue, fillRate, revenueByHour, audienceByAge, audienceByGender, recentOrders
 
-### QueuePositionResponse
-```json
-{
-  "status": "WAITING | ADMITTED | CANCELLED | EXPIRED",
-  "position": 45,
-  "estimatedWaitSeconds": 54,
-  "accessToken": "jwt-string (khi ADMITTED)",
-  "accessExpiresAt": "ISO-8601 (khi ADMITTED)"
-}
-```
+---
 
-### DashboardMetricsResponse
-```json
-{
-  "eventId": 1,
-  "summary": {
-    "totalSeats": 500, "soldSeats": 266,
-    "fillRate": 53.2, "totalRevenue": 279500000
-  },
-  "revenueByHour": [{ "hour": "ISO", "revenue": 0, "ticketsSold": 0 }],
-  "audienceByAge": [{ "ageGroup": "18-24", "count": 85, "percentage": 31.9 }],
-  "audienceByGender": [{ "gender": "MALE", "count": 148, "percentage": 55.6 }],
-  "recentOrders": []
-}
-```
+## 📋 Frontend việc cần làm sau Sprint 3
+
+1. **WebSocket client** trong `SeatSelectionPage`:
+   - Cài `@stomp/stompjs` và `sockjs-client`
+   - Subscribe `/topic/seats/{eventId}`
+   - Cập nhật seat status realtime từ WS message
+
+2. **EventDetails** — check queue status:
+   - Trước khi navigate sang SeatSelection, gọi `queueService.getQueueStatus(eventId)`
+   - Nếu `queueActive = true` → navigate sang VirtualWaitingRoom
+   - Nếu `queueActive = false` → navigate thẳng vào SeatSelection
+
+3. **Admin queue toggle** — trong EventManagement:
+   - Thêm nút "Bật/Tắt hàng chờ" gọi `PATCH /api/v1/admin/events/{id}/queue?active=true|false`

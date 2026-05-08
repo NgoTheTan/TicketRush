@@ -81,6 +81,7 @@ CREATE TABLE events (
     event_date  TIMESTAMP       NOT NULL,
     image_url   VARCHAR(1000),
     status      event_status    NOT NULL DEFAULT 'UPCOMING',
+    queue_active BOOLEAN        NOT NULL DEFAULT FALSE,
     created_by  BIGINT          NOT NULL,
     created_at  TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP       NOT NULL DEFAULT NOW(),

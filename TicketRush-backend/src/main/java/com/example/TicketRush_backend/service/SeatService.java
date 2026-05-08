@@ -34,6 +34,7 @@ import com.example.TicketRush_backend.repository.SeatHoldItemRepository;
 import com.example.TicketRush_backend.repository.SeatHoldRepository;
 import com.example.TicketRush_backend.repository.SeatZoneRepository;
 import com.example.TicketRush_backend.repository.UserRepository;
+import com.example.TicketRush_backend.service.SeatBroadcastService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,6 +48,7 @@ public class SeatService {
     private final SeatHoldRepository seatHoldRepository;
     private final SeatHoldItemRepository seatHoldItemRepository;
     private final UserRepository userRepository;
+    private final SeatBroadcastService seatBroadcastService;
 
     @Value("${app.seat.hold-duration-minutes:10}")
     private int holdDurationMinutes;
@@ -203,6 +205,9 @@ public class SeatService {
         // Flush để response đọc lại dữ liệu hold item mới nhất
         seatHoldItemRepository.flush();
 
+        // Broadcast SEAT_LOCKED sau khi DB commit — best effort
+        seatBroadcastService.broadcastSeatLocked(seat.getEvent().getId(), seatId);
+
         // Build response từ DB mới nhất, không dùng hold.getItems() stale
         return buildHoldResponse(hold, seat, price);
     }
@@ -262,6 +267,9 @@ public class SeatService {
                 hold.setReleasedAt(Instant.now());
                 seatHoldRepository.save(hold);
         }
+
+        // Broadcast SEAT_AVAILABLE sau khi DB commit — best effort
+        seatBroadcastService.broadcastSeatAvailable(seat.getEvent().getId(), seatId);
 
         // Build response từ DB mới nhất
         return buildReleaseResponse(hold);

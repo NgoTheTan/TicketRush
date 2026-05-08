@@ -65,31 +65,23 @@ export const ticketService = {
   },
 };
 
-// src/api/queueService.js  [MOCK - Sprint 3 backend not yet implemented]
+// src/api/queueService.js — Sprint 3: Real backend APIs
 export const queueService = {
-  // TODO Sprint 3: POST /api/v1/queue/{eventId}/join
-  joinQueue: async (eventId) => {
-    console.warn('[queueService] Backend not yet implemented. Using mock.');
-    return {
-      sessionId: Math.floor(Math.random() * 1000),
-      queueToken: 'mock-token-' + Date.now(),
-      position: Math.floor(Math.random() * 300) + 50,
-      estimatedWaitSeconds: Math.floor(Math.random() * 300) + 60,
-    };
-  },
-
-  // TODO Sprint 3: GET /api/v1/queue/position/{token}
-  getPosition: async (token) => {
-    console.warn('[queueService] Backend not yet implemented. Using mock.');
-    return {
-      status: 'WAITING',
-      position: Math.floor(Math.random() * 50) + 1,
-      estimatedWaitSeconds: Math.floor(Math.random() * 120) + 30,
-    };
-  },
-
-  // TODO Sprint 3: GET /api/v1/queue/{eventId}/status
+  // GET /api/v1/queue/{eventId}/status
   getQueueStatus: async (eventId) => {
-    return { queueActive: false };
+    const res = await api.get(`/api/v1/queue/${eventId}/status`);
+    return res.data; // { eventId, queueActive, currentQueueLength, estimatedWaitMinutes }
+  },
+
+  // POST /api/v1/queue/{eventId}/join
+  joinQueue: async (eventId) => {
+    const res = await api.post(`/api/v1/queue/${eventId}/join`, {});
+    return res.data; // { sessionId, queueToken, position, estimatedWaitSeconds, joinedAt }
+  },
+
+  // GET /api/v1/queue/position/{token} — polling every 3s
+  getPosition: async (token) => {
+    const res = await api.get(`/api/v1/queue/position/${token}`);
+    return res.data; // { status, position, estimatedWaitSeconds, accessToken?, accessExpiresAt? }
   },
 };

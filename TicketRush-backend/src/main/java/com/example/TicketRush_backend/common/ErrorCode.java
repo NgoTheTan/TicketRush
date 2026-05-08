@@ -46,6 +46,14 @@ public enum ErrorCode {
     TICKET_NOT_FOUND         (HttpStatus.NOT_FOUND, "TICKET_NOT_FOUND",         "Vé không tồn tại"),
     TICKET_NOT_OWNED_BY_USER (HttpStatus.FORBIDDEN, "TICKET_NOT_OWNED_BY_USER", "Vé này không thuộc về bạn"),
 
+
+    // ── Queue (7xxx) ──────────────────────────────────────────────────────────
+    QUEUE_SESSION_NOT_FOUND (HttpStatus.NOT_FOUND,            "QUEUE_SESSION_NOT_FOUND", "Phiên hàng chờ không tồn tại"),
+    QUEUE_TOKEN_INVALID     (HttpStatus.UNAUTHORIZED,          "QUEUE_TOKEN_INVALID",     "Token hàng chờ không hợp lệ"),
+    QUEUE_TOKEN_EXPIRED     (HttpStatus.GONE,                  "QUEUE_TOKEN_EXPIRED",     "Token hàng chờ đã hết hạn, vui lòng xếp hàng lại"),
+    QUEUE_ALREADY_JOINED    (HttpStatus.CONFLICT,              "QUEUE_ALREADY_JOINED",    "Bạn đã có mặt trong hàng chờ của sự kiện này"),
+    QUEUE_NOT_ACTIVE        (HttpStatus.UNPROCESSABLE_ENTITY,  "QUEUE_NOT_ACTIVE",        "Hàng chờ không kích hoạt cho sự kiện này"),
+
     // ── Validation (8xxx) ─────────────────────────────────────
     VALIDATION_FAILED    (HttpStatus.BAD_REQUEST, "VALIDATION_FAILED",   "Dữ liệu không hợp lệ"),
     INVALID_PAGE_PARAMS  (HttpStatus.BAD_REQUEST, "INVALID_PAGE_PARAMS", "Tham số phân trang không hợp lệ"),
