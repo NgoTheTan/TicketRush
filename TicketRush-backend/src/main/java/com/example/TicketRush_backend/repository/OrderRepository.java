@@ -28,7 +28,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("""
         SELECT o FROM Order o
-        WHERE (:search IS NULL OR LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :search, '%')))
+        WHERE (:search IS NULL OR CAST(o.orderCode AS string) LIKE CONCAT('%', :search, '%'))
           AND (:status IS NULL OR o.status = :status)
           AND (:eventId IS NULL OR o.event.id = :eventId)
     """)

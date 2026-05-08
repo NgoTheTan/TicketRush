@@ -11,6 +11,7 @@ import com.example.TicketRush_backend.enums.EventStatus;
 import com.example.TicketRush_backend.enums.OrderStatus;
 import com.example.TicketRush_backend.security.SecurityUtils;
 import com.example.TicketRush_backend.service.EventService;
+import com.example.TicketRush_backend.service.QueueService;
 import com.example.TicketRush_backend.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class AdminController {
 
     private final EventService eventService;
     private final OrderService orderService;
+    private final QueueService queueService;
 
     // ── Events ─────────────────────────────────────────────────
 
@@ -104,5 +106,19 @@ public class AdminController {
     @GetMapping("/orders/{orderId}")
     public ResponseEntity<ApiResponse<OrderResponse>> getOrder(@PathVariable Long orderId) {
         return ResponseEntity.ok(ApiResponse.ok(orderService.getOrderAdmin(orderId)));
+    }
+
+    // ── Queue Management ───────────────────────────────────────
+
+    /**
+     * PATCH /api/v1/admin/events/{eventId}/queue?active=true|false
+     * Bật/tắt virtual waiting room cho sự kiện.
+     */
+    @PatchMapping("/events/{eventId}/queue")
+    public ResponseEntity<ApiResponse<Void>> toggleQueue(
+            @PathVariable Long eventId,
+            @RequestParam boolean active) {
+        queueService.setQueueActive(eventId, active);
+        return ResponseEntity.ok(ApiResponse.noContent());
     }
 }

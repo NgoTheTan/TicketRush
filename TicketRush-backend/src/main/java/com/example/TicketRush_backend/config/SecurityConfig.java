@@ -61,6 +61,14 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/me/**").hasRole("CUSTOMER")
                 .requestMatchers("/api/v1/auth/me").authenticated()
 
+                // WebSocket handshake endpoint — SockJS (Sprint 3)
+                .requestMatchers("/ws/**").permitAll()
+
+                // Queue endpoints (Sprint 3)
+                .requestMatchers(HttpMethod.GET, "/api/v1/queue/*/status").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/queue/*/join").hasRole("CUSTOMER")
+                .requestMatchers(HttpMethod.GET, "/api/v1/queue/position/*").authenticated()
+
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
                 .anyRequest().authenticated()

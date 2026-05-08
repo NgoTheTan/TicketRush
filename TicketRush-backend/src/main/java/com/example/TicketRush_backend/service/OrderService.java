@@ -10,6 +10,7 @@ import com.example.TicketRush_backend.enums.OrderStatus;
 import com.example.TicketRush_backend.enums.SeatStatus;
 import com.example.TicketRush_backend.enums.TicketStatus;
 import com.example.TicketRush_backend.repository.*;
+import com.example.TicketRush_backend.service.SeatBroadcastService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,7 @@ public class OrderService {
     private final SeatHoldRepository seatHoldRepository;
     private final EventSeatRepository eventSeatRepository;
     private final TicketRepository ticketRepository;
+    private final SeatBroadcastService seatBroadcastService;
 
     // ── Customer: Create Order from Hold ──────────────────────
 
@@ -155,6 +157,12 @@ public class OrderService {
         hold.setStatus(HoldStatus.CONVERTED);
         hold.setConvertedAt(now);
         seatHoldRepository.save(hold);
+
+        // Broadcast SEAT_SOLD for each seat — best effort, non-blocking
+        Long eventId = order.getEvent().getId();
+        for (OrderItem oi : order.getItems()) {
+            seatBroadcastService.broadcastSeatSold(eventId, oi.getSeat().getId());
+        }
 
         return CheckoutResponse.builder()
                 .order(CheckoutResponse.OrderDetail.builder()

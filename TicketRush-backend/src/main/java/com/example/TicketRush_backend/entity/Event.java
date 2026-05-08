@@ -68,6 +68,12 @@ public class Event {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
+
+    /** Sprint 3: Admin bật/tắt virtual queue cho sự kiện này */
+    @Column(name = "queue_active", nullable = false)
+    @Builder.Default
+    private boolean queueActive = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
