@@ -5,6 +5,8 @@ import com.example.TicketRush_backend.common.ErrorCode;
 import com.example.TicketRush_backend.dto.auth.AuthResponse;
 import com.example.TicketRush_backend.dto.auth.LoginRequest;
 import com.example.TicketRush_backend.dto.auth.RegisterRequest;
+import com.example.TicketRush_backend.dto.auth.UpdateProfileRequest;
+import com.example.TicketRush_backend.repository.CustomerProfileRepository;
 import com.example.TicketRush_backend.entity.CustomerProfile;
 import com.example.TicketRush_backend.entity.User;
 import com.example.TicketRush_backend.enums.UserRole;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final CustomerProfileRepository customerProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
@@ -71,5 +74,38 @@ public class AuthService {
     public User getCurrentUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.AUTH_USER_NOT_FOUND));
+    }
+
+    @Transactional
+    public void updateProfile(Long userId, UpdateProfileRequest req) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.AUTH_USER_NOT_FOUND));
+
+        // Cập nhật fullName nếu có
+        if (req.getFullName() != null && !req.getFullName().isBlank()) {
+            user.setFullName(req.getFullName());
+        }
+
+        // Đổi mật khẩu nếu có
+        if (req.getNewPassword() != null && !req.getNewPassword().isBlank()) {
+            if (req.getCurrentPassword() == null
+                    || !passwordEncoder.matches(req.getCurrentPassword(), user.getPassword())) {
+                throw new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS,
+                        java.util.Map.of("message", "Mật khẩu hiện tại không đúng"));
+            }
+            user.setPassword(passwordEncoder.encode(req.getNewPassword()));
+        }
+
+        userRepository.save(user);
+
+        // Cập nhật CustomerProfile
+        if (user.getRole() == com.example.TicketRush_backend.enums.UserRole.CUSTOMER) {
+            customerProfileRepository.findByUserId(userId).ifPresent(profile -> {
+                if (req.getPhone() != null)       profile.setPhone(req.getPhone());
+                if (req.getDateOfBirth() != null) profile.setDateOfBirth(req.getDateOfBirth());
+                if (req.getGender() != null)      profile.setGender(req.getGender());
+                customerProfileRepository.save(profile);
+            });
+        }
     }
 }

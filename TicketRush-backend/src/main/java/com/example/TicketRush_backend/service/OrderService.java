@@ -10,6 +10,7 @@ import com.example.TicketRush_backend.enums.OrderStatus;
 import com.example.TicketRush_backend.enums.SeatStatus;
 import com.example.TicketRush_backend.enums.TicketStatus;
 import com.example.TicketRush_backend.repository.*;
+import com.example.TicketRush_backend.entity.CustomerProfile;
 import com.example.TicketRush_backend.service.SeatBroadcastService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,6 +34,7 @@ public class OrderService {
     private final SeatHoldRepository seatHoldRepository;
     private final EventSeatRepository eventSeatRepository;
     private final TicketRepository ticketRepository;
+    private final CustomerProfileRepository customerProfileRepository;
     private final SeatBroadcastService seatBroadcastService;
 
     // ── Customer: Create Order from Hold ──────────────────────
@@ -263,6 +265,20 @@ public class OrderService {
                         .imageUrl(o.getEvent().getImageUrl())
                         .build())
                 .items(items)
+                .customer(buildCustomerSummary(o))
+                .build();
+    }
+
+    private OrderResponse.CustomerSummary buildCustomerSummary(Order o) {
+        if (o.getUser() == null) return null;
+        String phone = customerProfileRepository
+                .findByUserId(o.getUser().getId())
+                .map(CustomerProfile::getPhone)
+                .orElse(null);
+        return OrderResponse.CustomerSummary.builder()
+                .fullName(o.getUser().getFullName())
+                .email(o.getUser().getEmail())
+                .phone(phone)
                 .build();
     }
 }

@@ -10,6 +10,8 @@ import com.example.TicketRush_backend.dto.seat.SeatZoneResponse;
 import com.example.TicketRush_backend.enums.EventStatus;
 import com.example.TicketRush_backend.enums.OrderStatus;
 import com.example.TicketRush_backend.security.SecurityUtils;
+import com.example.TicketRush_backend.dto.dashboard.DashboardResponse;
+import com.example.TicketRush_backend.service.DashboardService;
 import com.example.TicketRush_backend.service.EventService;
 import com.example.TicketRush_backend.service.QueueService;
 import com.example.TicketRush_backend.service.OrderService;
@@ -34,6 +36,7 @@ public class AdminController {
 
     private final EventService eventService;
     private final OrderService orderService;
+    private final DashboardService dashboardService;
     private final QueueService queueService;
 
     // ── Events ─────────────────────────────────────────────────
@@ -108,7 +111,20 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok(orderService.getOrderAdmin(orderId)));
     }
 
-    // ── Queue Management ───────────────────────────────────────
+    // ── Dashboard Analytics (Sprint 4) ───────────────────────
+
+    /**
+     * GET /api/v1/admin/dashboard/{eventId}
+     * Full analytics: revenue, fill rate, age/gender breakdown, recent orders.
+     * Frontend polls every 5 seconds.
+     */
+    @GetMapping("/dashboard/{eventId}")
+    public ResponseEntity<ApiResponse<DashboardResponse>> getDashboard(
+            @PathVariable Long eventId) {
+        return ResponseEntity.ok(ApiResponse.ok(dashboardService.getDashboard(eventId)));
+    }
+
+        // ── Queue Management ───────────────────────────────────────
 
     /**
      * PATCH /api/v1/admin/events/{eventId}/queue?active=true|false

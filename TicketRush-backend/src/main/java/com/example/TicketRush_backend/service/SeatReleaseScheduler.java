@@ -46,7 +46,7 @@ public class SeatReleaseScheduler {
     @Transactional
     public void releaseExpiredHolds() {
         Instant now = Instant.now();
-        List<EventSeat> expired = eventSeatRepository.findByStatusAndHeldUntilBefore(SeatStatus.LOCKED, now);
+        List<EventSeat> expired = eventSeatRepository.findExpiredLocks(now);
 
         if (expired.isEmpty()) return;
 

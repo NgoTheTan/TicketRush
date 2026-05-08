@@ -85,3 +85,15 @@ export const queueService = {
     return res.data; // { status, position, estimatedWaitSeconds, accessToken?, accessExpiresAt? }
   },
 };
+
+// ── Sprint 4: Dashboard analytics service ─────────────────────────────
+export const dashboardService = {
+  /**
+   * GET /api/v1/admin/dashboard/{eventId}
+   * Full analytics: revenue, fill rate, age/gender, recent orders.
+   */
+  getDashboard: async (eventId) => {
+    const res = await api.get(`/api/v1/admin/dashboard/${eventId}`);
+    return res.data;
+  },
+};
