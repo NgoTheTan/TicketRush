@@ -32,5 +32,16 @@ public class CreateSeatZonesRequest {
 
         @Size(max = 7)
         private String colorCode;
+
+        private List<SeatPosition> customSeats;
+    }
+
+    @Data
+    public static class SeatPosition {
+        @NotNull(message = "Row không được để trống")
+        private Integer row;
+
+        @NotNull(message = "Col không được để trống")
+        private Integer col;
     }
 }

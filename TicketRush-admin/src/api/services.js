@@ -1,0 +1,99 @@
+// src/api/seatService.js
+import api from './apiClient.js';
+
+export const seatService = {
+  getSeatMap: async (eventId) => {
+    const res = await api.get(`/api/v1/events/${eventId}/seats`);
+    return res.data; // { eventId, zones[] }
+  },
+
+  holdSeat: async (eventId, seatId) => {
+    const res = await api.post(`/api/v1/events/${eventId}/seats/${seatId}/hold`, {});
+    return res.data; // { holdId, expiresAt, remainingSeconds, heldSeat, allSelectedSeats, totalAmount }
+  },
+
+  releaseSeat: async (eventId, seatId) => {
+    const res = await api.delete(`/api/v1/events/${eventId}/seats/${seatId}/hold`);
+    return res.data;
+  },
+
+  getActiveHold: async (eventId) => {
+    const res = await api.get('/api/v1/holds/active', { eventId });
+    return res.data; // ActiveHoldResponse or null
+  },
+};
+
+// src/api/orderService.js
+export const orderService = {
+  createOrder: async (holdId) => {
+    const res = await api.post('/api/v1/orders', { holdId });
+    return res.data; // OrderResponse
+  },
+
+  confirmCheckout: async (holdId) => {
+    const res = await api.post(`/api/v1/checkout/${holdId}/confirm`, {});
+    return res.data; // CheckoutResponse { order, tickets[] }
+  },
+
+  getOrder: async (orderId) => {
+    const res = await api.get(`/api/v1/orders/${orderId}`);
+    return res.data;
+  },
+
+  // Admin
+  adminListOrders: async ({ search, status, eventId, page = 0, size = 20 } = {}) => {
+    const res = await api.get('/api/v1/admin/orders', { search, status, eventId, page, size });
+    return { data: res.data, meta: res.meta };
+  },
+
+  adminGetOrder: async (orderId) => {
+    const res = await api.get(`/api/v1/admin/orders/${orderId}`);
+    return res.data;
+  },
+};
+
+// src/api/ticketService.js
+export const ticketService = {
+  myTickets: async ({ status, page = 0, size = 20 } = {}) => {
+    const res = await api.get('/api/v1/tickets/my', { status, page, size });
+    return { data: res.data, meta: res.meta };
+  },
+
+  getTicket: async (ticketId) => {
+    const res = await api.get(`/api/v1/tickets/${ticketId}`);
+    return res.data;
+  },
+};
+
+// src/api/queueService.js — Sprint 3: Real backend APIs
+export const queueService = {
+  // GET /api/v1/queue/{eventId}/status
+  getQueueStatus: async (eventId) => {
+    const res = await api.get(`/api/v1/queue/${eventId}/status`);
+    return res.data; // { eventId, queueActive, currentQueueLength, estimatedWaitMinutes }
+  },
+
+  // POST /api/v1/queue/{eventId}/join
+  joinQueue: async (eventId) => {
+    const res = await api.post(`/api/v1/queue/${eventId}/join`, {});
+    return res.data; // { sessionId, queueToken, position, estimatedWaitSeconds, joinedAt }
+  },
+
+  // GET /api/v1/queue/position/{token} — polling every 3s
+  getPosition: async (token) => {
+    const res = await api.get(`/api/v1/queue/position/${token}`);
+    return res.data; // { status, position, estimatedWaitSeconds, accessToken?, accessExpiresAt? }
+  },
+};
+
+// ── Sprint 4: Dashboard analytics service ─────────────────────────────
+export const dashboardService = {
+  /**
+   * GET /api/v1/admin/dashboard/{eventId}
+   * Full analytics: revenue, fill rate, age/gender, recent orders.
+   */
+  getDashboard: async (eventId) => {
+    const res = await api.get(`/api/v1/admin/dashboard/${eventId}`);
+    return res.data;
+  },
+};

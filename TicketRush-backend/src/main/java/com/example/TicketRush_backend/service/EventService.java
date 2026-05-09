@@ -162,16 +162,32 @@ public class EventService {
     private List<EventSeat> generateSeats(Event event, SeatZone zone,
                                            CreateSeatZonesRequest.ZoneConfig cfg) {
         List<EventSeat> seats = new ArrayList<>();
-        for (int row = 0; row < cfg.getTotalRows(); row++) {
-            String rowLabel = rowLabel(row);
-            for (int seatNum = 1; seatNum <= cfg.getSeatsPerRow(); seatNum++) {
+        if (cfg.getCustomSeats() != null && !cfg.getCustomSeats().isEmpty()) {
+            for (CreateSeatZonesRequest.SeatPosition pos : cfg.getCustomSeats()) {
+                String rowLabel = rowLabel(pos.getRow());
+                // Để hiển thị trên lưới đúng tọa độ, chúng ta có thể lưu thêm thuộc tính tọa độ.
+                // Tuy nhiên hiện tại EventSeat chỉ có rowLabel và seatNumber.
+                // Ta gán rowLabel = ký tự của row, seatNumber = col.
                 seats.add(EventSeat.builder()
                         .event(event)
                         .zone(zone)
                         .rowLabel(rowLabel)
-                        .seatNumber(seatNum)
+                        .seatNumber(pos.getCol())
                         .status(SeatStatus.AVAILABLE)
                         .build());
+            }
+        } else {
+            for (int row = 0; row < cfg.getTotalRows(); row++) {
+                String rowLabel = rowLabel(row);
+                for (int seatNum = 1; seatNum <= cfg.getSeatsPerRow(); seatNum++) {
+                    seats.add(EventSeat.builder()
+                            .event(event)
+                            .zone(zone)
+                            .rowLabel(rowLabel)
+                            .seatNumber(seatNum)
+                            .status(SeatStatus.AVAILABLE)
+                            .build());
+                }
             }
         }
         return seats;
