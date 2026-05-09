@@ -1,8 +1,27 @@
 // src/pages/SignUpPage.jsx
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { Button, showToast } from '../components/ui/index.jsx';
+
+const SignUpFieldContext = createContext(null);
+
+function Field({ label, name, type = 'text', placeholder, children }) {
+  const { form, errors, setValue } = useContext(SignUpFieldContext);
+
+  return (
+    <div>
+      <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">{label}</label>
+      {children || (
+        <input type={type} value={form[name]} onChange={e => setValue(name, e.target.value)}
+          placeholder={placeholder}
+          className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+            ${errors[name] ? 'border-red-400' : 'border-slate-200'}`} />
+      )}
+      {errors[name] && <p className="text-xs text-red-600 mt-1">{errors[name]}</p>}
+    </div>
+  );
+}
 
 export default function SignUpPage() {
   const { register } = useAuth();
@@ -54,18 +73,7 @@ export default function SignUpPage() {
     }
   };
 
-  const Field = ({ label, name, type = 'text', placeholder, children }) => (
-    <div>
-      <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">{label}</label>
-      {children || (
-        <input type={type} value={form[name]} onChange={e => set(name, e.target.value)}
-          placeholder={placeholder}
-          className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-            ${errors[name] ? 'border-red-400' : 'border-slate-200'}`} />
-      )}
-      {errors[name] && <p className="text-xs text-red-600 mt-1">{errors[name]}</p>}
-    </div>
-  );
+  const fieldProps = { form, errors, setValue: set };
 
   return (
     <div className="min-h-screen bg-[#fcf8ff] flex items-center justify-center p-4 font-[Inter]">
@@ -81,6 +89,7 @@ export default function SignUpPage() {
         </div>
 
         {/* Form */}
+        <SignUpFieldContext.Provider value={fieldProps}>
         <form onSubmit={handleSubmit} className="px-8 py-6 space-y-4">
           <Field label="Họ và tên" name="fullName" placeholder="Nguyễn Văn A" />
           <Field label="Email" name="email" type="email" placeholder="email@example.com" />
@@ -115,6 +124,7 @@ export default function SignUpPage() {
             </button>
           </p>
         </form>
+        </SignUpFieldContext.Provider>
       </div>
     </div>
   );

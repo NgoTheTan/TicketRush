@@ -227,8 +227,10 @@ public class EventService {
     private EventResponse toDetailResponse(Event e) {
         List<EventResponse.ZoneSummary> zones = seatZoneRepository.findByEventId(e.getId()).stream()
                 .map(z -> EventResponse.ZoneSummary.from(z,
-                        eventSeatRepository.countByEventIdAndStatus(e.getId(), SeatStatus.AVAILABLE),
-                        eventSeatRepository.countByEventIdAndStatus(e.getId(), SeatStatus.SOLD)))
+                        eventSeatRepository.countByEventIdAndZoneIdAndStatus(
+                                e.getId(), z.getId(), SeatStatus.AVAILABLE),
+                        eventSeatRepository.countByEventIdAndZoneIdAndStatus(
+                                e.getId(), z.getId(), SeatStatus.SOLD)))
                 .toList();
 
         return EventResponse.builder()

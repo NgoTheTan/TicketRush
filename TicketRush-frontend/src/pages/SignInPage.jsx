@@ -70,7 +70,9 @@ export default function SignInPage() {
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Email</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[18px]">mail</span>
+                  <span className="absolute inset-y-0 left-[calc(0.75rem-1px)] flex items-center pointer-events-none">
+                    <span className="material-symbols-outlined text-slate-400 text-[18px] leading-none">mail</span>
+                  </span>
                   <input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))}
                     placeholder="nhap@email.com" required
                     className="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
@@ -83,14 +85,16 @@ export default function SignInPage() {
                   <a href="#" className="text-xs text-indigo-600 font-medium hover:text-indigo-700">Quên mật khẩu?</a>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[18px]">lock</span>
+                  <span className="absolute inset-y-0 left-[calc(0.75rem-1px)] flex items-center pointer-events-none">
+                    <span className="material-symbols-outlined text-slate-400 text-[18px] leading-none">lock</span>
+                  </span>
                   <input type={showPw ? 'text' : 'password'} value={form.password}
                     onChange={e => setForm(p => ({...p, password: e.target.value}))}
                     placeholder="••••••••" required
                     className="w-full pl-10 pr-10 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                   <button type="button" onClick={() => setShowPw(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                    <span className="material-symbols-outlined text-[18px]">{showPw ? 'visibility_off' : 'visibility'}</span>
+                    className="absolute inset-y-0 right-[calc(0.75rem+1px)] flex items-center text-slate-400 hover:text-slate-600">
+                    <span className="material-symbols-outlined text-[18px] leading-none">{showPw ? 'visibility_off' : 'visibility'}</span>
                   </button>
                 </div>
               </div>

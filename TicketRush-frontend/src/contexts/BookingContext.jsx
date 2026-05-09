@@ -15,18 +15,25 @@ export function BookingProvider({ children }) {
   const [checkoutResult, setCheckoutResult] = useState(null);
   // { order, tickets[] }
 
+  // Pending order created from the current hold, kept while moving between checkout screens.
+  const [pendingOrder, setPendingOrder] = useState(null);
+  // { holdId, order }
+
   const startBooking = useCallback((event) => {
     setCurrentEvent(event);
     setHoldData(null);
+    setPendingOrder(null);
     setCheckoutResult(null);
   }, []);
 
   const updateHold = useCallback((data) => {
     setHoldData(data);
+    setPendingOrder(prev => prev?.holdId === data?.holdId ? prev : null);
   }, []);
 
   const clearHold = useCallback(() => {
     setHoldData(null);
+    setPendingOrder(null);
   }, []);
 
   const setCheckout = useCallback((result) => {
@@ -36,6 +43,7 @@ export function BookingProvider({ children }) {
   const clearBooking = useCallback(() => {
     setCurrentEvent(null);
     setHoldData(null);
+    setPendingOrder(null);
     setCheckoutResult(null);
   }, []);
 
@@ -43,6 +51,7 @@ export function BookingProvider({ children }) {
     <BookingContext.Provider value={{
       currentEvent, setCurrentEvent,
       holdData, updateHold, clearHold,
+      pendingOrder, setPendingOrder,
       checkoutResult, setCheckout,
       startBooking, clearBooking,
     }}>

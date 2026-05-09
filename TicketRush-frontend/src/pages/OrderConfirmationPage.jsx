@@ -1,5 +1,5 @@
 // src/pages/OrderConfirmationPage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { useBooking } from '../contexts/BookingContext.jsx';
@@ -8,20 +8,38 @@ import { Spinner, formatCurrency, formatDate, showToast } from '../components/ui
 
 export default function OrderConfirmationPage({ eventId }) {
   const { navigate } = useRouter();
-  const { currentEvent, holdData, setCheckout } = useBooking();
+  const { currentEvent, holdData, pendingOrder, setPendingOrder, setCheckout } = useBooking();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState(null);
+  const creatingOrderForHold = useRef(null);
 
   // Step 1: Create order from hold
   useEffect(() => {
-    if (!holdData?.holdId) {
+    const holdId = holdData?.holdId;
+
+    if (!holdId) {
       navigate(`/events/${eventId}/seats`);
       return;
     }
-    orderService.createOrder(holdData.holdId)
-      .then(o => setOrder(o))
+
+    if (pendingOrder?.holdId === holdId) {
+      setOrder(pendingOrder.order);
+      setLoading(false);
+      return;
+    }
+
+    if (creatingOrderForHold.current === holdId) return;
+    creatingOrderForHold.current = holdId;
+    setLoading(true);
+    setError(null);
+
+    orderService.createOrder(holdId)
+      .then(o => {
+        setOrder(o);
+        setPendingOrder({ holdId, order: o });
+      })
       .catch(err => {
         if (err.code === 'HOLD_EXPIRED') {
           showToast('Phiên giữ ghế đã hết hạn. Vui lòng chọn lại.', 'error');
@@ -31,7 +49,7 @@ export default function OrderConfirmationPage({ eventId }) {
         }
       })
       .finally(() => setLoading(false));
-  }, [holdData?.holdId]);
+  }, [eventId, holdData?.holdId, navigate, pendingOrder, setPendingOrder]);
 
   // Step 2: Confirm payment
   const handleConfirm = async () => {

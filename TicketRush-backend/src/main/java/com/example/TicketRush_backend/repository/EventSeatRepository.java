@@ -47,4 +47,6 @@ public interface EventSeatRepository extends JpaRepository<EventSeat, Long> {
 
     /** Tổng số ghế theo zone */
     long countByEventIdAndZoneId(Long eventId, Long zoneId);
+
+    long countByEventIdAndZoneIdAndStatus(Long eventId, Long zoneId, SeatStatus status);
 }
