@@ -73,4 +73,15 @@ public class AuthController {
         authService.updateProfile(userId, req);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
+
+    @PostMapping("/seed-admin")
+    public ResponseEntity<ApiResponse<Void>> seedAdmin(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        String password = payload.get("password");
+        if (email == null || password == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        authService.seedAdmin(email, password);
+        return ResponseEntity.ok(ApiResponse.noContent());
+    }
 }

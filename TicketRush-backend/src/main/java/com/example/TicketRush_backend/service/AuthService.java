@@ -108,4 +108,17 @@ public class AuthService {
             });
         }
     }
+
+    @Transactional
+    public void seedAdmin(String email, String password) {
+        if (!userRepository.existsByEmail(email)) {
+            User admin = User.builder()
+                    .email(email)
+                    .password(passwordEncoder.encode(password))
+                    .fullName("System Administrator")
+                    .role(UserRole.ADMIN)
+                    .build();
+            userRepository.save(admin);
+        }
+    }
 }
