@@ -44,6 +44,24 @@ public class EventService {
         return page.map(this::toSummaryResponse);
     }
 
+    public List<Map<String, Object>> suggestEvents(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return List.of();
+        }
+        String safeKeyword = keyword.trim();
+        List<Event> events = eventRepository.findSuggestions(safeKeyword);
+        return events.stream()
+                .map(e -> {
+                    Map<String, Object> eventMap = new java.util.HashMap<>();
+                    eventMap.put("id", e.getId());
+                    eventMap.put("name", e.getName());
+                    eventMap.put("imageUrl", e.getImageUrl() != null ? e.getImageUrl() : "");
+                    eventMap.put("venue", e.getVenue() != null ? e.getVenue() : "");
+                    return eventMap;
+                })
+                .toList();
+    }
+
     public EventResponse getEventDetail(Long eventId) {
         Event event = findOrThrow(eventId);
         return toDetailResponse(event);

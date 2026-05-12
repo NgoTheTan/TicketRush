@@ -1,5 +1,5 @@
 // src/pages/admin/OrderManagementPage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { orderService } from '../api/services.js';
 import { Spinner, EmptyState, Badge, formatCurrency, formatDate, showToast } from '../components/ui/index.jsx';
@@ -112,10 +112,12 @@ export default function OrderManagementPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [meta, setMeta] = useState(null);
   const [page, setPage] = useState(0);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const debounceTimer = useRef(null);
 
   const load = async () => {
     setLoading(true);
@@ -129,6 +131,15 @@ export default function OrderManagementPage() {
     } catch (err) {
       showToast(err.message, 'error');
     } finally { setLoading(false); }
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchInput(value);
+    setPage(0);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setSearch(value);
+    }, 400);
   };
 
   useEffect(() => { load(); }, [search, statusFilter, page]);
@@ -145,7 +156,7 @@ export default function OrderManagementPage() {
         <div className="flex flex-wrap gap-3 mb-6">
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 flex-1 min-w-[200px]">
             <span className="material-symbols-outlined text-slate-400 text-[18px]">search</span>
-            <input value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
+            <input value={searchInput} onChange={e => handleSearchChange(e.target.value)}
               placeholder="Tìm theo mã đơn, email..." className="flex-1 text-sm outline-none" />
           </div>
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); }}

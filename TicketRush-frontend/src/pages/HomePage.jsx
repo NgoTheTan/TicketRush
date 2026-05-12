@@ -1,5 +1,5 @@
-// src/pages/HomePage.jsx - replaces initial stub
-import { useState, useEffect } from 'react';
+// src/pages/HomePage.jsx - with autocomplete + debounce
+import { useState, useEffect, useRef } from 'react';
 import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
@@ -48,8 +48,11 @@ export default function HomePage() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [meta, setMeta] = useState(null);
   const [page, setPage] = useState(0);
+  const debounceTimer = useRef(null);
 
   const load = async (s, p) => {
     setLoading(true); setError(null);
@@ -58,6 +61,45 @@ export default function HomePage() {
       setEvents(data || []); setMeta(m);
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
+  };
+
+  // Debounced suggest handler
+  const handleSearchInput = (value) => {
+    setSearchInput(value);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    
+    if (!value.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    debounceTimer.current = setTimeout(async () => {
+      try {
+        const result = await eventService.suggest(value.trim());
+        setSuggestions(result);
+        setShowSuggestions(true);
+      } catch (err) {
+        console.error('Suggest error:', err);
+        setSuggestions([]);
+      }
+    }, 300); // 300ms debounce
+  };
+
+  const handleSelectSuggestion = (eventName) => {
+    setSearchInput(eventName);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setPage(0);
+    setSearch(eventName);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setPage(0);
+    setSearch(searchInput);
+    setSuggestions([]);
+    setShowSuggestions(false);
   };
 
   useEffect(() => { load(search, page); }, [search, page]);
@@ -71,13 +113,48 @@ export default function HomePage() {
         <div className="relative max-w-screen-xl mx-auto px-6 py-20">
           <h1 className="text-4xl lg:text-6xl font-black tracking-tight mb-4 leading-tight">Khám phá sự kiện<br className="hidden lg:block" /> đỉnh cao</h1>
           <p className="text-lg text-indigo-200 mb-10 max-w-xl">Đặt vé dễ dàng cho các sự kiện âm nhạc, hội thảo và giải trí hàng đầu.</p>
-          <form onSubmit={e => { e.preventDefault(); setPage(0); setSearch(searchInput); }} className="flex gap-3 max-w-2xl">
+          <form onSubmit={handleSubmit} className="flex gap-3 max-w-2xl relative">
             <div className="flex-1 flex items-center gap-3 bg-white/10 border border-white/20 backdrop-blur-sm rounded-xl px-4 py-3">
               <span className="material-symbols-outlined text-indigo-300">search</span>
-              <input value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="Tìm kiếm sự kiện..."
+              <input 
+                value={searchInput} 
+                onChange={e => handleSearchInput(e.target.value)} 
+                onFocus={() => showSuggestions && setSuggestions(suggestions.length > 0 ? suggestions : [])}
+                placeholder="Tìm kiếm sự kiện..."
                 className="flex-1 bg-transparent text-white placeholder-indigo-300 outline-none text-sm" />
             </div>
             <button type="submit" className="bg-white text-indigo-700 font-bold px-6 rounded-xl hover:bg-indigo-50 transition-colors text-sm">Tìm kiếm</button>
+            
+            {/* Autocomplete dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50 max-w-2xl">
+                <div className="max-h-80 overflow-y-auto">
+                  {suggestions.map((sugg) => (
+                    <button
+                      key={sugg.id}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(sugg.name)}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left border-b border-slate-100 last:border-b-0"
+                    >
+                      <div className="w-12 h-12 bg-slate-200 rounded-lg overflow-hidden flex-shrink-0">
+                        {sugg.imageUrl ? (
+                          <img src={sugg.imageUrl} alt={sugg.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-indigo-100">
+                            <span className="material-symbols-outlined text-indigo-400 text-xl">event</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900 text-sm truncate">{sugg.name}</p>
+                        <p className="text-xs text-slate-500 truncate">{sugg.venue}</p>
+                      </div>
+                      <span className="material-symbols-outlined text-slate-400 text-[18px] flex-shrink-0">arrow_forward</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </form>
         </div>
       </div>

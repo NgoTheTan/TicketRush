@@ -1,5 +1,5 @@
 // src/pages/admin/EventManagementPage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
@@ -18,10 +18,12 @@ export default function EventManagementPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [meta, setMeta] = useState(null);
   const [page, setPage] = useState(0);
   const [actingId, setActingId] = useState(null);
+  const debounceTimer = useRef(null);
 
   const load = async () => {
     setLoading(true);
@@ -33,6 +35,15 @@ export default function EventManagementPage() {
   };
 
   useEffect(() => { load(); }, [search, statusFilter, page]);
+
+  const handleSearchChange = (value) => {
+    setSearchInput(value);
+    setPage(0);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setSearch(value);
+    }, 400);
+  };
 
   const handleStatusChange = async (eventId, newStatus) => {
     if (!confirm(`Xác nhận chuyển trạng thái sang "${newStatus}"?`)) return;
@@ -63,7 +74,7 @@ export default function EventManagementPage() {
         <div className="flex flex-wrap gap-3 mb-6">
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 flex-1 min-w-[200px]">
             <span className="material-symbols-outlined text-slate-400 text-[18px]">search</span>
-            <input value={search} onChange={e => { setSearch(e.target.value); setPage(0); }}
+            <input value={searchInput} onChange={e => handleSearchChange(e.target.value)}
               placeholder="Tìm sự kiện..." className="flex-1 text-sm outline-none" />
           </div>
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
