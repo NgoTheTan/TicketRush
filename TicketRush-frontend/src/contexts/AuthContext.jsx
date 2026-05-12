@@ -56,13 +56,11 @@ export function AuthProvider({ children }) {
   }, [clearAuth]);
 
   const isAuthenticated = !!token && !!user;
-  const isAdmin = user?.role === 'ADMIN';
-  const isCustomer = user?.role === 'CUSTOMER';
 
   return (
     <AuthContext.Provider value={{
       user, token, loading,
-      isAuthenticated, isAdmin, isCustomer,
+      isAuthenticated,
       login, register, logout,
     }}>
       {children}

@@ -17,12 +17,6 @@ import TicketDetailsPage from './pages/TicketDetailsPage.jsx';
 import VirtualWaitingRoomPage from './pages/VirtualWaitingRoomPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 
-// Admin pages
-import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx';
-import EventManagementPage from './pages/admin/EventManagementPage.jsx';
-import CreateEventPage from './pages/admin/CreateEventPage.jsx';
-import SeatLayoutConfigPage from './pages/admin/SeatLayoutConfigPage.jsx';
-import OrderManagementPage from './pages/admin/OrderManagementPage.jsx';
 
 function RequireAuth({ children }) {
   const { isAuthenticated } = useAuth();
@@ -31,14 +25,6 @@ function RequireAuth({ children }) {
     navigate('/login', { returnUrl: path });
     return null;
   }
-  return children;
-}
-
-function RequireAdmin({ children }) {
-  const { isAdmin, isAuthenticated } = useAuth();
-  const { navigate } = useRouter();
-  if (!isAuthenticated) { navigate('/login'); return null; }
-  if (!isAdmin) { navigate('/'); return null; }
   return children;
 }
 
@@ -52,12 +38,6 @@ function Router() {
   if (path === '/booking-success') return <RequireAuth><BookingSuccessPage /></RequireAuth>;
   if (path === '/my-tickets') return <RequireAuth><MyTicketsPage /></RequireAuth>;
   if (path === '/profile') return <RequireAuth><ProfilePage /></RequireAuth>;
-
-  // Admin routes
-  if (path === '/admin/dashboard') return <RequireAdmin><AdminDashboardPage /></RequireAdmin>;
-  if (path === '/admin/events') return <RequireAdmin><EventManagementPage /></RequireAdmin>;
-  if (path === '/admin/events/new') return <RequireAdmin><CreateEventPage /></RequireAdmin>;
-  if (path === '/admin/orders') return <RequireAdmin><OrderManagementPage /></RequireAdmin>;
 
   // Dynamic routes
   let m;
@@ -76,9 +56,6 @@ function Router() {
 
   m = matchRoute('/tickets/:id', path);
   if (m) return <RequireAuth><TicketDetailsPage ticketId={m.id} /></RequireAuth>;
-
-  m = matchRoute('/admin/events/:id/seats', path);
-  if (m) return <RequireAdmin><SeatLayoutConfigPage eventId={m.id} /></RequireAdmin>;
 
   // 404
   return (

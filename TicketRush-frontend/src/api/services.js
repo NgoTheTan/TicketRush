@@ -39,17 +39,6 @@ export const orderService = {
     const res = await api.get(`/api/v1/orders/${orderId}`);
     return res.data;
   },
-
-  // Admin
-  adminListOrders: async ({ search, status, eventId, page = 0, size = 20 } = {}) => {
-    const res = await api.get('/api/v1/admin/orders', { search, status, eventId, page, size });
-    return { data: res.data, meta: res.meta };
-  },
-
-  adminGetOrder: async (orderId) => {
-    const res = await api.get(`/api/v1/admin/orders/${orderId}`);
-    return res.data;
-  },
 };
 
 // src/api/ticketService.js
@@ -86,14 +75,3 @@ export const queueService = {
   },
 };
 
-// ── Sprint 4: Dashboard analytics service ─────────────────────────────
-export const dashboardService = {
-  /**
-   * GET /api/v1/admin/dashboard/{eventId}
-   * Full analytics: revenue, fill rate, age/gender, recent orders.
-   */
-  getDashboard: async (eventId) => {
-    const res = await api.get(`/api/v1/admin/dashboard/${eventId}`);
-    return res.data;
-  },
-};

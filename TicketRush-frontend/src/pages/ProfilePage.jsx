@@ -101,9 +101,8 @@ export default function ProfilePage() {
           <div>
             <p className="font-bold text-slate-900 text-lg">{profile?.fullName}</p>
             <p className="text-sm text-slate-500">{profile?.email}</p>
-            <span className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-semibold
-              ${profile?.role === 'ADMIN' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>
-              {profile?.role === 'ADMIN' ? 'Admin' : 'Khách hàng'}
+            <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-700">
+              Khách hàng
             </span>
           </div>
         </div>
@@ -133,8 +132,6 @@ export default function ProfilePage() {
                 className="w-full px-3 py-2.5 border border-slate-100 bg-slate-50 rounded-lg text-sm text-slate-400 cursor-not-allowed" />
               <p className="text-xs text-slate-400 mt-1">Email không thể thay đổi</p>
             </div>
-            {profile?.role === 'CUSTOMER' && (
-              <>
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Số điện thoại</label>
                   <input value={form.phone} onChange={e => set('phone', e.target.value)}
@@ -158,8 +155,7 @@ export default function ProfilePage() {
                     </select>
                   </div>
                 </div>
-              </>
-            )}
+
             <div className="pt-2 flex gap-3">
               <Button type="submit" loading={saving}>Lưu thay đổi</Button>
               <Button type="button" variant="secondary" onClick={() => navigate('/')}>Huỷ</Button>

@@ -19,11 +19,7 @@ export default function SignInPage() {
     try {
       const user = await login(form.email, form.password);
       showToast('Đăng nhập thành công!', 'success');
-      if (user.role === 'ADMIN') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate(params.returnUrl || '/');
-      }
+      navigate(params.returnUrl || '/');
     } catch (err) {
       setError(err.message || 'Đăng nhập thất bại');
     } finally {
