@@ -20,13 +20,13 @@ export default function AdminLayout({ children }) {
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Sidebar */}
-      <aside className="bg-slate-950 text-slate-400 w-64 flex-shrink-0 flex flex-col py-6 border-r border-slate-800">
+      <aside className="bg-sky-50 text-slate-600 w-64 flex-shrink-0 flex flex-col py-6 border-r border-sky-200 shadow-sm">
         <div className="px-6 mb-8">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-indigo-400 text-2xl" style={{fontVariationSettings:"'FILL' 1"}}>confirmation_number</span>
-            <span className="text-white font-bold text-lg tracking-tighter">TicketRush</span>
+            <span className="material-symbols-outlined text-sky-600 text-2xl" style={{fontVariationSettings:"'FILL' 1"}}>confirmation_number</span>
+            <span className="text-sky-700 font-bold text-lg tracking-tighter">TicketRush</span>
           </div>
-          <span className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1 block">Admin Panel</span>
+          <span className="text-xs text-sky-400 font-medium uppercase tracking-wider mt-1 block">Admin Panel</span>
         </div>
 
         <nav className="flex-1 px-3 space-y-1">
@@ -35,7 +35,7 @@ export default function AdminLayout({ children }) {
             return (
               <button key={item.to} onClick={() => navigate(item.to)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  active ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  active ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-500 hover:text-sky-700 hover:bg-sky-100'
                 }`}>
                 <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
                 {item.label}
@@ -44,10 +44,10 @@ export default function AdminLayout({ children }) {
           })}
         </nav>
 
-        <div className="px-4 pt-4 border-t border-slate-800">
-          <div className="text-xs text-slate-500 mb-2 px-2 truncate">{user?.email}</div>
+        <div className="px-4 pt-4 border-t border-sky-200">
+          <div className="text-xs text-sky-400 mb-2 px-2 truncate">{user?.email}</div>
           <button onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-500 hover:text-sky-700 hover:bg-sky-100 transition-colors">
             <span className="material-symbols-outlined text-[18px]">logout</span>
             Đăng xuất
           </button>

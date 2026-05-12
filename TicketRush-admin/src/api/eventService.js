@@ -41,6 +41,11 @@ const eventService = {
     return res.data;
   },
 
+  getSeatMap: async (eventId) => {
+    const res = await api.get(`/api/v1/admin/events/${eventId}/seat-map`);
+    return res.data;
+  },
+
   saveSeatZones: async (eventId, zones) => {
     const res = await api.post(`/api/v1/admin/events/${eventId}/seat-zones`, { zones });
     return res.data;

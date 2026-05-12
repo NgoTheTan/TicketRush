@@ -6,6 +6,7 @@ import com.example.TicketRush_backend.dto.event.EventResponse;
 import com.example.TicketRush_backend.dto.event.UpdateEventRequest;
 import com.example.TicketRush_backend.dto.order.OrderResponse;
 import com.example.TicketRush_backend.dto.seat.CreateSeatZonesRequest;
+import com.example.TicketRush_backend.dto.seat.SeatMapResponse;
 import com.example.TicketRush_backend.dto.seat.SeatZoneResponse;
 import com.example.TicketRush_backend.enums.EventStatus;
 import com.example.TicketRush_backend.enums.OrderStatus;
@@ -15,6 +16,7 @@ import com.example.TicketRush_backend.service.DashboardService;
 import com.example.TicketRush_backend.service.EventService;
 import com.example.TicketRush_backend.service.QueueService;
 import com.example.TicketRush_backend.service.OrderService;
+import com.example.TicketRush_backend.service.SeatService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,6 +40,7 @@ public class AdminController {
     private final OrderService orderService;
     private final DashboardService dashboardService;
     private final QueueService queueService;
+    private final SeatService seatService;
 
     // ── Events ─────────────────────────────────────────────────
 
@@ -81,6 +84,13 @@ public class AdminController {
     public ResponseEntity<ApiResponse<List<SeatZoneResponse>>> getSeatZones(
             @PathVariable Long eventId) {
         return ResponseEntity.ok(ApiResponse.ok(eventService.getSeatZones(eventId)));
+    }
+
+    @GetMapping("/events/{eventId}/seat-map")
+    public ResponseEntity<ApiResponse<SeatMapResponse>> getAdminSeatMap(
+            @PathVariable Long eventId) {
+        SeatMapResponse map = seatService.getSeatMap(eventId, null);
+        return ResponseEntity.ok(ApiResponse.ok(map));
     }
 
     @PostMapping("/events/{eventId}/seat-zones")

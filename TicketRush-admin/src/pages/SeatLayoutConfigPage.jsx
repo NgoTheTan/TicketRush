@@ -56,11 +56,11 @@ export default function SeatLayoutConfigPage({ eventId }) {
   const { navigate } = useRouter();
   const [event, setEvent] = useState(null);
   
-  // Zones: { id, name, price, colorCode }
+  // Zones: { id, name, price, currency, colorCode }
   const [zones, setZones] = useState([
-    { id: generateId(), name: 'Khu A', price: 500000, colorCode: ZONE_COLORS[0] }
+    { id: generateId(), name: 'Khu A', price: 500000, currency: 'VND', colorCode: ZONE_COLORS[0] }
   ]);
-  const [activeBrush, setActiveBrush] = useState(zones[0].id); // 'ERASE' or zone.id
+  const [activeZone, setActiveZone] = useState(zones[0].id);
   
   // Grid: 2D array [row][col] storing zoneId
   const [grid, setGrid] = useState(() => Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null)));
@@ -79,27 +79,28 @@ export default function SeatLayoutConfigPage({ eventId }) {
   useEffect(() => {
     Promise.all([
       eventService.get(eventId),
-      eventService.getSeatZones(eventId).catch(() => []),
-    ]).then(([ev, zns]) => {
+      eventService.getSeatMap(eventId).catch(() => null),
+    ]).then(([ev, mapRes]) => {
       setEvent(ev);
-      if (zns && zns.length > 0) {
+      if (mapRes && mapRes.zones && mapRes.zones.length > 0) {
         const loadedZones = [];
         const newGrid = Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null));
         
-        zns.forEach((z, i) => {
+        mapRes.zones.forEach((z, i) => {
           const zId = generateId();
           loadedZones.push({
             id: zId,
             name: z.name || z.zoneName,
             price: z.price,
+            currency: z.currency || 'VND',
             colorCode: z.colorCode || ZONE_COLORS[i % ZONE_COLORS.length]
           });
           
           if (z.rows) {
             z.rows.forEach(r => {
               let rIdx = 0;
-              for (let i = 0; i < r.rowLabel.length; i++) {
-                rIdx = rIdx * 26 + (r.rowLabel.charCodeAt(i) - 65 + 1);
+              for (let j = 0; j < r.rowLabel.length; j++) {
+                rIdx = rIdx * 26 + (r.rowLabel.charCodeAt(j) - 65 + 1);
               }
               rIdx -= 1; 
 
@@ -115,7 +116,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
         
         setZones(loadedZones);
         setGrid(newGrid);
-        setActiveBrush(loadedZones[0].id);
+        setActiveZone(loadedZones[0].id);
       }
     }).catch(err => showToast(err.message, 'error'))
       .finally(() => setLoading(false));
@@ -125,13 +126,13 @@ export default function SeatLayoutConfigPage({ eventId }) {
     setGrid(prev => {
       const next = [...prev];
       next[r] = [...next[r]];
-      next[r][c] = activeBrush === 'ERASE' ? null : activeBrush;
+      next[r][c] = (drawMode === 'ERASE_BRUSH' || drawMode === 'ERASE_POLYGON') ? null : activeZone;
       return next;
     });
-  }, [activeBrush]);
+  }, [activeZone, drawMode]);
 
   const onMouseDown = (r, c) => {
-    if (drawMode === 'BRUSH') {
+    if (drawMode === 'BRUSH' || drawMode === 'ERASE_BRUSH') {
       setIsMouseDown(true);
       handlePaint(r, c);
     } else {
@@ -141,7 +142,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
   };
 
   const onMouseEnter = (r, c) => {
-    if (drawMode === 'BRUSH') {
+    if (drawMode === 'BRUSH' || drawMode === 'ERASE_BRUSH') {
       if (isMouseDown) handlePaint(r, c);
     } else {
       // Polygon Mode: Update hover point
@@ -166,7 +167,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
           const pt = { row: r, col: c };
           // Check if point is inside polygon OR is exactly on the boundary
           if (isPointInPolygon(pt, polygonPoints) || boundaryPoints.some(p => p.row === r && p.col === c)) {
-            next[r][c] = activeBrush === 'ERASE' ? null : activeBrush;
+            next[r][c] = (drawMode === 'ERASE_POLYGON') ? null : activeZone;
           }
         }
       }
@@ -191,16 +192,19 @@ export default function SeatLayoutConfigPage({ eventId }) {
   const addZone = () => {
     const newId = generateId();
     setZones(z => [...z, {
-      id: newId, name: '', price: 0, colorCode: ZONE_COLORS[z.length % ZONE_COLORS.length]
+      id: newId, name: '', price: '', currency: 'VND', colorCode: ZONE_COLORS[z.length % ZONE_COLORS.length]
     }]);
-    setActiveBrush(newId);
+    setActiveZone(newId);
   };
 
   const updateZone = (id, k, v) => setZones(z => z.map(x => x.id === id ? { ...x, [k]: v } : x));
   
   const removeZone = (id) => {
-    setZones(z => z.filter(x => x.id !== id));
-    if (activeBrush === id) setActiveBrush('ERASE');
+    setZones(z => {
+      const newZones = z.filter(x => x.id !== id);
+      setActiveZone(prev => prev === id ? (newZones[0]?.id || '') : prev);
+      return newZones;
+    });
     setGrid(prev => prev.map(row => row.map(cell => cell === id ? null : cell)));
   };
 
@@ -211,7 +215,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
   };
 
   const handleSave = async () => {
-    const invalid = zones.find(z => !z.name || !z.price);
+    const invalid = zones.find(z => !z.name || z.price === '' || z.price === null);
     if (invalid) { showToast('Vui lòng nhập tên và giá cho tất cả các loại ghế', 'error'); return; }
 
     const payloadZones = zones.map(z => {
@@ -225,7 +229,8 @@ export default function SeatLayoutConfigPage({ eventId }) {
       }
       return {
         name: z.name,
-        price: z.price,
+        price: Number(z.price),
+        currency: z.currency || 'VND',
         colorCode: z.colorCode,
         totalRows: GRID_ROWS,
         seatsPerRow: GRID_COLS,
@@ -273,21 +278,31 @@ export default function SeatLayoutConfigPage({ eventId }) {
           )}
 
           {/* Draw Modes */}
-          <div className="bg-slate-100 p-1 rounded-xl flex gap-1">
+          <div className="bg-slate-100 p-1 rounded-xl flex gap-1 mb-6">
             <button 
               onClick={() => { setDrawMode('BRUSH'); cancelPolygon(); }}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${drawMode === 'BRUSH' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${drawMode === 'BRUSH' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
               <span className="material-symbols-outlined text-[18px]">brush</span> Cọ vẽ
             </button>
             <button 
               onClick={() => setDrawMode('POLYGON')}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${drawMode === 'POLYGON' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${drawMode === 'POLYGON' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
               <span className="material-symbols-outlined text-[18px]">pentagon</span> Đa giác
+            </button>
+            <button 
+              onClick={() => { setDrawMode('ERASE_BRUSH'); cancelPolygon(); }}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${drawMode === 'ERASE_BRUSH' ? 'bg-white shadow-sm text-red-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+              <span className="material-symbols-outlined text-[18px]">ink_eraser</span> Cục tẩy
+            </button>
+            <button 
+              onClick={() => setDrawMode('ERASE_POLYGON')}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${drawMode === 'ERASE_POLYGON' ? 'bg-white shadow-sm text-red-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+              <span className="material-symbols-outlined text-[18px]">format_shapes</span> Tẩy đa giác
             </button>
           </div>
 
           {/* Polygon actions */}
-          {drawMode === 'POLYGON' && polygonPoints.length > 0 && (
+          {(drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON') && polygonPoints.length > 0 && (
             <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
               <p className="text-sm font-medium text-indigo-800 mb-3 text-center">Đang vẽ đa giác: {polygonPoints.length} điểm</p>
               <div className="flex gap-2">
@@ -306,8 +321,8 @@ export default function SeatLayoutConfigPage({ eventId }) {
                 const count = grid.flat().filter(id => id === z.id).length;
                 return (
                   <div key={z.id} 
-                    className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${activeBrush === z.id ? 'border-indigo-500 bg-indigo-50/50' : 'border-transparent hover:bg-slate-50'}`}
-                    onClick={() => setActiveBrush(z.id)}>
+                    className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${activeZone === z.id ? 'border-indigo-500 bg-indigo-50/50' : 'border-transparent hover:bg-slate-50'}`}
+                    onClick={() => setActiveZone(z.id)}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <input type="color" value={z.colorCode} onChange={e => updateZone(z.id, 'colorCode', e.target.value)}
@@ -320,8 +335,12 @@ export default function SeatLayoutConfigPage({ eventId }) {
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-1">
                         <span className="text-slate-500">Giá:</span>
-                        <input type="number" value={z.price} onChange={e => updateZone(z.id, 'price', Number(e.target.value))}
+                        <input type="number" value={z.price === '' ? '' : z.price} onChange={e => updateZone(z.id, 'price', e.target.value === '' ? '' : Number(e.target.value))}
                           className="w-20 px-1 py-0.5 border border-slate-200 rounded bg-white" />
+                        <select value={z.currency || 'VND'} onChange={e => updateZone(z.id, 'currency', e.target.value)} className="w-16 px-1 py-0.5 border border-slate-200 rounded bg-white ml-1">
+                          <option value="VND">VND</option>
+                          <option value="USD">USD</option>
+                        </select>
                       </div>
                       <span className="font-semibold text-slate-600">{count} ghế</span>
                     </div>
@@ -334,13 +353,6 @@ export default function SeatLayoutConfigPage({ eventId }) {
               <span className="material-symbols-outlined text-[18px]">add</span> Thêm loại vé
             </button>
 
-            <div className="my-4 border-t border-slate-100" />
-
-            <div className={`p-3 rounded-lg border-2 transition-all cursor-pointer flex items-center gap-2 ${activeBrush === 'ERASE' ? 'border-red-500 bg-red-50' : 'border-transparent hover:bg-slate-50'}`}
-              onClick={() => setActiveBrush('ERASE')}>
-              <span className="material-symbols-outlined text-red-500">ink_eraser</span>
-              <span className="text-sm font-semibold text-red-600">Cục tẩy (Xóa ghế)</span>
-            </div>
           </div>
 
           {canEdit && (
@@ -371,12 +383,12 @@ export default function SeatLayoutConfigPage({ eventId }) {
           <div className="inline-block bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
             
             {/* SVG Overlay for Polygon Drawing */}
-            {drawMode === 'POLYGON' && (
+            {(drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON') && (
               <svg className="absolute pointer-events-none" style={{ left: 24, top: 24, width: GRID_COLS * 28, height: GRID_ROWS * 28, zIndex: 10 }}>
                 {polygonPoints.length > 0 && (
                   <polyline
                     points={polygonPoints.map(p => `${p.col * 28 + 12},${p.row * 28 + 12}`).join(' ')}
-                    fill="none" stroke="#6366f1" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+                    fill="none" stroke={drawMode === 'ERASE_POLYGON' ? '#ef4444' : '#6366f1'} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
                   />
                 )}
                 {polygonPoints.length > 0 && hoverPoint && (
@@ -385,11 +397,11 @@ export default function SeatLayoutConfigPage({ eventId }) {
                     y1={polygonPoints[polygonPoints.length - 1].row * 28 + 12}
                     x2={hoverPoint.col * 28 + 12} 
                     y2={hoverPoint.row * 28 + 12}
-                    stroke="#6366f1" strokeWidth="3" strokeDasharray="6,6" opacity="0.6" strokeLinecap="round"
+                    stroke={drawMode === 'ERASE_POLYGON' ? '#ef4444' : '#6366f1'} strokeWidth="3" strokeDasharray="6,6" opacity="0.6" strokeLinecap="round"
                   />
                 )}
                 {polygonPoints.map((p, i) => (
-                  <circle key={i} cx={p.col * 28 + 12} cy={p.row * 28 + 12} r="5" fill="#fff" stroke="#6366f1" strokeWidth="2" />
+                  <circle key={i} cx={p.col * 28 + 12} cy={p.row * 28 + 12} r="5" fill="#fff" stroke={drawMode === 'ERASE_POLYGON' ? '#ef4444' : '#6366f1'} strokeWidth="2" />
                 ))}
               </svg>
             )}
@@ -403,7 +415,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
                       <div key={`${r}-${c}`}
                         onMouseDown={() => canEdit && onMouseDown(r, c)}
                         onMouseEnter={() => canEdit && onMouseEnter(r, c)}
-                        className={`w-6 h-6 rounded-t-lg rounded-b-sm border-b-2 transition-transform active:scale-90 ${drawMode === 'POLYGON' ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400' : 'cursor-crosshair'} ${!cell ? 'bg-slate-100 border-slate-200 hover:bg-slate-200' : 'shadow-sm'}`}
+                        className={`w-6 h-6 rounded-t-lg rounded-b-sm border-b-2 transition-transform active:scale-90 ${(drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON') ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400' : 'cursor-crosshair'} ${!cell ? 'bg-slate-100 border-slate-200 hover:bg-slate-200' : 'shadow-sm'}`}
                         style={zone ? { backgroundColor: zone.colorCode, borderColor: 'rgba(0,0,0,0.2)' } : {}}
                       />
                     );
@@ -414,10 +426,10 @@ export default function SeatLayoutConfigPage({ eventId }) {
           </div>
           
           <p className="text-xs text-slate-400 mt-6 text-center">
-            {drawMode === 'BRUSH' ? (
-              <>Kéo chuột (Drag) để vẽ nhanh nhiều ghế. Chọn <strong>Cục tẩy</strong> để xóa.</>
+            {drawMode === 'BRUSH' || drawMode === 'ERASE_BRUSH' ? (
+              <>Kéo chuột (Drag) để vẽ hoặc xóa nhanh nhiều ghế.</>
             ) : (
-              <>Click để đánh dấu các đỉnh của đa giác. Bấm <strong>Hoàn thành</strong> để tô màu.</>
+              <>Click để đánh dấu các đỉnh của đa giác. Bấm <strong>Hoàn thành</strong> để thực hiện.</>
             )}
           </p>
         </div>
