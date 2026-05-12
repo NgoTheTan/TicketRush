@@ -1,6 +1,7 @@
 // src/pages/HomePage.jsx - with autocomplete + debounce
 import { useState, useEffect, useRef } from 'react';
 import Header from '../components/layout/Header.jsx';
+import Footer from '../components/layout/Footer.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
 import { Spinner, EmptyState, ErrorState, Badge, formatCurrency, eventStatusLabel, eventStatusVariant, formatDate } from '../components/ui/index.jsx';
@@ -189,6 +190,7 @@ export default function HomePage() {
           </>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
