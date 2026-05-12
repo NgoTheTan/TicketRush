@@ -93,6 +93,7 @@ public class SeatService {
                                             .map(s -> SeatMapResponse.SeatItem.builder()
                                                     .seatId(s.getId())
                                                     .seatNumber(s.getSeatNumber())
+                                                    .rowLabel(entry.getKey())
                                                     .status(s.getStatus())
                                                     .heldByMe(currentUserId != null
                                                             && s.getHeldBy() != null

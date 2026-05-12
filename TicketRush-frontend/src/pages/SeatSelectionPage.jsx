@@ -1,4 +1,3 @@
-// src/pages/SeatSelectionPage.jsx
 import { useState, useEffect, useCallback } from 'react';
 import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
@@ -6,6 +5,7 @@ import { useBooking } from '../contexts/BookingContext.jsx';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import { seatService } from '../api/services.js';
 import { Spinner, ErrorState, formatCurrency, showToast } from '../components/ui/index.jsx';
+import UnifiedSeatGrid from '../components/ui/UnifiedSeatGrid.jsx';
 
 // ── Countdown timer ───────────────────────────────────────────
 function Countdown({ expiresAt, onExpired }) {
@@ -31,24 +31,6 @@ function Countdown({ expiresAt, onExpired }) {
       <span className="material-symbols-outlined text-[16px]">timer</span>
       Hết hạn sau {String(m).padStart(2,'0')}:{String(s).padStart(2,'0')}
     </div>
-  );
-}
-
-// ── Seat button ───────────────────────────────────────────────
-function SeatButton({ seat, onClick, loading }) {
-  const { status, heldByMe, seatNumber, rowLabel } = seat;
-  let cls = 'w-6 h-6 rounded transition-all ';
-  if (status === 'AVAILABLE') cls += 'bg-white border border-slate-300 hover:bg-indigo-100 hover:border-indigo-400 cursor-pointer active:scale-90';
-  else if (heldByMe)          cls += 'bg-indigo-600 cursor-pointer hover:bg-indigo-700 active:scale-90 ring-2 ring-indigo-300';
-  else if (status === 'LOCKED') cls += 'bg-slate-300 cursor-not-allowed';
-  else if (status === 'SOLD')   cls += 'bg-red-400 cursor-not-allowed';
-  return (
-    <button disabled={status !== 'AVAILABLE' && !heldByMe} onClick={() => onClick?.(seat)}
-      title={`${rowLabel}${seatNumber} — ${status}`}
-      className={cls + (loading ? ' opacity-50' : '')}>
-      {heldByMe && <span className="material-symbols-outlined text-[12px] text-white">check</span>}
-      {status === 'SOLD' && <span className="material-symbols-outlined text-[12px] text-white">close</span>}
-    </button>
   );
 }
 
@@ -216,48 +198,12 @@ export default function SeatSelectionPage({ eventId }) {
 
             {!loading && seatMap && (
               <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
-                {/* Stage */}
-                <div className="mb-8 text-center">
-                  <div className="w-3/4 mx-auto h-3 bg-gradient-to-r from-transparent via-slate-300 to-transparent rounded-full mb-2" />
-                  <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold">Sân khấu</p>
-                </div>
-                {/* Legend */}
-                <div className="flex flex-wrap gap-4 mb-6 text-xs text-slate-500">
-                  {[
-                    { color: 'bg-white border border-slate-300', label: 'Có sẵn' },
-                    { color: 'bg-indigo-600',                    label: 'Đang chọn' },
-                    { color: 'bg-slate-300',                     label: 'Đã giữ' },
-                    { color: 'bg-red-400',                       label: 'Đã bán' },
-                  ].map(({ color, label }) => (
-                    <div key={label} className="flex items-center gap-1.5">
-                      <div className={`w-4 h-4 rounded ${color}`} />
-                      <span>{label}</span>
-                    </div>
-                  ))}
-                </div>
-                {/* Zones */}
-                <div className="space-y-8">
-                  {seatMap.zones?.map(zone => (
-                    <div key={zone.zoneId}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: zone.colorCode || '#6366f1' }} />
-                        <h3 className="font-semibold text-sm text-slate-700">{zone.zoneName}</h3>
-                        <span className="text-xs text-slate-400 ml-auto">{formatCurrency(zone.price)}</span>
-                      </div>
-                      {zone.rows?.map(row => (
-                        <div key={row.rowLabel} className="flex items-center gap-2 mb-1.5">
-                          <span className="text-xs text-slate-400 w-5 text-center font-mono">{row.rowLabel}</span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {row.seats?.map(seat => (
-                              <SeatButton key={seat.seatId} seat={seat}
-                                onClick={handleSeatClick} loading={actingSeatId === seat.seatId} />
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
+                <UnifiedSeatGrid
+                  seatMap={seatMap}
+                  onSeatClick={handleSeatClick}
+                  actingSeatId={actingSeatId}
+                  mode="user"
+                />
               </div>
             )}
           </div>

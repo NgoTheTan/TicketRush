@@ -83,13 +83,144 @@ export function ToastContainer() {
   );
 }
 
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export function showToast(message, type = 'info') {
   if (_setToast) {
     _setToast({ message, type });
     setTimeout(() => _setToast(null), 4000);
   }
+}
+
+// ── Confirm Dialog ────────────────────────────────────────────
+export function ConfirmDialog({ open, title, message, confirmLabel = 'Xác nhận', cancelLabel = 'Hủy bỏ', variant = 'danger', onConfirm, onCancel }) {
+  if (!open) return null;
+
+  const variantStyles = {
+    danger: {
+      icon: '🗑️',
+      iconBg: 'bg-red-100',
+      confirmBtn: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+    },
+    warning: {
+      icon: '⚠️',
+      iconBg: 'bg-amber-100',
+      confirmBtn: 'bg-amber-500 hover:bg-amber-600 focus:ring-amber-400',
+    },
+    info: {
+      icon: '📋',
+      iconBg: 'bg-indigo-100',
+      confirmBtn: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500',
+    },
+  };
+  const s = variantStyles[variant] || variantStyles.danger;
+
+  return (
+    <div
+      className="fixed inset-0 z-[9990] flex items-center justify-center p-4"
+      style={{ animation: 'fadeInBackdrop 0.18s ease' }}
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
+        onClick={onCancel}
+        style={{ animation: 'fadeInBackdrop 0.18s ease' }}
+      />
+
+      {/* Dialog */}
+      <div
+        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+        style={{ animation: 'slideUpDialog 0.22s cubic-bezier(0.34,1.56,0.64,1)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Top accent bar */}
+        <div className={`h-1 w-full ${variant === 'danger' ? 'bg-red-500' : variant === 'warning' ? 'bg-amber-400' : 'bg-indigo-500'}`} />
+
+        <div className="p-6">
+          {/* Icon + Title */}
+          <div className="flex items-start gap-4 mb-4">
+            <div className={`flex-shrink-0 w-12 h-12 rounded-xl ${s.iconBg} flex items-center justify-center text-2xl`}>
+              {s.icon}
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 leading-snug">{title}</h3>
+              {message && (
+                <p className="mt-1.5 text-sm text-slate-500 leading-relaxed">{message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 mt-6">
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300"
+            >
+              {cancelLabel}
+            </button>
+            <button
+              onClick={onConfirm}
+              className={`px-5 py-2 text-sm font-semibold text-white rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 ${s.confirmBtn}`}
+            >
+              {confirmLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes fadeInBackdrop {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes slideUpDialog {
+          from { opacity: 0; transform: translateY(24px) scale(0.96); }
+          to   { opacity: 1; transform: translateY(0)   scale(1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/**
+ * useConfirm – trả về [dialogElement, confirmFn]
+ * confirmFn(opts) trả về Promise<boolean>
+ */
+export function useConfirm() {
+  const [state, setState] = useState({ open: false });
+  const resolveRef = useRef(null);
+
+  const confirm = useCallback((opts = {}) => {
+    return new Promise((resolve) => {
+      resolveRef.current = resolve;
+      setState({ open: true, ...opts });
+    });
+  }, []);
+
+  const handleConfirm = () => {
+    setState(s => ({ ...s, open: false }));
+    resolveRef.current?.(true);
+  };
+
+  const handleCancel = () => {
+    setState(s => ({ ...s, open: false }));
+    resolveRef.current?.(false);
+  };
+
+  const dialog = (
+    <ConfirmDialog
+      open={state.open}
+      title={state.title}
+      message={state.message}
+      confirmLabel={state.confirmLabel}
+      cancelLabel={state.cancelLabel}
+      variant={state.variant}
+      onConfirm={handleConfirm}
+      onCancel={handleCancel}
+    />
+  );
+
+  return [dialog, confirm];
 }
 
 // ── Button ────────────────────────────────────────────────────
@@ -164,10 +295,10 @@ export function formatCurrency(amount) {
 
 export function formatDate(iso) {
   if (!iso) return '—';
-  return new Intl.DateTimeFormat('vi-VN', {
-    year: 'numeric', month: 'long', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  }).format(new Date(iso));
+  const d = new Date(iso);
+  const date = new Intl.DateTimeFormat('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' }).format(d);
+  const time = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(d);
+  return `${date}, ${time}`;
 }
 
 export function formatDateShort(iso) {

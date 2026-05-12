@@ -37,6 +37,7 @@ public class SeatMapResponse {
     public static class SeatItem {
         private Long seatId;
         private Integer seatNumber;
+        private String rowLabel;
         private SeatStatus status;
         // heldByMe: true nếu chính user đang giữ ghế này (phục vụ UI highlight)
         private boolean heldByMe;

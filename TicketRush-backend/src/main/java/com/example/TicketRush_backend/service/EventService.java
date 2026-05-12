@@ -9,6 +9,7 @@ import com.example.TicketRush_backend.dto.seat.CreateSeatZonesRequest;
 import com.example.TicketRush_backend.dto.seat.SeatZoneResponse;
 import com.example.TicketRush_backend.entity.*;
 import com.example.TicketRush_backend.enums.EventStatus;
+import com.example.TicketRush_backend.enums.OrderStatus;
 import com.example.TicketRush_backend.enums.SeatStatus;
 import com.example.TicketRush_backend.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class EventService {
     private final SeatZoneRepository seatZoneRepository;
     private final EventSeatRepository eventSeatRepository;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
 
     // ── Public / Customer ──────────────────────────────────────
 
@@ -118,6 +120,29 @@ public class EventService {
         validateTransition(event.getStatus(), targetStatus);
         event.setStatus(targetStatus);
         return EventResponse.basic(eventRepository.save(event));
+    }
+
+    @Transactional
+    public void deleteEvent(Long eventId) {
+        Event event = findOrThrow(eventId);
+
+        // Chỉ chặn xoá sự kiện đang mở bán (ON_SALE)
+        if (event.getStatus() == EventStatus.ON_SALE) {
+            throw new AppException(ErrorCode.EVENT_INVALID_STATUS_TRANSITION,
+                    Map.of("reason", "Không thể xoá sự kiện đang mở bán. Hãy hủy hoặc kết thúc sự kiện trước."));
+        }
+
+        // Kiểm tra không có đơn hàng PAID nào liên quan
+        boolean hasPaidOrders = orderRepository.existsByEventIdAndStatus(eventId, OrderStatus.PAID);
+        if (hasPaidOrders) {
+            throw new AppException(ErrorCode.EVENT_INVALID_STATUS_TRANSITION,
+                    Map.of("reason", "Không thể xoá sự kiện đã có đơn hàng thanh toán"));
+        }
+
+        // Xoá dữ liệu liên quan theo thứ tự
+        eventSeatRepository.deleteAll(eventSeatRepository.findByEventId(eventId));
+        seatZoneRepository.deleteByEventId(eventId);
+        eventRepository.delete(event);
     }
 
     // ── Seat Zone + Seat generation ────────────────────────────

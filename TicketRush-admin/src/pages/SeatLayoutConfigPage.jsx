@@ -86,6 +86,25 @@ export default function SeatLayoutConfigPage({ eventId }) {
         const loadedZones = [];
         const newGrid = Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null));
         
+        let maxR = 0, maxC = 0;
+        mapRes.zones.forEach(z => {
+          z.rows?.forEach(r => {
+            let rIdx = 0;
+            for (let j = 0; j < r.rowLabel.length; j++) {
+              rIdx = rIdx * 26 + (r.rowLabel.charCodeAt(j) - 65 + 1);
+            }
+            rIdx -= 1;
+            if (rIdx > maxR) maxR = rIdx;
+            r.seats?.forEach(s => {
+              const cIdx = s.seatNumber - 1;
+              if (cIdx > maxC) maxC = cIdx;
+            });
+          });
+        });
+
+        const rOffset = Math.max(0, Math.floor((GRID_ROWS - (maxR + 1)) / 2));
+        const cOffset = Math.max(0, Math.floor((GRID_COLS - (maxC + 1)) / 2));
+
         mapRes.zones.forEach((z, i) => {
           const zId = generateId();
           loadedZones.push({
@@ -105,9 +124,11 @@ export default function SeatLayoutConfigPage({ eventId }) {
               rIdx -= 1; 
 
               r.seats.forEach(s => {
-                const cIdx = s.seatNumber;
-                if (rIdx < GRID_ROWS && cIdx < GRID_COLS) {
-                  newGrid[rIdx][cIdx] = zId;
+                const cIdx = s.seatNumber - 1;
+                const finalR = rIdx + rOffset;
+                const finalC = cIdx + cOffset;
+                if (finalR >= 0 && finalR < GRID_ROWS && finalC >= 0 && finalC < GRID_COLS) {
+                  newGrid[finalR][finalC] = zId;
                 }
               });
             });
@@ -218,12 +239,28 @@ export default function SeatLayoutConfigPage({ eventId }) {
     const invalid = zones.find(z => !z.name || z.price === '' || z.price === null);
     if (invalid) { showToast('Vui lòng nhập tên và giá cho tất cả các loại ghế', 'error'); return; }
 
+    let minR = GRID_ROWS, maxR = -1;
+    let minC = GRID_COLS, maxC = -1;
+
+    for (let r = 0; r < GRID_ROWS; r++) {
+      for (let c = 0; c < GRID_COLS; c++) {
+        if (grid[r][c] !== null) {
+          if (r < minR) minR = r;
+          if (r > maxR) maxR = r;
+          if (c < minC) minC = c;
+          if (c > maxC) maxC = c;
+        }
+      }
+    }
+
     const payloadZones = zones.map(z => {
       const customSeats = [];
-      for (let r = 0; r < GRID_ROWS; r++) {
-        for (let c = 0; c < GRID_COLS; c++) {
-          if (grid[r][c] === z.id) {
-            customSeats.push({ row: r, col: c });
+      if (maxR >= 0) {
+        for (let r = minR; r <= maxR; r++) {
+          for (let c = minC; c <= maxC; c++) {
+            if (grid[r][c] === z.id) {
+              customSeats.push({ row: r - minR, col: c - minC + 1 });
+            }
           }
         }
       }
@@ -232,8 +269,8 @@ export default function SeatLayoutConfigPage({ eventId }) {
         price: Number(z.price),
         currency: z.currency || 'VND',
         colorCode: z.colorCode,
-        totalRows: GRID_ROWS,
-        seatsPerRow: GRID_COLS,
+        totalRows: maxR >= minR ? (maxR - minR + 1) : 0,
+        seatsPerRow: maxC >= minC ? (maxC - minC + 1) : 0,
         customSeats
       };
     }).filter(z => z.customSeats.length > 0);

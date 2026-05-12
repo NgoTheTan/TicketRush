@@ -64,6 +64,11 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(created));
     }
 
+    @GetMapping("/events/{eventId}")
+    public ResponseEntity<ApiResponse<EventResponse>> getEvent(@PathVariable Long eventId) {
+        return ResponseEntity.ok(ApiResponse.ok(eventService.getEventDetail(eventId)));
+    }
+
     @PatchMapping("/events/{eventId}")
     public ResponseEntity<ApiResponse<EventResponse>> updateEvent(
             @PathVariable Long eventId,
@@ -76,6 +81,12 @@ public class AdminController {
             @PathVariable Long eventId,
             @RequestParam EventStatus status) {
         return ResponseEntity.ok(ApiResponse.ok(eventService.changeStatus(eventId, status)));
+    }
+
+    @DeleteMapping("/events/{eventId}")
+    public ResponseEntity<ApiResponse<Void>> deleteEvent(@PathVariable Long eventId) {
+        eventService.deleteEvent(eventId);
+        return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     // ── Seat Zones ─────────────────────────────────────────────

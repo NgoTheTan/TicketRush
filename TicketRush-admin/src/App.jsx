@@ -8,6 +8,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 import EventManagementPage from './pages/EventManagementPage.jsx';
 import CreateEventPage from './pages/CreateEventPage.jsx';
 import SeatLayoutConfigPage from './pages/SeatLayoutConfigPage.jsx';
+import EventSeatViewPage from './pages/EventSeatViewPage.jsx';
 import OrderManagementPage from './pages/OrderManagementPage.jsx';
 
 function RequireAdmin({ children }) {
@@ -39,6 +40,9 @@ function Router() {
   let m;
   m = matchRoute('/admin/events/:id/seats', path);
   if (m) return <RequireAdmin><SeatLayoutConfigPage eventId={m.id} /></RequireAdmin>;
+
+  m = matchRoute('/admin/events/:id/view', path);
+  if (m) return <RequireAdmin><EventSeatViewPage eventId={m.id} /></RequireAdmin>;
 
   // 404
   return (

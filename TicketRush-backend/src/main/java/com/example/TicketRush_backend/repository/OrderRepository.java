@@ -15,6 +15,8 @@ import com.example.TicketRush_backend.enums.OrderStatus;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
+    boolean existsByEventIdAndStatus(Long eventId, OrderStatus status);
+
     Page<Order> findByUserId(Long userId, Pageable pageable);
 
     Optional<Order> findByIdAndUserId(Long id, Long userId);

@@ -20,6 +20,11 @@ const eventService = {
     return { data: res.data, meta: res.meta };
   },
 
+  adminGetEvent: async (eventId) => {
+    const res = await api.get(`/api/v1/admin/events/${eventId}`);
+    return res.data;
+  },
+
   adminCreate: async (payload) => {
     const res = await api.post('/api/v1/admin/events', payload);
     return res.data;
@@ -33,6 +38,10 @@ const eventService = {
   adminChangeStatus: async (eventId, status) => {
     const res = await api.patch(`/api/v1/admin/events/${eventId}/status?status=${status}`, {});
     return res.data;
+  },
+
+  adminDelete: async (eventId) => {
+    await api.delete(`/api/v1/admin/events/${eventId}`);
   },
 
   // Seat zones
