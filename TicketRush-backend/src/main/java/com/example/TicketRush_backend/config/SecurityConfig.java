@@ -72,6 +72,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/queue/*/join").hasRole("CUSTOMER")
                 .requestMatchers(HttpMethod.GET, "/api/v1/queue/position/*").authenticated()
 
+                // Static uploads (banner images, etc.) — public access
+                .requestMatchers("/uploads/**").permitAll()
+
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 
                 .anyRequest().authenticated()
@@ -94,6 +97,7 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);
+        source.registerCorsConfiguration("/uploads/**", config);
         return source;
     }
 

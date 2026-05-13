@@ -6,12 +6,15 @@ import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
 import { Spinner, EmptyState, ErrorState, Badge, formatCurrency, eventStatusLabel, eventStatusVariant, formatDate } from '../components/ui/index.jsx';
 
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
+
 function EventCard({ event, onClick }) {
   return (
     <div onClick={onClick} className="bg-white rounded-xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group">
       <div className="relative h-48 bg-slate-100 overflow-hidden">
         {event.imageUrl
-          ? <img src={event.imageUrl} alt={event.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          ? <img src={toFullUrl(event.imageUrl)} alt={event.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           : <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
               <span className="material-symbols-outlined text-6xl text-indigo-300">event</span>
             </div>}
@@ -139,7 +142,7 @@ export default function HomePage() {
                     >
                       <div className="w-12 h-12 bg-slate-200 rounded-lg overflow-hidden flex-shrink-0">
                         {sugg.imageUrl ? (
-                          <img src={sugg.imageUrl} alt={sugg.name} className="w-full h-full object-cover" />
+                          <img src={toFullUrl(sugg.imageUrl)} alt={sugg.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-indigo-100">
                             <span className="material-symbols-outlined text-indigo-400 text-xl">event</span>

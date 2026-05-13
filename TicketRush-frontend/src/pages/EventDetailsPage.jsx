@@ -7,6 +7,9 @@ import { useBooking } from '../contexts/BookingContext.jsx';
 import eventService from '../api/eventService.js';
 import { Spinner, ErrorState, Badge, formatCurrency, eventStatusLabel, eventStatusVariant, formatDate, showToast } from '../components/ui/index.jsx';
 
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
+
 export default function EventDetailsPage({ eventId }) {
   const { navigate } = useRouter();
   const { isAuthenticated } = useAuth();
@@ -48,7 +51,7 @@ export default function EventDetailsPage({ eventId }) {
       {/* Banner */}
       <div className="relative h-72 lg:h-96 bg-slate-800 overflow-hidden">
         {event.imageUrl
-          ? <img src={event.imageUrl} alt={event.name} className="w-full h-full object-cover opacity-80" />
+          ? <img src={toFullUrl(event.imageUrl)} alt={event.name} className="w-full h-full object-cover opacity-80" />
           : <div className="w-full h-full bg-gradient-to-br from-indigo-800 to-purple-900 flex items-center justify-center">
               <span className="material-symbols-outlined text-8xl text-indigo-300">event</span>
             </div>}
@@ -77,7 +80,15 @@ export default function EventDetailsPage({ eventId }) {
                 <span className="material-symbols-outlined text-indigo-500 text-[20px] mt-0.5">location_on</span>
                 <div>
                   <p className="text-xs text-slate-400 font-medium">Địa điểm</p>
-                  <p className="text-sm font-semibold text-slate-700">{event.venue}</p>
+                  {event.locationUrl ? (
+                    <a href={event.locationUrl} target="_blank" rel="noopener noreferrer"
+                      className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 transition-colors flex items-center gap-1">
+                      {event.venue}
+                      <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                    </a>
+                  ) : (
+                    <p className="text-sm font-semibold text-slate-700">{event.venue}</p>
+                  )}
                 </div>
               </div>
               {totalSeats > 0 && (

@@ -6,6 +6,9 @@ import eventService from '../api/eventService.js';
 import { dashboardService } from '../api/services.js';
 import { formatCurrency, formatDate, Spinner, EmptyState } from '../components/ui/index.jsx';
 
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
+
 function StatCard({ icon, label, value, sub, color = 'indigo' }) {
   const colors = {
     indigo: 'bg-indigo-50 text-indigo-600',
@@ -164,7 +167,7 @@ export default function AdminDashboardPage() {
                         >
                           <div className="w-10 h-10 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
                             {e.imageUrl ? (
-                              <img src={e.imageUrl} alt={e.name} className="w-full h-full object-cover" />
+                              <img src={toFullUrl(e.imageUrl)} alt={e.name} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-slate-400">
                                 <span className="material-symbols-outlined text-[18px]">event</span>
@@ -190,7 +193,7 @@ export default function AdminDashboardPage() {
           <div className="mb-8 rounded-2xl overflow-hidden relative shadow-sm border border-slate-100 bg-slate-900 group">
             <div className="absolute inset-0">
               {selectedEvent.imageUrl ? (
-                <img src={selectedEvent.imageUrl} alt={selectedEvent.name} className="w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity duration-500" />
+                <img src={toFullUrl(selectedEvent.imageUrl)} alt={selectedEvent.name} className="w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity duration-500" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-r from-indigo-900 to-purple-900 opacity-80" />
               )}
@@ -204,7 +207,14 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-4 text-indigo-100 text-sm">
                 <span className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px]">location_on</span>
-                  {selectedEvent.venue}
+                  {selectedEvent.locationUrl ? (
+                    <a href={selectedEvent.locationUrl} target="_blank" rel="noopener noreferrer"
+                      className="hover:text-white underline underline-offset-2 transition-colors">
+                      {selectedEvent.venue}
+                    </a>
+                  ) : (
+                    <span>{selectedEvent.venue}</span>
+                  )}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-[16px]">calendar_month</span>
@@ -227,13 +237,11 @@ export default function AdminDashboardPage() {
             {dashboard && s && (
               <>
                 {/* KPI Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                   <StatCard icon="payments" label="Tổng doanh thu" color="green"
                     value={formatCurrency(s.totalRevenue)} sub="Chỉ tính đơn đã thanh toán" />
                   <StatCard icon="chair" label="Tỷ lệ lấp đầy" color="amber"
                     value={`${s.fillRate.toFixed(1)}%`} sub={`${s.soldSeats}/${s.totalSeats} ghế`} />
-                  <StatCard icon="event" label="Sự kiện đang xem" color="indigo"
-                    value={dashboard.eventName.length > 20 ? dashboard.eventName.slice(0, 20) + '…' : dashboard.eventName} />
                   <StatCard icon="lock" label="Ghế đang giữ" color="red"
                     value={s.lockedSeats} sub="Sẽ release sau 10 phút" />
                 </div>

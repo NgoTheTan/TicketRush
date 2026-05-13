@@ -311,6 +311,7 @@ public class EventService {
         return EventResponse.builder()
                 .id(e.getId()).name(e.getName()).venue(e.getVenue())
                 .eventDate(e.getEventDate()).status(e.getStatus()).createdAt(e.getCreatedAt())
+                .imageUrl(e.getImageUrl()).locationUrl(e.getLocationUrl())
                 .totalSeats(sold + locked + avail).soldSeats(sold)
                 .lockedSeats(locked).availableSeats(avail)
                 .build();
