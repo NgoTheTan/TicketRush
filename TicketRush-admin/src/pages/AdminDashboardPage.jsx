@@ -1,5 +1,5 @@
 // src/pages/admin/AdminDashboardPage.jsx — Sprint 4: Real dashboard analytics
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
@@ -65,6 +65,9 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [dashLoading, setDashLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceTimer = useRef(null);
 
   // Load event list on mount
   useEffect(() => {
@@ -100,27 +103,117 @@ export default function AdminDashboardPage() {
     return () => clearInterval(id);
   }, [selectedEventId, loadDashboard]);
 
+  const handleSearchInput = (value) => {
+    setSearchInput(value);
+    if (!value.trim()) {
+      setShowSuggestions(false);
+      return;
+    }
+    setShowSuggestions(true);
+  };
+
+  const handleSelectSuggestion = (event) => {
+    setSelectedEventId(event.id);
+    setSearchInput(event.name);
+    setShowSuggestions(false);
+  };
+
   const s = dashboard?.summary;
+  const selectedEvent = events.find(e => e.id === selectedEventId);
+  const filteredEvents = events.filter(e => e.name.toLowerCase().includes(searchInput.toLowerCase()));
 
   return (
     <AdminLayout>
       <div className="p-8">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-black text-slate-900">Dashboard</h1>
             <p className="text-sm text-slate-500 mt-0.5">Tổng quan hoạt động hệ thống</p>
           </div>
-          {/* Event selector */}
+          {/* Search bar selector */}
           {events.length > 0 && (
-            <select value={selectedEventId || ''} onChange={e => setSelectedEventId(Number(e.target.value))}
-              className="px-4 py-2 border border-slate-200 rounded-lg text-sm bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              {events.map(e => (
-                <option key={e.id} value={e.id}>{e.name}</option>
-              ))}
-            </select>
+            <div className="relative w-full max-w-sm">
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2.5 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all shadow-sm">
+                <span className="material-symbols-outlined text-slate-400 text-[20px]">search</span>
+                <input
+                  value={searchInput}
+                  onChange={e => handleSearchInput(e.target.value)}
+                  onFocus={() => {
+                    if (!searchInput && selectedEvent) setSearchInput('');
+                    setShowSuggestions(true);
+                  }}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  placeholder={selectedEvent ? selectedEvent.name : "Tìm sự kiện..."}
+                  className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder-slate-400"
+                />
+              </div>
+              
+              {showSuggestions && (
+                <div className="absolute top-full right-0 mt-2 w-[400px] bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">
+                  <div className="max-h-80 overflow-y-auto py-1">
+                    {filteredEvents.length === 0 ? (
+                      <p className="text-sm text-slate-500 text-center py-4">Không tìm thấy sự kiện nào</p>
+                    ) : (
+                      filteredEvents.map((e) => (
+                        <button
+                          key={e.id}
+                          type="button"
+                          onClick={() => handleSelectSuggestion(e)}
+                          className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-left border-b border-slate-50 last:border-b-0 ${e.id === selectedEventId ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}`}
+                        >
+                          <div className="w-10 h-10 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
+                            {e.imageUrl ? (
+                              <img src={e.imageUrl} alt={e.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                <span className="material-symbols-outlined text-[18px]">event</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm truncate ${e.id === selectedEventId ? 'font-bold text-indigo-700' : 'font-medium text-slate-700'}`}>{e.name}</p>
+                            <p className="text-xs text-slate-500 truncate">{e.venue}</p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
+
+        {/* Selected Event Banner */}
+        {selectedEvent && (
+          <div className="mb-8 rounded-2xl overflow-hidden relative shadow-sm border border-slate-100 bg-slate-900 group">
+            <div className="absolute inset-0">
+              {selectedEvent.imageUrl ? (
+                <img src={selectedEvent.imageUrl} alt={selectedEvent.name} className="w-full h-full object-cover opacity-40 group-hover:opacity-50 transition-opacity duration-500" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-r from-indigo-900 to-purple-900 opacity-80" />
+              )}
+            </div>
+            <div className="relative px-8 py-10 flex flex-col justify-end min-h-[160px]">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider mb-3 w-fit">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Dashboard
+              </div>
+              <h2 className="text-3xl font-black text-white mb-2">{selectedEvent.name}</h2>
+              <div className="flex items-center gap-4 text-indigo-100 text-sm">
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px]">location_on</span>
+                  {selectedEvent.venue}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+                  {formatDate(selectedEvent.eventDate)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {loading ? <div className="flex justify-center py-20"><Spinner size="lg" /></div>
           : events.length === 0 ? (

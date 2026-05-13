@@ -1,11 +1,20 @@
 // src/contexts/RouterContext.jsx
 // Hash-based router — no external dependency needed
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useSyncExternalStore, useCallback } from 'react';
 
 const RouterContext = createContext(null);
 
-function parseHash() {
-  const hash = window.location.hash.replace('#', '') || '/';
+function subscribe(callback) {
+  window.addEventListener('hashchange', callback);
+  return () => window.removeEventListener('hashchange', callback);
+}
+
+function getSnapshot() {
+  return window.location.hash || '#/';
+}
+
+function parseHash(hashString) {
+  const hash = hashString.replace('#', '') || '/';
   const [path, search] = hash.split('?');
   const params = {};
   if (search) {
@@ -15,23 +24,18 @@ function parseHash() {
 }
 
 export function RouterProvider({ children }) {
-  const [{ path, params }, setRoute] = useState(parseHash);
-
-  useEffect(() => {
-    const handler = () => setRoute(parseHash());
-    window.addEventListener('hashchange', handler);
-    return () => window.removeEventListener('hashchange', handler);
-  }, []);
+  const hash = useSyncExternalStore(subscribe, getSnapshot);
+  const { path, params } = parseHash(hash);
 
   const navigate = useCallback((to, queryParams) => {
-    let hash = to;
+    let newHash = to.startsWith('#') ? to : `#${to}`;
     if (queryParams) {
       const qs = new URLSearchParams(
         Object.fromEntries(Object.entries(queryParams).filter(([, v]) => v != null))
       ).toString();
-      if (qs) hash += `?${qs}`;
+      if (qs) newHash += `?${qs}`;
     }
-    window.location.hash = hash;
+    window.location.hash = newHash;
   }, []);
 
   const goBack = useCallback(() => window.history.back(), []);

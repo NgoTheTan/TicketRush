@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import { RouterProvider, useRouter, matchRoute } from './contexts/RouterContext.jsx';
 import { ToastContainer } from './components/ui/index.jsx';
@@ -7,6 +8,7 @@ import SignInPage from './pages/SignInPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 import EventManagementPage from './pages/EventManagementPage.jsx';
 import CreateEventPage from './pages/CreateEventPage.jsx';
+import EditEventPage from './pages/EditEventPage.jsx';
 import SeatLayoutConfigPage from './pages/SeatLayoutConfigPage.jsx';
 import EventSeatViewPage from './pages/EventSeatViewPage.jsx';
 import OrderManagementPage from './pages/OrderManagementPage.jsx';
@@ -14,12 +16,17 @@ import OrderManagementPage from './pages/OrderManagementPage.jsx';
 function RequireAdmin({ children }) {
   const { isAdmin, isAuthenticated } = useAuth();
   const { navigate } = useRouter();
-  if (!isAuthenticated) { navigate('/login'); return null; }
-  if (!isAdmin) { 
-    // Nếu login rồi mà không phải admin, ép quay lại trang login báo lỗi
-    navigate('/login'); 
-    return null; 
-  }
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    } else if (!isAdmin) {
+      // Nếu login rồi mà không phải admin, ép quay lại trang login báo lỗi
+      navigate('/login');
+    }
+  }, [isAuthenticated, isAdmin, navigate]);
+
+  if (!isAuthenticated || !isAdmin) return null;
   return children;
 }
 
@@ -38,6 +45,9 @@ function Router() {
 
   // Dynamic routes
   let m;
+  m = matchRoute('/admin/events/:id/edit', path);
+  if (m) return <RequireAdmin><EditEventPage eventId={m.id} /></RequireAdmin>;
+
   m = matchRoute('/admin/events/:id/seats', path);
   if (m) return <RequireAdmin><SeatLayoutConfigPage eventId={m.id} /></RequireAdmin>;
 

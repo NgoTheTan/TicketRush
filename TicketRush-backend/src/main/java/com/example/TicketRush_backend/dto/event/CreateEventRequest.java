@@ -24,4 +24,7 @@ public class CreateEventRequest {
 
     @Size(max = 1000)
     private String imageUrl;
+
+    @Size(max = 1000)
+    private String locationUrl;
 }

@@ -30,7 +30,8 @@ public class StartupSchemaPatcher implements ApplicationContextInitializer<Confi
         try (Connection connection = DriverManager.getConnection(url, username, Objects.toString(password, ""));
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("ALTER TABLE events ADD COLUMN IF NOT EXISTS queue_active BOOLEAN NOT NULL DEFAULT FALSE");
-            log.info("Patched events.queue_active column before JPA validation");
+            statement.executeUpdate("ALTER TABLE events ADD COLUMN IF NOT EXISTS location_url VARCHAR(1000)");
+            log.info("Patched events missing columns before JPA validation");
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to patch missing queue_active column", ex);
         }

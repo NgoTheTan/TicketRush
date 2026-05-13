@@ -56,6 +56,23 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok(result.getContent(), ApiResponse.PageMeta.of(result)));
     }
 
+    @PostMapping("/upload")
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadImage(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            java.nio.file.Path uploadDir = java.nio.file.Paths.get("uploads");
+            if (!java.nio.file.Files.exists(uploadDir)) {
+                java.nio.file.Files.createDirectories(uploadDir);
+            }
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename().replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+            java.nio.file.Path filePath = uploadDir.resolve(fileName).toAbsolutePath();
+            file.transferTo(filePath.toFile());
+
+            return ResponseEntity.ok(ApiResponse.ok(Map.of("url", "/uploads/" + fileName)));
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi upload file: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/events")
     public ResponseEntity<ApiResponse<EventResponse>> createEvent(
             @Valid @RequestBody CreateEventRequest req) {

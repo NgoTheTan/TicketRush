@@ -18,6 +18,7 @@ public class EventResponse {
     private String venue;
     private Instant eventDate;
     private String imageUrl;
+    private String locationUrl;
     private EventStatus status;
     private Instant createdAt;
 
@@ -60,6 +61,7 @@ public class EventResponse {
                 .venue(e.getVenue())
                 .eventDate(e.getEventDate())
                 .imageUrl(e.getImageUrl())
+                .locationUrl(e.getLocationUrl())
                 .status(e.getStatus())
                 .createdAt(e.getCreatedAt())
                 .build();

@@ -166,10 +166,12 @@ export default function EventManagementPage() {
                     <td className="px-6 py-4 text-slate-600 text-xs">{e.soldSeats ?? 0}/{e.totalSeats ?? '—'}</td>
                     <td className="px-6 py-4 relative z-10" onClick={ev => ev.stopPropagation()}>
                         <div className="flex items-center gap-2">
-                          <button onClick={() => navigate(`/admin/events/${e.id}/seats`)}
-                            className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-100 text-slate-600 bg-white">
-                            Cấu hình ghế
-                          </button>
+                          {e.status !== 'ON_SALE' && e.status !== 'ENDED' && (
+                            <button onClick={() => navigate(`/admin/events/${e.id}/edit`)}
+                              className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-100 text-slate-600 bg-white">
+                              Chỉnh sửa
+                            </button>
+                          )}
                           {nextStatus(e.status) && (
                             <button onClick={() => handleStatusChange(e.id, nextStatus(e.status))}
                               disabled={actingId === e.id}

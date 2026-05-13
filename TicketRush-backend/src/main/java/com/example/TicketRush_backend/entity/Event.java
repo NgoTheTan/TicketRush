@@ -54,6 +54,9 @@ public class Event {
     @Column(name = "image_url", length = 1000)
     private String imageUrl;
 
+    @Column(name = "location_url", length = 1000)
+    private String locationUrl;
+
     // @Enumerated(EnumType.STRING)
     // @Column(nullable = false, length = 20)
     // @Builder.Default

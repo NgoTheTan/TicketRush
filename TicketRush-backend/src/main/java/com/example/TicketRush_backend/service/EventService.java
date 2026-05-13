@@ -94,6 +94,7 @@ public class EventService {
                 .venue(req.getVenue())
                 .eventDate(req.getEventDate())
                 .imageUrl(req.getImageUrl())
+                .locationUrl(req.getLocationUrl())
                 .status(EventStatus.UPCOMING)
                 .createdBy(admin)
                 .build();
@@ -110,6 +111,7 @@ public class EventService {
         if (req.getVenue() != null)       event.setVenue(req.getVenue());
         if (req.getEventDate() != null)   event.setEventDate(req.getEventDate());
         if (req.getImageUrl() != null)    event.setImageUrl(req.getImageUrl());
+        if (req.getLocationUrl() != null) event.setLocationUrl(req.getLocationUrl());
 
         return EventResponse.basic(eventRepository.save(event));
     }
@@ -277,6 +279,7 @@ public class EventService {
         return EventResponse.builder()
                 .id(e.getId()).name(e.getName()).venue(e.getVenue())
                 .eventDate(e.getEventDate()).imageUrl(e.getImageUrl())
+                .locationUrl(e.getLocationUrl())
                 .status(e.getStatus()).createdAt(e.getCreatedAt())
                 .totalSeats(total).availableSeats(available).soldSeats(sold)
                 .priceFrom(priceFrom)
@@ -295,6 +298,7 @@ public class EventService {
         return EventResponse.builder()
                 .id(e.getId()).name(e.getName()).description(e.getDescription())
                 .venue(e.getVenue()).eventDate(e.getEventDate()).imageUrl(e.getImageUrl())
+                .locationUrl(e.getLocationUrl())
                 .status(e.getStatus()).createdAt(e.getCreatedAt())
                 .zones(zones)
                 .build();

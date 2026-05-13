@@ -53,7 +53,7 @@ const getPolygonBoundary = (vs) => {
 };
 
 export default function SeatLayoutConfigPage({ eventId }) {
-  const { navigate } = useRouter();
+  const { navigate, goBack } = useRouter();
   const [event, setEvent] = useState(null);
   
   // Zones: { id, name, price, currency, colorCode }
@@ -300,7 +300,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
         {/* Left Sidebar - Settings */}
         <div className="w-full xl:w-80 flex-shrink-0 space-y-6">
           <div>
-            <button onClick={() => navigate('/admin/events')} className="text-sm text-indigo-600 flex items-center gap-1 mb-4 hover:text-indigo-700">
+            <button onClick={goBack} className="text-sm text-indigo-600 flex items-center gap-1 mb-4 hover:text-indigo-700">
               <span className="material-symbols-outlined text-[16px]">arrow_back</span> Quay lại
             </button>
             <h1 className="text-2xl font-black text-slate-900">Thiết kế sơ đồ</h1>

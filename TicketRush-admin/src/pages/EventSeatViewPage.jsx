@@ -170,8 +170,13 @@ export default function EventSeatViewPage({ eventId }) {
                     <h1 className="text-lg font-black text-slate-900">
                       {event?.name ?? `Sự kiện #${eventId}`}
                     </h1>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {event?.venue}{event?.eventDate ? ` · ${formatDate(event.eventDate)}` : ''}
+                    <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
+                      <span>{event?.venue}{event?.eventDate ? ` · ${formatDate(event.eventDate)}` : ''}</span>
+                      {event?.locationUrl && (
+                        <a href={event.locationUrl} target="_blank" rel="noreferrer" className="text-indigo-500 hover:text-indigo-700 hover:underline flex items-center gap-0.5">
+                          <span className="material-symbols-outlined text-[14px]">location_on</span> Bản đồ
+                        </a>
+                      )}
                     </p>
                   </div>
 
@@ -181,14 +186,16 @@ export default function EventSeatViewPage({ eventId }) {
                       <Badge label={eventStatusLabel(event.status)} variant={eventStatusVariant(event.status)} />
                     )}
 
-                    <button
-                      onClick={() => navigate(`/admin/events/${eventId}/seats`)}
-                      disabled={acting}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-slate-200 text-slate-700 bg-white rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">chair</span>
-                      Cấu hình ghế
-                    </button>
+                    {event?.status !== 'ON_SALE' && event?.status !== 'ENDED' && (
+                      <button
+                        onClick={() => navigate(`/admin/events/${eventId}/edit`)}
+                        disabled={acting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-slate-200 text-slate-700 bg-white rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                        Chỉnh sửa
+                      </button>
+                    )}
 
                     {/* Nút chuyển trạng thái tiếp theo */}
                     {nextStatus && (
