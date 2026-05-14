@@ -5,6 +5,9 @@ import { useRouter } from '../contexts/RouterContext.jsx';
 import { ticketService } from '../api/services.js';
 import { Spinner, EmptyState, ErrorState, Badge, formatDate, formatCurrency } from '../components/ui/index.jsx';
 
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
+
 export default function MyTicketsPage() {
   const { navigate } = useRouter();
   const [tickets, setTickets] = useState([]);
@@ -57,7 +60,7 @@ export default function MyTicketsPage() {
                 {/* Event image */}
                 <div className="w-24 h-24 flex-shrink-0 bg-slate-100 overflow-hidden m-4 rounded-lg">
                   {ticket.event?.imageUrl
-                    ? <img src={ticket.event.imageUrl} alt={ticket.event.name} className="w-full h-full object-cover" />
+                    ? <img src={toFullUrl(ticket.event.imageUrl)} alt={ticket.event.name} className="w-full h-full object-cover" />
                     : <div className="w-full h-full flex items-center justify-center">
                         <span className="material-symbols-outlined text-3xl text-slate-300">event</span>
                       </div>}

@@ -25,4 +25,6 @@ public interface SeatHoldRepository extends JpaRepository<SeatHold, Long> {
             HoldStatus status,
             Instant now
     );
+
+    List<SeatHold> findByEventId(Long eventId);
 }

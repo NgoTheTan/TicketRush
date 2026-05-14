@@ -10,6 +10,7 @@ import {
   showToast, useConfirm,
 } from '../components/ui/index.jsx';
 import UnifiedSeatGrid from '../components/ui/UnifiedSeatGrid.jsx';
+import { useWebSocket } from '../hooks/useWebSocket.js';
 
 // ── Status transition config ──────────────────────────────────
 const NEXT_STATUS = { UPCOMING: 'ON_SALE', ON_SALE: 'ENDED' };
@@ -34,6 +35,20 @@ const STATUS_ACTION_LABELS = {
   },
 };
 
+// ── WS Status Indicator ───────────────────────────────────────
+function WsIndicator({ connected }) {
+  return (
+    <div
+      className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full
+        ${connected ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-100'}`}
+      title={connected ? 'Cập nhật ghế realtime đang bật' : 'Không có kết nối realtime'}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+      {connected ? 'Live' : 'Offline'}
+    </div>
+  );
+}
+
 // ── Zone stat card ────────────────────────────────────────────
 function ZoneStatCard({ zone }) {
   const total   = (zone.availableCount ?? 0) + (zone.lockedCount ?? 0) + (zone.soldCount ?? 0);
@@ -49,7 +64,7 @@ function ZoneStatCard({ zone }) {
       <div className="grid grid-cols-3 gap-2 text-center mb-3">
         {[
           { label: 'Có sẵn',   value: zone.availableCount ?? 0, color: 'text-slate-700', bg: 'bg-slate-50' },
-          { label: 'Đang giữ', value: zone.lockedCount   ?? 0, color: 'text-slate-700', bg: 'bg-slate-100' },
+          { label: 'Đang giữ', value: zone.lockedCount   ?? 0, color: 'text-amber-700',  bg: 'bg-amber-50' },
           { label: 'Đã bán',   value: zone.soldCount     ?? 0, color: 'text-rose-700',  bg: 'bg-rose-50'  },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={`${bg} rounded-lg py-2`}>
@@ -69,12 +84,13 @@ function ZoneStatCard({ zone }) {
 // ── Main ──────────────────────────────────────────────────────
 export default function EventSeatViewPage({ eventId }) {
   const { navigate } = useRouter();
-  const [seatMap, setSeatMap]   = useState(null);
-  const [event, setEvent]       = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(null);
-  const [acting, setActing]     = useState(false);
-  const [confirmDialog, confirm] = useConfirm();
+  const [seatMap, setSeatMap]       = useState(null);
+  const [event, setEvent]           = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
+  const [acting, setActing]         = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [confirmDialog, confirm]    = useConfirm();
 
   const load = useCallback(async () => {
     if (!eventId) return;
@@ -95,6 +111,36 @@ export default function EventSeatViewPage({ eventId }) {
   }, [eventId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // ── WebSocket: cập nhật ghế real-time ─────────────────────
+  const handleWsMessage = useCallback((msg) => {
+    if (!msg.seatId || !msg.status) return;
+
+    setSeatMap(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        zones: prev.zones.map(zone => ({
+          ...zone,
+          rows: zone.rows.map(row => ({
+            ...row,
+            seats: row.seats.map(seat =>
+              seat.seatId === msg.seatId
+                ? { ...seat, status: msg.status }
+                : seat
+            ),
+          })),
+        })),
+      };
+    });
+  }, []);
+
+  useWebSocket(
+    eventId ? `/topic/admin/seats/${eventId}` : null,
+    handleWsMessage,
+    !!eventId,
+    useCallback(() => setWsConnected(true), [])
+  );
 
   // ── Status change ──────────────────────────────────────────
   const handleStatusChange = async (newStatus) => {
@@ -167,9 +213,12 @@ export default function EventSeatViewPage({ eventId }) {
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
                   <div className="flex-1 min-w-0">
-                    <h1 className="text-lg font-black text-slate-900">
-                      {event?.name ?? `Sự kiện #${eventId}`}
-                    </h1>
+                    <div className="flex items-center gap-3">
+                      <h1 className="text-lg font-black text-slate-900">
+                        {event?.name ?? `Sự kiện #${eventId}`}
+                      </h1>
+                      <WsIndicator connected={wsConnected} />
+                    </div>
                     <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
                       <span>{event?.venue}{event?.eventDate ? ` · ${formatDate(event.eventDate)}` : ''}</span>
                       {event?.locationUrl && (
@@ -186,7 +235,7 @@ export default function EventSeatViewPage({ eventId }) {
                       <Badge label={eventStatusLabel(event.status)} variant={eventStatusVariant(event.status)} />
                     )}
 
-                    {event?.status !== 'ON_SALE' && event?.status !== 'ENDED' && (
+                    {event?.status !== 'ON_SALE' && event?.status !== 'ENDED' && event?.status !== 'CANCELLED' && (
                       <button
                         onClick={() => navigate(`/admin/events/${eventId}/edit`)}
                         disabled={acting}
@@ -238,9 +287,9 @@ export default function EventSeatViewPage({ eventId }) {
                 {/* Summary bar */}
                 <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100">
                   {[
-                    { label: 'Tổng ghế',    value: totalSeats,    color: 'text-slate-800' },
-                    { label: 'Đã bán',       value: totals.sold,   color: 'text-rose-600'  },
-                    { label: 'Đang giữ chỗ', value: totals.locked, color: 'text-slate-600' },
+                    { label: 'Tổng ghế',     value: totalSeats,    color: 'text-slate-800' },
+                    { label: 'Đã bán',        value: totals.sold,   color: 'text-rose-600'  },
+                    { label: 'Đang giữ chỗ', value: totals.locked, color: 'text-amber-600' },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="py-3 text-center">
                       <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -271,7 +320,7 @@ export default function EventSeatViewPage({ eventId }) {
                 <div className="space-y-2">
                   {[
                     { label: 'Có sẵn',       value: totals.available, color: 'bg-indigo-300' },
-                    { label: 'Đang giữ chỗ',  value: totals.locked,    color: 'bg-slate-700' },
+                    { label: 'Đang giữ chỗ', value: totals.locked,    color: 'bg-amber-400' },
                     { label: 'Đã bán',        value: totals.sold,      color: 'bg-rose-500'  },
                   ].map(({ label, value, color }) => {
                     const pct = totalSeats > 0 ? Math.round((value / totalSeats) * 100) : 0;

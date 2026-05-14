@@ -32,6 +32,10 @@ public class EventService {
     private final EventSeatRepository eventSeatRepository;
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final SeatHoldRepository seatHoldRepository;
+    private final QueueSessionRepository queueSessionRepository;
+    private final TicketRepository ticketRepository;
+    private final SeatBroadcastService seatBroadcastService;
 
     // ── Public / Customer ──────────────────────────────────────
 
@@ -99,7 +103,9 @@ public class EventService {
                 .createdBy(admin)
                 .build();
 
-        return EventResponse.basic(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        seatBroadcastService.broadcastEventListUpdate();
+        return EventResponse.basic(saved);
     }
 
     @Transactional
@@ -113,7 +119,9 @@ public class EventService {
         if (req.getImageUrl() != null)    event.setImageUrl(req.getImageUrl());
         if (req.getLocationUrl() != null) event.setLocationUrl(req.getLocationUrl());
 
-        return EventResponse.basic(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        seatBroadcastService.broadcastEventListUpdate();
+        return EventResponse.basic(saved);
     }
 
     @Transactional
@@ -121,7 +129,9 @@ public class EventService {
         Event event = findOrThrow(eventId);
         validateTransition(event.getStatus(), targetStatus);
         event.setStatus(targetStatus);
-        return EventResponse.basic(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        seatBroadcastService.broadcastEventListUpdate();
+        return EventResponse.basic(saved);
     }
 
     @Transactional
@@ -141,7 +151,11 @@ public class EventService {
                     Map.of("reason", "Không thể xoá sự kiện đã có đơn hàng thanh toán"));
         }
 
-        // Xoá dữ liệu liên quan theo thứ tự
+        // Xoá dữ liệu liên quan theo thứ tự đảm bảo toàn vẹn khóa ngoại
+        queueSessionRepository.deleteAll(queueSessionRepository.findByEventId(eventId));
+        ticketRepository.deleteAll(ticketRepository.findByEventId(eventId));
+        orderRepository.deleteAll(orderRepository.findByEventId(eventId));
+        seatHoldRepository.deleteAll(seatHoldRepository.findByEventId(eventId));
         eventSeatRepository.deleteAll(eventSeatRepository.findByEventId(eventId));
         seatZoneRepository.deleteByEventId(eventId);
         eventRepository.delete(event);
@@ -288,11 +302,14 @@ public class EventService {
 
     private EventResponse toDetailResponse(Event e) {
         List<EventResponse.ZoneSummary> zones = seatZoneRepository.findByEventId(e.getId()).stream()
-                .map(z -> EventResponse.ZoneSummary.from(z,
-                        eventSeatRepository.countByEventIdAndZoneIdAndStatus(
-                                e.getId(), z.getId(), SeatStatus.AVAILABLE),
-                        eventSeatRepository.countByEventIdAndZoneIdAndStatus(
-                                e.getId(), z.getId(), SeatStatus.SOLD)))
+                .map(z -> {
+                    long total     = eventSeatRepository.countByEventIdAndZoneId(e.getId(), z.getId());
+                    long available = eventSeatRepository.countByEventIdAndZoneIdAndStatus(
+                            e.getId(), z.getId(), SeatStatus.AVAILABLE);
+                    long sold      = eventSeatRepository.countByEventIdAndZoneIdAndStatus(
+                            e.getId(), z.getId(), SeatStatus.SOLD);
+                    return EventResponse.ZoneSummary.from(z, total, available, sold);
+                })
                 .toList();
 
         return EventResponse.builder()

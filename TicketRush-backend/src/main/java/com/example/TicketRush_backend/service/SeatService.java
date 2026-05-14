@@ -27,6 +27,11 @@ import com.example.TicketRush_backend.entity.SeatZone;
 import com.example.TicketRush_backend.entity.User;
 import com.example.TicketRush_backend.enums.EventStatus;
 import com.example.TicketRush_backend.enums.HoldStatus;
+import com.example.TicketRush_backend.dto.ws.DashboardUpdateMessage;
+import com.example.TicketRush_backend.enums.OrderStatus;
+import com.example.TicketRush_backend.repository.OrderRepository;
+import java.math.RoundingMode;
+
 import com.example.TicketRush_backend.enums.SeatStatus;
 import com.example.TicketRush_backend.repository.EventRepository;
 import com.example.TicketRush_backend.repository.EventSeatRepository;
@@ -47,6 +52,7 @@ public class SeatService {
     private final SeatHoldRepository seatHoldRepository;
     private final SeatHoldItemRepository seatHoldItemRepository;
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
     private final SeatBroadcastService seatBroadcastService;
 
     @Value("${app.seat.hold-duration-minutes:10}")
@@ -157,8 +163,8 @@ public class SeatService {
                     Map.of("seatId", seatId));
         }
 
-        // 4. Kiểm tra giới hạn 2 ghế
-        int currentHeldCount = eventSeatRepository.countLockedByUserInEvent(eventId, userId);
+        // 4. Kiểm tra giới hạn 2 ghế (bao gồm cả ghế đang giữ và ghế đã mua trong sự kiện này)
+        int currentHeldCount = eventSeatRepository.countHeldOrSoldByUserInEvent(eventId, userId);
         if (currentHeldCount >= MAX_SEATS_PER_HOLD) {
             throw new AppException(ErrorCode.SEAT_HOLD_LIMIT_EXCEEDED,
                     Map.of("currentHeldCount", currentHeldCount, "maxAllowed", MAX_SEATS_PER_HOLD));
@@ -206,6 +212,7 @@ public class SeatService {
 
         // Broadcast SEAT_LOCKED sau khi DB commit — best effort
         seatBroadcastService.broadcastSeatLocked(seat.getEvent().getId(), seatId);
+        broadcastDashboardStats(eventId);
 
         // Build response từ DB mới nhất, không dùng hold.getItems() stale
         return buildHoldResponse(hold, seat, price);
@@ -269,6 +276,7 @@ public class SeatService {
 
         // Broadcast SEAT_AVAILABLE sau khi DB commit — best effort
         seatBroadcastService.broadcastSeatAvailable(seat.getEvent().getId(), seatId);
+        broadcastDashboardStats(eventId);
 
         // Build response từ DB mới nhất
         return buildReleaseResponse(hold);
@@ -377,4 +385,33 @@ public class SeatService {
                 .totalAmount(total)
                 .build();
         }
+
+    private void broadcastDashboardStats(Long eventId) {
+        try {
+            long sold   = eventSeatRepository.countByEventIdAndStatus(eventId, SeatStatus.SOLD);
+            long locked = eventSeatRepository.countByEventIdAndStatus(eventId, SeatStatus.LOCKED);
+            long avail  = eventSeatRepository.countByEventIdAndStatus(eventId, SeatStatus.AVAILABLE);
+            long total  = sold + locked + avail;
+            double rate = total == 0 ? 0.0 : BigDecimal.valueOf((double) sold / total * 100)
+                    .setScale(2, RoundingMode.HALF_UP)
+                    .doubleValue();
+
+            BigDecimal revenue = orderRepository.sumRevenueByEventId(eventId, OrderStatus.PAID);
+
+            seatBroadcastService.broadcastDashboardUpdate(
+                    DashboardUpdateMessage.builder()
+                            .eventId(eventId)
+                            .soldSeats(sold)
+                            .lockedSeats(locked)
+                            .availableSeats(avail)
+                            .totalSeats(total)
+                            .fillRate(rate)
+                            .totalRevenue(revenue)
+                            .pendingOrders(0L)
+                            .build()
+            );
+        } catch (Exception e) {
+            // log warn or ignore
+        }
+    }
 }

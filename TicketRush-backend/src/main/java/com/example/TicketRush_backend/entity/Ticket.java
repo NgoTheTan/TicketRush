@@ -32,8 +32,7 @@ import lombok.Setter;
 @Table(name = "tickets",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uq_ticket_code",       columnNames = "ticket_code"),
-                @UniqueConstraint(name = "uq_ticket_order_item", columnNames = "order_item_id"),
-                @UniqueConstraint(name = "uq_ticket_seat",       columnNames = "seat_id")
+                @UniqueConstraint(name = "uq_ticket_order_item", columnNames = "order_item_id")
         })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Ticket {

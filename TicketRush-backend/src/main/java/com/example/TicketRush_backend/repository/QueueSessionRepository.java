@@ -38,4 +38,6 @@ public interface QueueSessionRepository extends JpaRepository<QueueSession, Long
     /** Kiểm tra user có đang WAITING hoặc ADMITTED trong event không */
     boolean existsByUserIdAndEventIdAndStatusIn(
             Long userId, Long eventId, List<QueueStatus> statuses);
+
+    List<QueueSession> findByEventId(Long eventId);
 }

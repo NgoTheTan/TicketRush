@@ -50,6 +50,14 @@ export const orderService = {
     const res = await api.get(`/api/v1/admin/orders/${orderId}`);
     return res.data;
   },
+
+  /**
+   * Admin hủy đơn hàng PENDING — ghế sẽ được trả lại.
+   */
+  adminCancelOrder: async (orderId) => {
+    const res = await api.patch(`/api/v1/admin/orders/${orderId}/status?status=CANCELLED`);
+    return res.data;
+  },
 };
 
 // src/api/ticketService.js

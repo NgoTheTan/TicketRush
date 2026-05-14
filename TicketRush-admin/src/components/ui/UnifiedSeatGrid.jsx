@@ -68,12 +68,6 @@ export default function UnifiedSeatGrid({ seatMap, onSeatClick, actingSeatId, mo
           <div className="w-4 h-4 rounded bg-slate-800 border border-slate-900" />
           <span>Đang giữ chỗ</span>
         </div>
-        {mode === 'user' && (
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-indigo-600" style={{ boxShadow: '0 0 0 2px #a5b4fc' }} />
-            <span>Đang chọn (của bạn)</span>
-          </div>
-        )}
       </div>
 
       {/* Stage */}
@@ -139,7 +133,11 @@ function SeatCell({ seat, zone, mode, acting, onClick }) {
   let tooltip = '';
   let interactive = false;
 
-  if (mode === 'user' && heldByMe) {
+  if (status === 'SOLD') {
+    style = { backgroundColor: '#cbd5e1', borderColor: '#94a3b8' };
+    extraCls = 'cursor-not-allowed opacity-70';
+    tooltip = 'Đã bán';
+  } else if (mode === 'user' && heldByMe) {
     style = { backgroundColor: '#4f46e5', borderColor: '#4338ca', boxShadow: '0 0 0 2px #a5b4fc' };
     extraCls = 'cursor-pointer active:scale-90';
     tooltip = 'Đang chọn (của bạn)';
@@ -155,10 +153,6 @@ function SeatCell({ seat, zone, mode, acting, onClick }) {
     style = { backgroundColor: '#1e293b', borderColor: '#0f172a' };
     extraCls = 'cursor-not-allowed opacity-80';
     tooltip = 'Đang giữ chỗ';
-  } else if (status === 'SOLD') {
-    style = { backgroundColor: '#cbd5e1', borderColor: '#94a3b8' };
-    extraCls = 'cursor-not-allowed opacity-70';
-    tooltip = 'Đã bán';
   }
 
   return (

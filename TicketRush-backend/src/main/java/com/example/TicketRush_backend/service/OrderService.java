@@ -1,6 +1,7 @@
 package com.example.TicketRush_backend.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -17,6 +18,8 @@ import com.example.TicketRush_backend.common.AppException;
 import com.example.TicketRush_backend.common.ErrorCode;
 import com.example.TicketRush_backend.dto.checkout.CheckoutResponse;
 import com.example.TicketRush_backend.dto.order.OrderResponse;
+import com.example.TicketRush_backend.dto.ws.DashboardUpdateMessage;
+import com.example.TicketRush_backend.dto.ws.OrderUpdateMessage;
 import com.example.TicketRush_backend.entity.CustomerProfile;
 import com.example.TicketRush_backend.entity.EventSeat;
 import com.example.TicketRush_backend.entity.Order;
@@ -94,7 +97,14 @@ public class OrderService {
         order.setItems(items);
         order = orderRepository.save(order);
 
-        return buildOrderResponse(order);
+        OrderResponse response = buildOrderResponse(order);
+
+        // Broadcast tới admin: đơn hàng mới PENDING
+        broadcastOrderUpdate("ORDER_CREATED", order);
+        // Broadcast dashboard stats update
+        broadcastDashboardStats(order.getEvent().getId());
+
+        return response;
     }
 
     // ── Customer: Confirm Checkout ─────────────────────────────
@@ -176,6 +186,11 @@ public class OrderService {
             seatBroadcastService.broadcastSeatSold(eventId, oi.getSeat().getId());
         }
 
+        // Broadcast ORDER_PAID tới admin
+        broadcastOrderUpdate("ORDER_PAID", order);
+        // Broadcast dashboard stats update
+        broadcastDashboardStats(eventId);
+
         return CheckoutResponse.builder()
                 .order(CheckoutResponse.OrderDetail.builder()
                         .orderId(order.getId())
@@ -192,6 +207,99 @@ public class OrderService {
                         .build())
                 .tickets(ticketDetails)
                 .build();
+    }
+
+    // ── Customer: Cancel Order ─────────────────────────────────
+
+    /**
+     * Người dùng hủy đơn hàng (nhấn "Quay lại" không thanh toán).
+     * Flow:
+     *   1. Tìm order thuộc user, status PENDING
+     *   2. Order → CANCELLED
+     *   3. Hold → RELEASED
+     *   4. Các ghế LOCKED → AVAILABLE
+     *   5. Broadcast WS cho admin và user
+     */
+    @Transactional
+    public void cancelOrder(Long orderId, Long userId) {
+        Order order = orderRepository.findByIdAndUserId(orderId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new AppException(ErrorCode.ORDER_ALREADY_PAID,
+                    Map.of("currentStatus", order.getStatus()));
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+
+        // Release hold
+        SeatHold hold = order.getHold();
+        if (hold != null && hold.getStatus() == HoldStatus.ACTIVE) {
+            hold.setStatus(HoldStatus.RELEASED);
+            hold.setReleasedAt(Instant.now());
+            seatHoldRepository.save(hold);
+
+            // Release từng ghế
+            Long eventId = order.getEvent().getId();
+            for (SeatHoldItem holdItem : hold.getItems()) {
+                EventSeat seat = holdItem.getSeat();
+                if (seat.getStatus() == SeatStatus.LOCKED) {
+                    seat.setStatus(SeatStatus.AVAILABLE);
+                    seat.setHeldBy(null);
+                    seat.setHeldUntil(null);
+                    eventSeatRepository.save(seat);
+                    seatBroadcastService.broadcastSeatAvailable(eventId, seat.getId());
+                }
+            }
+
+            // Broadcast ORDER_CANCELLED tới admin
+            broadcastOrderUpdate("ORDER_CANCELLED", order);
+            // Broadcast dashboard stats
+            broadcastDashboardStats(eventId);
+        }
+    }
+
+    // ── Admin: Cancel or update order status ──────────────────
+
+    /**
+     * Admin có thể cập nhật trạng thái đơn hàng (ví dụ: hủy thủ công).
+     */
+    @Transactional
+    public OrderResponse adminUpdateOrderStatus(Long orderId, OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        OrderStatus oldStatus = order.getStatus();
+        order.setStatus(newStatus);
+        orderRepository.save(order);
+
+        // Nếu cancel → release ghế
+        if (newStatus == OrderStatus.CANCELLED && oldStatus == OrderStatus.PENDING) {
+            SeatHold hold = order.getHold();
+            if (hold != null && hold.getStatus() == HoldStatus.ACTIVE) {
+                hold.setStatus(HoldStatus.RELEASED);
+                hold.setReleasedAt(Instant.now());
+                seatHoldRepository.save(hold);
+
+                Long eventId = order.getEvent().getId();
+                for (SeatHoldItem holdItem : hold.getItems()) {
+                    EventSeat seat = holdItem.getSeat();
+                    if (seat.getStatus() == SeatStatus.LOCKED) {
+                        seat.setStatus(SeatStatus.AVAILABLE);
+                        seat.setHeldBy(null);
+                        seat.setHeldUntil(null);
+                        eventSeatRepository.save(seat);
+                        seatBroadcastService.broadcastSeatAvailable(eventId, seat.getId());
+                    }
+                }
+            }
+        }
+
+        broadcastOrderUpdate("ORDER_" + newStatus.name(), order);
+        broadcastDashboardStats(order.getEvent().getId());
+
+        return buildOrderResponse(order);
     }
 
     // ── Customer: Get Order ────────────────────────────────────
@@ -330,5 +438,66 @@ public class OrderService {
                 .email(o.getUser().getEmail())
                 .phone(phone)
                 .build();
+    }
+
+    /**
+     * Tính và broadcast dashboard stats sau khi có thay đổi order/seat.
+     * Gọi sau khi transaction commit (được gọi từ trong @Transactional method,
+     * STOMP là async nên an toàn).
+     */
+    private void broadcastDashboardStats(Long eventId) {
+        try {
+            long sold    = eventSeatRepository.countByEventIdAndStatus(eventId, SeatStatus.SOLD);
+            long locked  = eventSeatRepository.countByEventIdAndStatus(eventId, SeatStatus.LOCKED);
+            long avail   = eventSeatRepository.countByEventIdAndStatus(eventId, SeatStatus.AVAILABLE);
+            long total   = sold + locked + avail;
+            double rate  = total == 0 ? 0.0 : roundRate((double) sold / total * 100);
+
+            BigDecimal revenue = orderRepository.sumRevenueByEventId(eventId, OrderStatus.PAID);
+            long pending = orderRepository.searchOrdersByStatus("", OrderStatus.PENDING,
+                    org.springframework.data.domain.Pageable.unpaged()).getTotalElements();
+
+            seatBroadcastService.broadcastDashboardUpdate(
+                    DashboardUpdateMessage.builder()
+                            .eventId(eventId)
+                            .soldSeats(sold)
+                            .lockedSeats(locked)
+                            .availableSeats(avail)
+                            .totalSeats(total)
+                            .fillRate(rate)
+                            .totalRevenue(revenue)
+                            .pendingOrders(pending)
+                            .build()
+            );
+        } catch (Exception e) {
+            // Non-critical: nếu không broadcast được thì chỉ log
+        }
+    }
+
+    private void broadcastOrderUpdate(String type, Order order) {
+        try {
+            seatBroadcastService.broadcastOrderCreated(
+                    OrderUpdateMessage.builder()
+                            .type(type)
+                            .orderId(order.getId())
+                            .orderCode(order.getOrderCode())
+                            .eventId(order.getEvent().getId())
+                            .eventName(order.getEvent().getName())
+                            .status(order.getStatus().name())
+                            .totalAmount(order.getTotalAmount())
+                            .customerName(order.getUser() != null ? order.getUser().getFullName() : null)
+                            .customerEmail(order.getUser() != null ? order.getUser().getEmail() : null)
+                            .ticketCount(order.getItems() != null ? order.getItems().size() : 0)
+                            .build()
+            );
+        } catch (Exception e) {
+            // Non-critical: nếu không broadcast được thì chỉ log
+        }
+    }
+
+    private double roundRate(double value) {
+        return BigDecimal.valueOf(value)
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
     }
 }

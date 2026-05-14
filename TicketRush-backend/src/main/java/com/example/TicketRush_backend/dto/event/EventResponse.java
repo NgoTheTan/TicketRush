@@ -40,13 +40,13 @@ public class EventResponse {
         private Long availableSeats;
         private Long soldSeats;
 
-        public static ZoneSummary from(SeatZone z, long available, long sold) {
+        public static ZoneSummary from(SeatZone z, long total, long available, long sold) {
             return ZoneSummary.builder()
                     .id(z.getId())
                     .name(z.getName())
                     .price(z.getPrice())
                     .colorCode(z.getColorCode())
-                    .totalSeats(z.getTotalRows() * z.getSeatsPerRow())
+                    .totalSeats((int) total)
                     .availableSeats(available)
                     .soldSeats(sold)
                     .build();

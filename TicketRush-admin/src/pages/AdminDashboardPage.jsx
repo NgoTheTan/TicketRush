@@ -1,15 +1,17 @@
-// src/pages/admin/AdminDashboardPage.jsx — Sprint 4: Real dashboard analytics
+// src/pages/admin/AdminDashboardPage.jsx — Sprint 4: Real dashboard analytics + WebSocket
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
+import { useDashboardState } from '../contexts/DashboardStateContext.jsx';
 import eventService from '../api/eventService.js';
 import { dashboardService } from '../api/services.js';
-import { formatCurrency, formatDate, Spinner, EmptyState } from '../components/ui/index.jsx';
+import { formatCurrency, formatDate, Spinner, EmptyState, Badge, eventStatusLabel, eventStatusVariant } from '../components/ui/index.jsx';
+import { useWebSocket } from '../hooks/useWebSocket.js';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
 
-function StatCard({ icon, label, value, sub, color = 'indigo' }) {
+function StatCard({ icon, label, value, sub, color = 'indigo', highlight = false }) {
   const colors = {
     indigo: 'bg-indigo-50 text-indigo-600',
     green:  'bg-emerald-50 text-emerald-600',
@@ -17,7 +19,8 @@ function StatCard({ icon, label, value, sub, color = 'indigo' }) {
     red:    'bg-red-50 text-red-600',
   };
   return (
-    <div className="bg-white rounded-xl p-5 border border-slate-100 shadow-sm">
+    <div className={`bg-white rounded-xl p-5 border shadow-sm transition-all duration-300
+      ${highlight ? 'border-indigo-300 shadow-indigo-100' : 'border-slate-100'}`}>
       <div className="flex items-center gap-3 mb-3">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colors[color]}`}>
           <span className="material-symbols-outlined text-[20px]">{icon}</span>
@@ -26,6 +29,17 @@ function StatCard({ icon, label, value, sub, color = 'indigo' }) {
       </div>
       <p className="text-2xl font-black text-slate-900">{value}</p>
       {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
+    </div>
+  );
+}
+
+// ── WS Live Indicator ─────────────────────────────────────────
+function WsLiveIndicator({ connected }) {
+  return (
+    <div className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full font-medium transition-all
+      ${connected ? 'text-emerald-600 bg-emerald-50 border border-emerald-200' : 'text-slate-400 bg-slate-100'}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+      {connected ? 'Realtime' : 'Polling 5s'}
     </div>
   );
 }
@@ -62,14 +76,19 @@ function GenderBar({ gender, count, percentage }) {
 
 export default function AdminDashboardPage() {
   const { navigate } = useRouter();
+  // ── Persistent state (survives navigation) ────────────────
+  const {
+    selectedEventId, setSelectedEventId,
+    searchInput, setSearchInput,
+  } = useDashboardState();
+
   const [events, setEvents] = useState([]);
-  const [selectedEventId, setSelectedEventId] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dashLoading, setDashLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [searchInput, setSearchInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
   const debounceTimer = useRef(null);
 
   // Load event list on mount
@@ -77,10 +96,14 @@ export default function AdminDashboardPage() {
     eventService.adminList({ size: 50 })
       .then(({ data }) => {
         setEvents(data || []);
-        if (data?.length > 0) setSelectedEventId(data[0].id);
+        // Chỉ tự chọn event đầu tiên nếu chưa có lựa chọn nào được ghi nhớ
+        if (data?.length > 0 && !selectedEventId) {
+          setSelectedEventId(data[0].id);
+        }
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDashboard = useCallback(async (eventId) => {
@@ -99,19 +122,44 @@ export default function AdminDashboardPage() {
     if (selectedEventId) loadDashboard(selectedEventId);
   }, [selectedEventId, loadDashboard]);
 
-  // Polling every 5 seconds
+  // ── WebSocket: nhận cập nhật dashboard real-time ──────────
+  // Khi WS gửi DashboardUpdateMessage → cập nhật summary stats ngay
+  const handleDashboardWs = useCallback((msg) => {
+    if (!msg.eventId || msg.eventId !== selectedEventId) return;
+
+    setDashboard(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        summary: {
+          ...prev.summary,
+          soldSeats: msg.soldSeats,
+          lockedSeats: msg.lockedSeats,
+          availableSeats: msg.availableSeats,
+          totalSeats: msg.totalSeats,
+          fillRate: msg.fillRate,
+          totalRevenue: msg.totalRevenue,
+        },
+      };
+    });
+  }, [selectedEventId]);
+
+  useWebSocket(
+    selectedEventId ? `/topic/admin/dashboard/${selectedEventId}` : null,
+    handleDashboardWs,
+    !!selectedEventId,
+    useCallback(() => setWsConnected(true), [])
+  );
+
+  // Fallback polling mỗi 30s (WS đã cập nhật realtime; polling chỉ để sync toàn bộ)
   useEffect(() => {
     if (!selectedEventId) return;
-    const id = setInterval(() => loadDashboard(selectedEventId), 5000);
+    const id = setInterval(() => loadDashboard(selectedEventId), 30000);
     return () => clearInterval(id);
   }, [selectedEventId, loadDashboard]);
 
   const handleSearchInput = (value) => {
     setSearchInput(value);
-    if (!value.trim()) {
-      setShowSuggestions(false);
-      return;
-    }
     setShowSuggestions(true);
   };
 
@@ -199,9 +247,12 @@ export default function AdminDashboardPage() {
               )}
             </div>
             <div className="relative px-8 py-10 flex flex-col justify-end min-h-[160px]">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider mb-3 w-fit">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live Dashboard
+              <div className="flex items-center gap-2 mb-3">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider">
+                  <span className={`w-1.5 h-1.5 rounded-full ${wsConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                  {wsConnected ? 'Live Dashboard' : 'Dashboard'}
+                </div>
+                <Badge label={eventStatusLabel(selectedEvent.status)} variant={eventStatusVariant(selectedEvent.status)} />
               </div>
               <h2 className="text-3xl font-black text-white mb-2">{selectedEvent.name}</h2>
               <div className="flex items-center gap-4 text-indigo-100 text-sm">

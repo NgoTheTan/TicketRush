@@ -1,6 +1,7 @@
 package com.example.TicketRush_backend.repository;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +23,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByIdAndUserId(Long id, Long userId);
 
     Optional<Order> findByHoldId(Long holdId);
+
+    List<Order> findByEventId(Long eventId);
 
     @Query("SELECT o FROM Order o WHERE o.status = :status AND o.event.id = :eventId")
     Page<Order> findByStatusAndEventId(@Param("status") OrderStatus status,
@@ -158,4 +161,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("status") OrderStatus status,
             Pageable pageable
     );
+
+    /**
+     * Tìm các Order PENDING có expiresAt trước thời điểm now.
+     * Dùng bởi SeatReleaseScheduler để expire order khi hold hết hạn.
+     */
+    @Query("""
+        SELECT o FROM Order o
+        WHERE o.status = :status
+          AND o.expiresAt IS NOT NULL
+          AND o.expiresAt < :now
+    """)
+    List<Order> findExpiredPendingOrders(@Param("status") OrderStatus status, @Param("now") Instant now);
 }

@@ -1,8 +1,9 @@
 // src/pages/admin/OrderManagementPage.jsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { orderService } from '../api/services.js';
 import { Spinner, EmptyState, Badge, formatCurrency, formatDate, showToast } from '../components/ui/index.jsx';
+import { useWebSocket } from '../hooks/useWebSocket.js';
 
 const STATUS_OPTS = [
   { value: '', label: 'Tất cả' },
@@ -15,10 +16,27 @@ const STATUS_OPTS = [
 const statusVariant = s => ({ PAID:'success', PENDING:'warning', EXPIRED:'default', CANCELLED:'error' }[s]||'default');
 const statusLabel   = s => ({ PAID:'Đã thanh toán', PENDING:'Chờ xử lý', EXPIRED:'Hết hạn', CANCELLED:'Đã hủy' }[s]||s);
 
+// ── WS Status Indicator ───────────────────────────────────────
+function WsIndicator({ connected, newCount }) {
+  return (
+    <div className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full transition-all
+      ${connected ? 'text-emerald-600 bg-emerald-50 border border-emerald-200' : 'text-slate-400 bg-slate-100'}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+      {connected ? 'Live' : 'Offline'}
+      {newCount > 0 && (
+        <span className="ml-1 bg-indigo-600 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold animate-bounce">
+          +{newCount}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ── Order Detail Modal ────────────────────────────────────────
-function OrderDetailModal({ orderId, onClose }) {
+function OrderDetailModal({ orderId, onClose, onStatusChange }) {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     orderService.adminGetOrder(orderId)
@@ -26,6 +44,21 @@ function OrderDetailModal({ orderId, onClose }) {
       .catch(err => { showToast(err.message, 'error'); onClose(); })
       .finally(() => setLoading(false));
   }, [orderId]);
+
+  const handleAdminCancel = async () => {
+    if (!order) return;
+    setCancelling(true);
+    try {
+      await orderService.adminCancelOrder(orderId);
+      showToast('Đã hủy đơn hàng thành công', 'success');
+      onStatusChange?.();
+      onClose();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -100,6 +133,22 @@ function OrderDetailModal({ orderId, onClose }) {
             {order.paidAt && (
               <p className="text-xs text-slate-400 text-right">Thanh toán lúc {formatDate(order.paidAt)}</p>
             )}
+
+            {/* Admin cancel action */}
+            {order.status === 'PENDING' && (
+              <div className="pt-2 border-t border-slate-100">
+                <button
+                  onClick={handleAdminCancel}
+                  disabled={cancelling}
+                  className="w-full py-2.5 border border-red-200 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
+                >
+                  {cancelling ? 'Đang hủy...' : '✕ Hủy đơn hàng này'}
+                </button>
+                <p className="text-xs text-slate-400 text-center mt-1">
+                  Ghế sẽ được trả lại để người khác có thể đặt
+                </p>
+              </div>
+            )}
           </div>
         ) : null}
       </div>
@@ -117,9 +166,11 @@ export default function OrderManagementPage() {
   const [meta, setMeta] = useState(null);
   const [page, setPage] = useState(0);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [newOrderCount, setNewOrderCount] = useState(0);
   const debounceTimer = useRef(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const { data, meta: m } = await orderService.adminListOrders({
@@ -127,11 +178,13 @@ export default function OrderManagementPage() {
         status: statusFilter || undefined,
         page, size: 20,
       });
-      setOrders(data || []); setMeta(m);
+      setOrders(data || []);
+      setMeta(m);
+      setNewOrderCount(0); // reset badge khi đã reload
     } catch (err) {
       showToast(err.message, 'error');
     } finally { setLoading(false); }
-  };
+  }, [search, statusFilter, page]);
 
   const handleSearchChange = (value) => {
     setSearchInput(value);
@@ -142,14 +195,73 @@ export default function OrderManagementPage() {
     }, 400);
   };
 
-  useEffect(() => { load(); }, [search, statusFilter, page]);
+  useEffect(() => { load(); }, [load]);
+
+  // ── WebSocket: nhận cập nhật đơn hàng real-time ──────────
+  const handleWsMessage = useCallback((msg) => {
+    if (!msg.orderId) return;
+
+    // Cập nhật order trong list nếu đang hiển thị
+    setOrders(prev => {
+      const exists = prev.some(o => o.orderId === msg.orderId);
+
+      // Nếu đơn hàng mới tạo hoặc vừa được thanh toán thành công
+      if (msg.type === 'ORDER_CREATED' || msg.type === 'ORDER_PAID') {
+        // Thêm vào đầu danh sách nếu tab hiện tại là Tất cả hoặc khớp với status
+        if (!statusFilter || statusFilter === msg.status) {
+          if (!exists) {
+            setNewOrderCount(c => c + 1);
+            const newOrder = {
+              orderId: msg.orderId,
+              orderCode: msg.orderCode,
+              status: msg.status,
+              totalAmount: msg.totalAmount,
+              customer: { fullName: msg.customerName, email: msg.customerEmail },
+              event: { name: msg.eventName },
+              createdAt: msg.timestamp,
+              paidAt: msg.type === 'ORDER_PAID' ? msg.timestamp : null,
+            };
+            return [newOrder, ...prev.slice(0, 19)]; // giữ tối đa 20
+          }
+        }
+      }
+
+      if (exists) {
+        // Cập nhật status của order đã có
+        return prev.map(o =>
+          o.orderId === msg.orderId
+            ? { ...o, status: msg.status, paidAt: msg.type === 'ORDER_PAID' ? msg.timestamp : o.paidAt }
+            : o
+        );
+      }
+
+      return prev;
+    });
+  }, [statusFilter]);
+
+  // Subscribe tới global order topic (tất cả events)
+  useWebSocket('/topic/admin/orders/global', handleWsMessage, true,
+    useCallback(() => setWsConnected(true), []));
+
 
   return (
     <AdminLayout>
       <div className="p-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-black text-slate-900">Quản lý Đơn hàng</h1>
-          {meta && <p className="text-sm text-slate-500 mt-1">{meta.totalElements} đơn hàng</p>}
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900">Quản lý Đơn hàng</h1>
+            {meta && <p className="text-sm text-slate-500 mt-1">{meta.totalElements} đơn hàng</p>}
+          </div>
+          <div className="flex items-center gap-3">
+            <WsIndicator connected={wsConnected} newCount={newOrderCount} />
+            <button
+              onClick={load}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[15px]">refresh</span>
+              Làm mới
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -168,8 +280,8 @@ export default function OrderManagementPage() {
         {loading ? <div className="flex justify-center py-20"><Spinner size="lg" /></div>
           : orders.length === 0 ? <EmptyState icon="📋" title="Không có đơn hàng nào" />
           : (
-          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
+            <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
                   <th className="px-6 py-3">Mã đơn</th>
@@ -184,7 +296,8 @@ export default function OrderManagementPage() {
                 {orders.map(o => (
                   <tr key={o.orderId}
                     onClick={() => setSelectedOrderId(o.orderId)}
-                    className="hover:bg-slate-50 cursor-pointer transition-colors">
+                    className={`hover:bg-slate-50 cursor-pointer transition-colors
+                      ${o.status === 'PENDING' ? 'bg-amber-50/30' : ''}`}>
                     <td className="px-6 py-4 font-mono text-xs font-bold text-indigo-600">{o.orderCode}</td>
                     <td className="px-6 py-4">
                       <p className="font-medium text-slate-800 text-xs">{o.customer?.fullName || '—'}</p>
@@ -217,6 +330,7 @@ export default function OrderManagementPage() {
         <OrderDetailModal
           orderId={selectedOrderId}
           onClose={() => setSelectedOrderId(null)}
+          onStatusChange={load}
         />
       )}
     </AdminLayout>

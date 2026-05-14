@@ -1,9 +1,10 @@
 // src/pages/EventDetailsPage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useBooking } from '../contexts/BookingContext.jsx';
+import { useWebSocket } from '../hooks/useWebSocket.js';
 import eventService from '../api/eventService.js';
 import { Spinner, ErrorState, Badge, formatCurrency, eventStatusLabel, eventStatusVariant, formatDate, showToast } from '../components/ui/index.jsx';
 
@@ -13,12 +14,12 @@ const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEN
 export default function EventDetailsPage({ eventId }) {
   const { navigate } = useRouter();
   const { isAuthenticated } = useAuth();
-  const { startBooking } = useBooking();
+  const { startBooking, holdData, currentEvent } = useBooking();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const loadEvent = useCallback(() => {
     if (!eventId) return;
     setLoading(true);
     eventService.get(eventId)
@@ -27,14 +28,34 @@ export default function EventDetailsPage({ eventId }) {
       .finally(() => setLoading(false));
   }, [eventId]);
 
+  useEffect(() => { loadEvent(); }, [loadEvent]);
+
+  // Lắng nghe WebSocket: khi admin mở bán / thay đổi status → tự reload
+  const handleEventsWs = useCallback((msg) => {
+    if (msg?.type === 'EVENT_LIST_UPDATED') {
+      loadEvent();
+    }
+  }, [loadEvent]);
+
+  useWebSocket('/topic/events', handleEventsWs);
+
   const handleSelectSeat = () => {
     if (!isAuthenticated) {
       navigate('/login', { returnUrl: `/events/${eventId}` });
       return;
     }
-    startBooking(event);
+    // Nếu đang có hold hợp lệ cho đúng sự kiện này → đi thẳng đến trang ghế
+    const hasActiveHold = holdData?.allSelectedSeats?.length > 0
+      && holdData?.expiresAt
+      && new Date(holdData.expiresAt) > new Date()
+      && currentEvent?.id === event?.id;
+
+    if (!hasActiveHold) {
+      startBooking(event);
+    }
     navigate(`/events/${eventId}/seats`);
   };
+
 
   if (loading) return <><Header /><div className="flex justify-center py-32"><Spinner size="lg" /></div></>;
   if (error) return <><Header /><div className="max-w-2xl mx-auto py-20"><ErrorState message={error} onRetry={() => window.location.reload()} /></div></>;
@@ -149,10 +170,29 @@ export default function EventDetailsPage({ eventId }) {
             )}
 
             {canBook ? (
-              <button onClick={handleSelectSeat}
-                className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 active:scale-95 transition-all">
-                🎟️ Chọn ghế &amp; Đặt vé
-              </button>
+              <>
+                {/* Hiển thị nếu đang có hold hợp lệ cho sự kiện này */}
+                {holdData?.allSelectedSeats?.length > 0
+                  && holdData?.expiresAt
+                  && new Date(holdData.expiresAt) > new Date()
+                  && currentEvent?.id === event?.id && (
+                  <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined text-amber-500 text-[16px]">timer</span>
+                    <p className="text-xs text-amber-700 font-medium">
+                      Bạn đang giữ {holdData.allSelectedSeats.length} ghế — tiếp tục để đặt vé
+                    </p>
+                  </div>
+                )}
+                <button onClick={handleSelectSeat}
+                  className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 active:scale-95 transition-all">
+                  {holdData?.allSelectedSeats?.length > 0
+                    && holdData?.expiresAt
+                    && new Date(holdData.expiresAt) > new Date()
+                    && currentEvent?.id === event?.id
+                    ? '⏩ Tiếp tục đặt vé'
+                    : '🎟️ Chọn ghế & Đặt vé'}
+                </button>
+              </>
             ) : (
               <div className={`w-full py-3.5 text-center rounded-xl font-semibold text-sm
                 ${event.status === 'UPCOMING' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-500'}`}>
@@ -160,7 +200,7 @@ export default function EventDetailsPage({ eventId }) {
               </div>
             )}
 
-            <p className="text-xs text-slate-400 text-center mt-3">Tối đa 2 ghế mỗi lần đặt</p>
+            <p className="text-xs text-slate-400 text-center mt-3">Tối đa 2 vé mỗi sự kiện</p>
           </div>
         </div>
       </div>

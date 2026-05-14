@@ -58,6 +58,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/events/*/seats/*/hold").hasRole("CUSTOMER")
                 .requestMatchers(HttpMethod.POST, "/api/v1/holds/*/release").hasRole("CUSTOMER")
                 .requestMatchers(HttpMethod.POST, "/api/v1/orders").hasRole("CUSTOMER")
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/orders/*").hasRole("CUSTOMER")
+                .requestMatchers(HttpMethod.GET, "/api/v1/orders/*").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/checkout/*/summary").hasRole("CUSTOMER")
                 .requestMatchers(HttpMethod.POST, "/api/v1/checkout/*/confirm").hasRole("CUSTOMER")
                 .requestMatchers("/api/v1/me/**").hasRole("CUSTOMER")

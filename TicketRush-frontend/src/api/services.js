@@ -30,6 +30,14 @@ export const orderService = {
     return res.data; // OrderResponse
   },
 
+  /**
+   * Hủy đơn hàng PENDING — gọi khi user nhấn Quay lại / Hủy thanh toán.
+   * Backend sẽ: Order→CANCELLED, Hold→RELEASED, Ghế→AVAILABLE.
+   */
+  cancelOrder: async (orderId) => {
+    await api.delete(`/api/v1/orders/${orderId}`);
+  },
+
   confirmCheckout: async (holdId) => {
     const res = await api.post(`/api/v1/checkout/${holdId}/confirm`, {});
     return res.data; // CheckoutResponse { order, tickets[] }

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import { RouterProvider, useRouter, matchRoute } from './contexts/RouterContext.jsx';
+import { DashboardStateProvider } from './contexts/DashboardStateContext.jsx';
 import { ToastContainer } from './components/ui/index.jsx';
 
 // Pages
@@ -68,8 +69,10 @@ export default function App() {
   return (
     <RouterProvider>
       <AuthProvider>
-        <Router />
-        <ToastContainer />
+        <DashboardStateProvider>
+          <Router />
+          <ToastContainer />
+        </DashboardStateProvider>
       </AuthProvider>
     </RouterProvider>
   );

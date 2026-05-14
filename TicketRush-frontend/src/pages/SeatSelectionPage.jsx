@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { useBooking } from '../contexts/BookingContext.jsx';
@@ -80,11 +80,15 @@ export default function SeatSelectionPage({ eventId }) {
     }
   }, [eventId]);
 
+  const holdDataRef = useRef(holdData);
+  useEffect(() => {
+    holdDataRef.current = holdData;
+  }, [holdData]);
+
   // ── WebSocket: update individual seat without full reload ──
   const handleWsMessage = useCallback((msg) => {
     // msg = { type, eventId, seatId, status, timestamp }
     if (!msg.seatId || !msg.status) return;
-    setWsConnected(true);
 
     setSeatMap(prev => {
       if (!prev) return prev;
@@ -94,11 +98,17 @@ export default function SeatSelectionPage({ eventId }) {
           ...zone,
           rows: zone.rows.map(row => ({
             ...row,
-            seats: row.seats.map(seat =>
-              seat.seatId === msg.seatId
-                ? { ...seat, status: msg.status, heldByMe: msg.status === 'LOCKED' ? seat.heldByMe : false }
-                : seat
-            ),
+            seats: row.seats.map(seat => {
+              if (seat.seatId === msg.seatId) {
+                const isHeldInContext = holdDataRef.current?.allSelectedSeats?.some(s => s.seatId === msg.seatId);
+                return {
+                  ...seat,
+                  status: msg.status,
+                  heldByMe: msg.status === 'LOCKED' ? (seat.heldByMe || !!isHeldInContext) : false
+                };
+              }
+              return seat;
+            }),
           })),
         })),
       };
@@ -108,19 +118,39 @@ export default function SeatSelectionPage({ eventId }) {
   useWebSocket(
     eventId ? `/topic/seats/${eventId}` : null,
     handleWsMessage,
-    !!eventId
+    !!eventId,
+    useCallback(() => setWsConnected(true), [])
   );
 
   // ── Seat interactions ─────────────────────────────────────
   const handleSeatClick = async (seat) => {
     if (actingSeatId) return;
 
-    if (seat.heldByMe) {
+    const isHeldByMe = seat.heldByMe || holdData?.allSelectedSeats?.some(s => s.seatId === seat.seatId);
+
+    if (isHeldByMe) {
       setActingSeatId(seat.seatId);
       try {
         const result = await seatService.releaseSeat(eventId, seat.seatId);
         if (!result?.allSelectedSeats?.length) clearHold();
         else updateHold(result);
+        setSeatMap(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            zones: prev.zones.map(zone => ({
+              ...zone,
+              rows: zone.rows.map(row => ({
+                ...row,
+                seats: row.seats.map(s =>
+                  s.seatId === seat.seatId
+                    ? { ...s, status: 'AVAILABLE', heldByMe: false }
+                    : s
+                ),
+              })),
+            })),
+          };
+        });
         showToast('Đã bỏ chọn ghế', 'info');
         // Nếu WS active sẽ tự update; nếu không thì reload
         if (!wsConnected) await loadSeatMap();
@@ -137,6 +167,23 @@ export default function SeatSelectionPage({ eventId }) {
       try {
         const result = await seatService.holdSeat(eventId, seat.seatId);
         updateHold(result);
+        setSeatMap(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            zones: prev.zones.map(zone => ({
+              ...zone,
+              rows: zone.rows.map(row => ({
+                ...row,
+                seats: row.seats.map(s =>
+                  s.seatId === seat.seatId
+                    ? { ...s, status: 'LOCKED', heldByMe: true }
+                    : s
+                ),
+              })),
+            })),
+          };
+        });
         showToast(`Đã giữ ghế ${seat.rowLabel}${seat.seatNumber}`, 'success');
         if (!wsConnected) await loadSeatMap();
       } catch (err) {
@@ -203,6 +250,7 @@ export default function SeatSelectionPage({ eventId }) {
                   onSeatClick={handleSeatClick}
                   actingSeatId={actingSeatId}
                   mode="user"
+                  currentHeldSeatIds={holdData?.allSelectedSeats?.map(s => s.seatId) || []}
                 />
               </div>
             )}
@@ -243,7 +291,7 @@ export default function SeatSelectionPage({ eventId }) {
               {expired && (
                 <p className="text-xs text-red-500 text-center mt-2">Phiên giữ ghế đã hết hạn. Vui lòng chọn lại.</p>
               )}
-              <p className="text-xs text-slate-400 text-center mt-3">Tối đa 2 ghế • Giữ trong 10 phút</p>
+              <p className="text-xs text-slate-400 text-center mt-3">Tối đa 2 vé / sự kiện • Giữ trong 10 phút</p>
             </div>
           </div>
         </div>

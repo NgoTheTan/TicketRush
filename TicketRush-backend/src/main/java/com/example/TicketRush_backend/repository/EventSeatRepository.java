@@ -23,6 +23,9 @@ public interface EventSeatRepository extends JpaRepository<EventSeat, Long> {
     @Query("SELECT COUNT(s) FROM EventSeat s WHERE s.event.id = :eventId AND s.heldBy.id = :userId AND s.status = 'LOCKED'")
     int countLockedByUserInEvent(@Param("eventId") Long eventId, @Param("userId") Long userId);
 
+    @Query("SELECT COUNT(s) FROM EventSeat s WHERE s.event.id = :eventId AND s.heldBy.id = :userId AND s.status IN ('LOCKED', 'SOLD')")
+    int countHeldOrSoldByUserInEvent(@Param("eventId") Long eventId, @Param("userId") Long userId);
+
     @Query("SELECT s FROM EventSeat s WHERE s.status = 'LOCKED' AND s.heldUntil < :now")
     List<EventSeat> findExpiredLocks(@Param("now") Instant now);
 

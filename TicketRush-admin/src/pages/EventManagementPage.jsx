@@ -136,8 +136,8 @@ export default function EventManagementPage() {
             <button onClick={() => navigate('/admin/events/new')} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">Tạo sự kiện đầu tiên</button>
           } />
         ) : (
-          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
+            <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
                   <th className="px-6 py-3">Sự kiện</th>
@@ -166,7 +166,7 @@ export default function EventManagementPage() {
                     <td className="px-6 py-4 text-slate-600 text-xs">{e.soldSeats ?? 0}/{e.totalSeats ?? '—'}</td>
                     <td className="px-6 py-4 relative z-10" onClick={ev => ev.stopPropagation()}>
                         <div className="flex items-center gap-2">
-                          {e.status !== 'ON_SALE' && e.status !== 'ENDED' && (
+                          {e.status !== 'ON_SALE' && e.status !== 'ENDED' && e.status !== 'CANCELLED' && (
                             <button onClick={() => navigate(`/admin/events/${e.id}/edit`)}
                               className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-slate-100 text-slate-600 bg-white">
                               Chỉnh sửa

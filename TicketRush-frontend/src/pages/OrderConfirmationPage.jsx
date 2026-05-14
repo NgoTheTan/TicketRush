@@ -8,10 +8,11 @@ import { Spinner, formatCurrency, formatDate, showToast } from '../components/ui
 
 export default function OrderConfirmationPage({ eventId }) {
   const { navigate } = useRouter();
-  const { currentEvent, holdData, pendingOrder, setPendingOrder, setCheckout } = useBooking();
+  const { currentEvent, holdData, pendingOrder, setPendingOrder, setCheckout, clearHold } = useBooking();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState(null);
   const creatingOrderForHold = useRef(null);
 
@@ -44,6 +45,9 @@ export default function OrderConfirmationPage({ eventId }) {
         if (err.code === 'HOLD_EXPIRED') {
           showToast('Phiên giữ ghế đã hết hạn. Vui lòng chọn lại.', 'error');
           navigate(`/events/${eventId}/seats`);
+        } else if (err.code === 'ORDER_ALREADY_PAID') {
+          // Order đã tồn tại — thử lấy lại
+          showToast('Đơn hàng đã tồn tại, đang tải...', 'info');
         } else {
           setError(err.message);
         }
@@ -69,6 +73,31 @@ export default function OrderConfirmationPage({ eventId }) {
     } finally { setConfirming(false); }
   };
 
+  // Step 3: Cancel order — khi user bấm "Quay lại"
+  const handleCancel = async () => {
+    const orderId = order?.orderId;
+    if (!orderId) {
+      // Order chưa tạo xong — chỉ quay lại trang chọn ghế
+      navigate(`/events/${eventId}/seats`);
+      return;
+    }
+
+    setCancelling(true);
+    try {
+      await orderService.cancelOrder(orderId);
+      clearHold();
+      setPendingOrder(null);
+      showToast('Đã hủy đơn hàng. Ghế đã được trả lại.', 'info');
+      navigate(`/events/${eventId}/seats`);
+    } catch (err) {
+      // Nếu order đã cancel rồi hoặc đã paid → vẫn quay lại
+      clearHold();
+      navigate(`/events/${eventId}/seats`);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const eventName = currentEvent?.name || order?.event?.name || `Sự kiện #${eventId}`;
 
   if (loading) return <><Header /><div className="flex justify-center py-32"><Spinner size="lg" /></div></>;
@@ -86,9 +115,21 @@ export default function OrderConfirmationPage({ eventId }) {
     <div className="min-h-screen bg-[#fcf8ff] font-[Inter]">
       <Header />
       <div className="max-w-2xl mx-auto px-4 py-10">
-        <button onClick={() => navigate(`/events/${eventId}/seats`)}
-          className="text-sm text-indigo-600 hover:text-indigo-700 mb-6 flex items-center gap-1">
-          <span className="material-symbols-outlined text-[16px]">arrow_back</span> Quay lại
+        <button
+          onClick={handleCancel}
+          disabled={cancelling}
+          className="text-sm text-indigo-600 hover:text-indigo-700 mb-6 flex items-center gap-1 disabled:opacity-50"
+        >
+          {cancelling ? (
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 border-2 border-indigo-400/30 border-t-indigo-500 rounded-full animate-spin" />
+              Đang hủy...
+            </span>
+          ) : (
+            <>
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span> Quay lại
+            </>
+          )}
         </button>
 
         <h1 className="text-2xl font-bold text-slate-900 mb-6">Xác nhận đặt vé</h1>
@@ -140,6 +181,7 @@ export default function OrderConfirmationPage({ eventId }) {
           <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6 text-center">
             <p className="text-xs text-indigo-400 uppercase font-semibold tracking-wide">Mã đơn hàng</p>
             <p className="text-lg font-mono font-bold text-indigo-700 mt-1">{order.orderCode}</p>
+            <p className="text-xs text-indigo-400 mt-1">Đơn hàng đang chờ thanh toán</p>
           </div>
         )}
 
@@ -152,15 +194,31 @@ export default function OrderConfirmationPage({ eventId }) {
           </div>
         </div>
 
-        <button onClick={handleConfirm} disabled={confirming}
-          className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold text-base hover:bg-indigo-700 disabled:opacity-50 active:scale-95 transition-all">
-          {confirming ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Đang xử lý...
-            </span>
-          ) : '✓ XÁC NHẬN THANH TOÁN'}
-        </button>
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={handleCancel}
+            disabled={cancelling || confirming}
+            className="flex-1 py-4 border-2 border-slate-200 text-slate-600 rounded-xl font-bold text-base hover:bg-slate-50 disabled:opacity-50 active:scale-95 transition-all"
+          >
+            {cancelling ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-slate-400/30 border-t-slate-500 rounded-full animate-spin" />
+                Đang hủy...
+              </span>
+            ) : '✕ Hủy đặt vé'}
+          </button>
+
+          <button onClick={handleConfirm} disabled={confirming || cancelling}
+            className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-bold text-base hover:bg-indigo-700 disabled:opacity-50 active:scale-95 transition-all">
+            {confirming ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Đang xử lý...
+              </span>
+            ) : '✓ XÁC NHẬN THANH TOÁN'}
+          </button>
+        </div>
       </div>
     </div>
   );

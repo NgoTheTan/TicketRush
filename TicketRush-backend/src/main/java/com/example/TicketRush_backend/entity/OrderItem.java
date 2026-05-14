@@ -6,8 +6,7 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "order_items",
-        uniqueConstraints = @UniqueConstraint(name = "uq_item_seat_id", columnNames = "seat_id"))
+@Table(name = "order_items")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class OrderItem {
 

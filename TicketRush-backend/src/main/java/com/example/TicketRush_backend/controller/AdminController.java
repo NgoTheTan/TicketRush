@@ -149,6 +149,18 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok(orderService.getOrderAdmin(orderId)));
     }
 
+    /**
+     * PATCH /api/v1/admin/orders/{orderId}/status?status=CANCELLED
+     * Admin cập nhật trạng thái đơn hàng (ví dụ: hủy đơn thủ công).
+     * Hỗ trợ: CANCELLED (từ PENDING)
+     */
+    @PatchMapping("/orders/{orderId}/status")
+    public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(
+            @PathVariable Long orderId,
+            @RequestParam OrderStatus status) {
+        return ResponseEntity.ok(ApiResponse.ok(orderService.adminUpdateOrderStatus(orderId, status)));
+    }
+
     // ── Dashboard Analytics (Sprint 4) ───────────────────────
 
     /**

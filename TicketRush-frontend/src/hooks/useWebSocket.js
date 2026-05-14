@@ -13,14 +13,17 @@ const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws';
  * @param {string|null} topic   - Topic để subscribe, ví dụ "/topic/seats/1"
  * @param {function}    onMessage - Callback khi nhận message: (payload: object) => void
  * @param {boolean}     enabled   - Có kết nối hay không (mặc định true)
+ * @param {function}    onConnect - Callback khi kết nối thành công (optional)
  */
-export function useWebSocket(topic, onMessage, enabled = true) {
+export function useWebSocket(topic, onMessage, enabled = true, onConnect) {
   const clientRef  = useRef(null);
   const subRef     = useRef(null);
   const onMsgRef   = useRef(onMessage); // avoid reconnect on every render
+  const onConRef   = useRef(onConnect);
 
-  // Keep callback ref fresh
+  // Keep callback refs fresh
   useEffect(() => { onMsgRef.current = onMessage; }, [onMessage]);
+  useEffect(() => { onConRef.current = onConnect; }, [onConnect]);
 
   const connect = useCallback(() => {
     if (!topic || !enabled) return;
@@ -34,6 +37,8 @@ export function useWebSocket(topic, onMessage, enabled = true) {
         webSocketFactory: () => new SockJS(WS_URL),
         reconnectDelay: 5000,
         onConnect: () => {
+          // Notify caller immediately on connect
+          onConRef.current?.();
           subRef.current = client.subscribe(topic, (frame) => {
             try {
               const payload = JSON.parse(frame.body);

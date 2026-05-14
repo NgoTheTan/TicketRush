@@ -5,6 +5,7 @@ import Footer from '../components/layout/Footer.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
 import { Spinner, EmptyState, ErrorState, Badge, formatCurrency, eventStatusLabel, eventStatusVariant, formatDate } from '../components/ui/index.jsx';
+import { useWebSocket } from '../hooks/useWebSocket.js';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
@@ -67,14 +68,22 @@ export default function HomePage() {
     finally { setLoading(false); }
   };
 
+  // Realtime updates when event status changes
+  useWebSocket('/topic/events', (msg) => {
+    if (msg?.type === 'EVENT_LIST_UPDATED') {
+      load(search, page);
+    }
+  });
+
   // Debounced suggest handler
   const handleSearchInput = (value) => {
     setSearchInput(value);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     
+    setShowSuggestions(true);
+
     if (!value.trim()) {
       setSuggestions([]);
-      setShowSuggestions(false);
       return;
     }
 
@@ -108,6 +117,8 @@ export default function HomePage() {
 
   useEffect(() => { load(search, page); }, [search, page]);
 
+  const displaySuggestions = searchInput.trim() ? suggestions : events;
+
   return (
     <div className="min-h-screen bg-[#fcf8ff] font-[Inter]">
       <Header />
@@ -123,17 +134,18 @@ export default function HomePage() {
               <input 
                 value={searchInput} 
                 onChange={e => handleSearchInput(e.target.value)} 
-                onFocus={() => showSuggestions && setSuggestions(suggestions.length > 0 ? suggestions : [])}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 placeholder="Tìm kiếm sự kiện..."
                 className="flex-1 bg-transparent text-white placeholder-indigo-300 outline-none text-sm" />
             </div>
             <button type="submit" className="bg-white text-indigo-700 font-bold px-6 rounded-xl hover:bg-indigo-50 transition-colors text-sm">Tìm kiếm</button>
             
             {/* Autocomplete dropdown */}
-            {showSuggestions && suggestions.length > 0 && (
+            {showSuggestions && displaySuggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50 max-w-2xl">
                 <div className="max-h-80 overflow-y-auto">
-                  {suggestions.map((sugg) => (
+                  {displaySuggestions.map((sugg) => (
                     <button
                       key={sugg.id}
                       type="button"

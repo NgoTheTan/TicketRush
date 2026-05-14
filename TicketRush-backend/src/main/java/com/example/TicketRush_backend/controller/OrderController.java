@@ -46,6 +46,20 @@ public class OrderController {
     }
 
     /**
+     * DELETE /api/v1/orders/{orderId}
+     * Người dùng hủy đơn hàng PENDING (nhấn "Quay lại" không thanh toán).
+     * Flow: Order → CANCELLED, Hold → RELEASED, Ghế → AVAILABLE.
+     * Access: CUSTOMER (chỉ owner của order)
+     */
+    @DeleteMapping("/orders/{orderId}")
+    public ResponseEntity<ApiResponse<Void>> cancelOrder(
+            @PathVariable Long orderId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        orderService.cancelOrder(orderId, userId);
+        return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
+    /**
      * POST /api/v1/checkout/{holdId}/confirm
      * Xác nhận thanh toán giả lập.
      * Chuyển: Seat LOCKED→SOLD, Order PENDING→PAID, tạo Ticket QR.
