@@ -1,9 +1,9 @@
 # TicketRush - Nền tảng tạo sự kiện và đặt vé online
 
 ## Các thành viên và đóng góp
-Nhật Triều <br>
-Thế Tân <br>
-Hoàng Nhân
+23021740 - Triều: Backend <br>
+Tân: Admin <br>
+Nhân: Customer
 
 ## Giới thiệu chung
 
@@ -22,9 +22,9 @@ cd TicketRush-backend
 .\mvnw.cmd spring-boot:run
 
 ### 2. Chạy frontend:
-Admin: cd TicketRush-admin => npm run dev => Mở http://localhost:5174/
-Customer: cd TicketRush-frontend => npm install => npm run dev => Mở http://localhost:5173/
-(Bạn không nên mở 2 link trên trong cùng 1 tài khoản chrome, và nên đăng xuất sau khi sử dụng)
+Admin: cd TicketRush-admin => npm run dev => Mở http://localhost:5174/ <br>
+Customer: cd TicketRush-frontend => npm install => npm run dev => Mở http://localhost:5173/ <br>
+(Bạn không nên mở 2 link trên trong cùng 1 tài khoản chrome, và nên đăng xuất sau khi sử dụng) <br>
 
 ## Ảnh giao diện và ghi chú khác
 
