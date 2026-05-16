@@ -32,6 +32,7 @@ export function RouterProvider({ children }) {
       if (qs) hash += `?${qs}`;
     }
     window.location.hash = hash;
+    setRoute(parseHash());
   }, []);
 
   const goBack = useCallback(() => window.history.back(), []);
