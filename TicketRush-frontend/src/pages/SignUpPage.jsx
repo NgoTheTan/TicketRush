@@ -61,7 +61,7 @@ export default function SignUpPage() {
         gender: form.gender,
       });
       showToast('Đăng ký thành công!', 'success');
-      navigate('/');
+      navigate('/system-queue', { returnUrl: '/' });
     } catch (err) {
       if (err.code === 'AUTH_EMAIL_ALREADY_EXISTS') {
         setErrors({ email: 'Email này đã được sử dụng' });

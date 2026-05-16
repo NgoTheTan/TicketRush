@@ -72,7 +72,9 @@ public class SecurityConfig {
 
                 // Queue endpoints (Sprint 3)
                 .requestMatchers(HttpMethod.GET, "/api/v1/queue/*/status").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/queue/*/join").hasRole("CUSTOMER")
+                .requestMatchers(HttpMethod.GET, "/api/v1/queue/system/status").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/queue/system/join").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/queue/*/join").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/queue/position/*").authenticated()
 
                 // Static uploads (banner images, etc.) — public access

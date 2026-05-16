@@ -15,6 +15,7 @@ import BookingSuccessPage from './pages/BookingSuccessPage.jsx';
 import MyTicketsPage from './pages/MyTicketsPage.jsx';
 import TicketDetailsPage from './pages/TicketDetailsPage.jsx';
 import VirtualWaitingRoomPage from './pages/VirtualWaitingRoomPage.jsx';
+import SystemQueuePage from './pages/SystemQueuePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 
 
@@ -34,6 +35,7 @@ function Router() {
   // Static routes
   if (path === '/' || path === '') return <HomePage />;
   if (path === '/login') return <SignInPage />;
+  if (path === '/system-queue') return <RequireAuth><SystemQueuePage /></RequireAuth>;
   if (path === '/register') return <SignUpPage />;
   if (path === '/booking-success') return <RequireAuth><BookingSuccessPage /></RequireAuth>;
   if (path === '/my-tickets') return <RequireAuth><MyTicketsPage /></RequireAuth>;

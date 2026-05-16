@@ -54,7 +54,7 @@ public class QueueSession {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id", nullable = false)
+    @JoinColumn(name = "event_id", nullable = true)   // null cho system queue
     private Event event;
 
     /** UUID token — dùng để client polling, không dùng JWT */

@@ -62,24 +62,48 @@ export const ticketService = {
   },
 };
 
-// src/api/queueService.js — Sprint 3: Real backend APIs
+// ── Queue service (always-on for ON_SALE events) ─────────────
 export const queueService = {
-  // GET /api/v1/queue/{eventId}/status
+  /**
+   * GET /api/v1/queue/{eventId}/status
+   * Check queue status before joining.
+   */
   getQueueStatus: async (eventId) => {
     const res = await api.get(`/api/v1/queue/${eventId}/status`);
-    return res.data; // { eventId, queueActive, currentQueueLength, estimatedWaitMinutes }
+    return res.data;
   },
 
-  // POST /api/v1/queue/{eventId}/join
+  /**
+   * POST /api/v1/queue/{eventId}/join
+   * Join queue or resume existing session (idempotent).
+   * Returns { sessionId, queueToken, position, estimatedWaitSeconds, joinedAt }
+   */
   joinQueue: async (eventId) => {
     const res = await api.post(`/api/v1/queue/${eventId}/join`, {});
-    return res.data; // { sessionId, queueToken, position, estimatedWaitSeconds, joinedAt }
+    return res.data;
   },
 
-  // GET /api/v1/queue/position/{token} — polling every 3s
+  /**
+   * GET /api/v1/queue/position/{token}
+   * Poll every 2s. Returns { status, position, estimatedWaitSeconds, accessToken?, accessExpiresAt? }
+   */
   getPosition: async (token) => {
     const res = await api.get(`/api/v1/queue/position/${token}`);
-    return res.data; // { status, position, estimatedWaitSeconds, accessToken?, accessExpiresAt? }
+    return res.data;
+  },
+
+  // ── System Queue (login-level) ──────────────────────────────
+
+  /** POST /api/v1/queue/system/join — join sau khi login */
+  joinSystemQueue: async () => {
+    const res = await api.post('/api/v1/queue/system/join', {});
+    return res.data;
+  },
+
+  /** GET /api/v1/queue/system/status */
+  getSystemQueueStatus: async () => {
+    const res = await api.get('/api/v1/queue/system/status');
+    return res.data;
   },
 };
 

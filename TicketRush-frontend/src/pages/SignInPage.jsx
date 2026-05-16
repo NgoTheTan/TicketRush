@@ -19,7 +19,12 @@ export default function SignInPage() {
     try {
       const user = await login(form.email, form.password);
       showToast('Đăng nhập thành công!', 'success');
-      navigate(params.returnUrl || '/');
+      if (user.role === 'ADMIN') {
+        navigate('/admin/dashboard');
+      } else {
+        const dest = params.returnUrl || '/';
+        navigate('/system-queue', { returnUrl: dest });
+      }
     } catch (err) {
       setError(err.message || 'Đăng nhập thất bại');
     } finally {
