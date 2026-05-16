@@ -13,7 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -46,19 +48,30 @@ public class AuthController {
         Long userId = SecurityUtils.getCurrentUserId();
         User user = authService.getCurrentUser(userId);
 
-        Map<String, Object> userInfo = Map.of(
-                "id", user.getId(),
-                "fullName", user.getFullName(),
-                "email", user.getEmail(),
-                "role", user.getRole(),
-                "profile", user.getProfile() != null ? Map.of(
-                        "phone", user.getProfile().getPhone(),
-                        "dateOfBirth", user.getProfile().getDateOfBirth(),
-                        "gender", user.getProfile().getGender()
-                ) : Map.of()
-        );
+        Map<String, Object> profileInfo = new LinkedHashMap<>();
+        if (user.getProfile() != null) {
+            profileInfo.put("phone", user.getProfile().getPhone());
+            profileInfo.put("dateOfBirth", user.getProfile().getDateOfBirth());
+            profileInfo.put("gender", user.getProfile().getGender());
+            profileInfo.put("avatarUrl", user.getProfile().getAvatarUrl());
+        }
+
+        Map<String, Object> userInfo = new LinkedHashMap<>();
+        userInfo.put("id", user.getId());
+        userInfo.put("fullName", user.getFullName());
+        userInfo.put("email", user.getEmail());
+        userInfo.put("role", user.getRole());
+        userInfo.put("profile", profileInfo);
 
         return ResponseEntity.ok(ApiResponse.ok(userInfo));
+    }
+
+    @PostMapping("/me/avatar")
+    public ResponseEntity<ApiResponse<Map<String, String>>> updateAvatar(
+            @RequestParam("file") MultipartFile file) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        String avatarUrl = authService.updateAvatar(userId, file);
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("avatarUrl", avatarUrl)));
     }
 
     /**

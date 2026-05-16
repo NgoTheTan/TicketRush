@@ -22,6 +22,10 @@ public class SeatMapResponse {
         private String zoneName;
         private BigDecimal price;
         private String colorCode;
+        private Integer totalSeats;
+        private Integer availableCount;
+        private Integer lockedCount;
+        private Integer soldCount;
         private List<RowMap> rows;
     }
 
@@ -36,6 +40,7 @@ public class SeatMapResponse {
     @Builder
     public static class SeatItem {
         private Long seatId;
+        private Long zoneId;
         private Integer seatNumber;
         private String rowLabel;
         private SeatStatus status;

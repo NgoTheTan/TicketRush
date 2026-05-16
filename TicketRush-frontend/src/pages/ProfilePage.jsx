@@ -1,18 +1,21 @@
 // src/pages/ProfilePage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from '../components/layout/Header.jsx';
-import { useAuth } from '../contexts/AuthContext.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import authService from '../api/authService.js';
 import api from '../api/apiClient.js';
-import { Button, showToast, formatDateShort } from '../components/ui/index.jsx';
+import { Button, showToast } from '../components/ui/index.jsx';
+
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
 
 export default function ProfilePage() {
-  const { user, login } = useAuth();
   const { navigate } = useRouter();
+  const avatarInputRef = useRef(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [tab, setTab] = useState('info'); // 'info' | 'password'
 
   // Form state
@@ -34,6 +37,38 @@ export default function ProfilePage() {
   }, []);
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      showToast('Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP', 'error');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Ảnh đại diện không được vượt quá 2MB', 'error');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const result = await authService.updateAvatar(file);
+      setProfile(prev => ({
+        ...prev,
+        profile: {
+          ...(prev?.profile ?? {}),
+          avatarUrl: result.avatarUrl,
+        },
+      }));
+      showToast('Đã cập nhật ảnh đại diện!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Cập nhật ảnh đại diện thất bại', 'error');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSaveInfo = async (e) => {
     e.preventDefault();
@@ -94,19 +129,50 @@ export default function ProfilePage() {
         <p className="text-sm text-slate-500 mb-8">Quản lý thông tin cá nhân và bảo mật</p>
 
         {/* Avatar & role */}
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 mb-6 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-2xl font-black text-indigo-600">
-            {(profile?.fullName || 'U')[0].toUpperCase()}
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 mb-6 flex flex-wrap items-center gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full bg-indigo-100 overflow-hidden flex items-center justify-center text-2xl font-black text-indigo-600">
+              {profile?.profile?.avatarUrl ? (
+                <img
+                  src={toFullUrl(profile.profile.avatarUrl)}
+                  alt={profile?.fullName || 'Avatar'}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                (profile?.fullName || 'U')[0].toUpperCase()
+              )}
+            </div>
+            {uploadingAvatar && (
+              <div className="absolute inset-0 rounded-full bg-white/70 flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+              </div>
+            )}
           </div>
-          <div>
+          <div className="flex-1 min-w-[180px]">
             <p className="font-bold text-slate-900 text-lg">{profile?.fullName}</p>
             <p className="text-sm text-slate-500">{profile?.email}</p>
             <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-700">
               Khách hàng
             </span>
           </div>
+          <div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              loading={uploadingAvatar}
+              onClick={() => avatarInputRef.current?.click()}
+            >
+              Đổi ảnh
+            </Button>
+          </div>
         </div>
-
         {/* Tabs */}
         <div className="flex gap-1 p-1 bg-slate-100 rounded-xl mb-6">
           {[{ id: 'info', label: 'Thông tin cá nhân' }, { id: 'password', label: 'Đổi mật khẩu' }].map(t => (

@@ -65,6 +65,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/me/**").hasRole("CUSTOMER")
                 .requestMatchers("/api/v1/auth/me").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/v1/auth/me").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/me/avatar").authenticated()
 
                 // WebSocket handshake endpoint — SockJS (Sprint 3)
                 .requestMatchers("/ws/**").permitAll()

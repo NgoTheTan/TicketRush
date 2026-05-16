@@ -78,6 +78,17 @@ const api = {
     });
     return handleResponse(res);
   },
+
+  upload: async (path, formData) => {
+    const token = getToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    return handleResponse(res);
+  },
 };
 
 export default api;

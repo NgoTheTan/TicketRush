@@ -16,6 +16,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +33,13 @@ public class AuthService {
     private final CustomerProfileRepository customerProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+
+    private static final long MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+    private static final Set<String> ALLOWED_AVATAR_TYPES = Set.of(
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+    );
 
     @Transactional
     public AuthResponse register(RegisterRequest req) {
@@ -56,6 +71,7 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest req) {
         User user = userRepository.findByEmail(req.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS));
@@ -74,6 +90,51 @@ public class AuthService {
     public User getCurrentUser(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.AUTH_USER_NOT_FOUND));
+    }
+
+    @Transactional
+    public String updateAvatar(Long userId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED,
+                    java.util.Map.of("message", "File ảnh không được để trống"));
+        }
+        if (file.getSize() > MAX_AVATAR_BYTES) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED,
+                    java.util.Map.of("message", "Ảnh đại diện không được vượt quá 2MB"));
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_AVATAR_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED,
+                    java.util.Map.of("message", "Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP"));
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.AUTH_USER_NOT_FOUND));
+
+        CustomerProfile profile = customerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.AUTH_USER_NOT_FOUND));
+
+        try {
+            Path uploadDir = Paths.get("uploads", "avatars");
+            Files.createDirectories(uploadDir);
+
+            String extension = switch (contentType.toLowerCase(Locale.ROOT)) {
+                case "image/png" -> ".png";
+                case "image/webp" -> ".webp";
+                default -> ".jpg";
+            };
+            String fileName = "user_" + user.getId() + "_" + UUID.randomUUID() + extension;
+            Path filePath = uploadDir.resolve(fileName).toAbsolutePath().normalize();
+            file.transferTo(filePath.toFile());
+
+            String avatarUrl = "/uploads/avatars/" + fileName;
+            profile.setAvatarUrl(avatarUrl);
+            customerProfileRepository.save(profile);
+            return avatarUrl;
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi upload ảnh đại diện: " + e.getMessage(), e);
+        }
     }
 
     @Transactional

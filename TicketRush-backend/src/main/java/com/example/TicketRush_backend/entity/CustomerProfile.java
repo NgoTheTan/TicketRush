@@ -47,6 +47,9 @@ public class CustomerProfile {
     @Column(name = "date_of_birth", nullable = false)
     private LocalDate dateOfBirth;
 
+    @Column(name = "avatar_url", length = 1000)
+    private String avatarUrl;
+
     // @Enumerated(EnumType.STRING)
     // @Column(nullable = false, length = 10)
     // private Gender gender;

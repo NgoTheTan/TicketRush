@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -74,10 +73,6 @@ public class SeatService {
         List<EventSeat> seats = eventSeatRepository.findByEventId(eventId);
         List<SeatZone> zones = seatZoneRepository.findByEventId(eventId);
 
-        // Map seatId → zone để gán zoneName và price
-        Map<Long, SeatZone> zoneById = zones.stream()
-                .collect(Collectors.toMap(SeatZone::getId, z -> z));
-
         // Nhóm seats theo zoneId → rowLabel → list seat
         Map<Long, Map<String, List<EventSeat>>> grouped = seats.stream()
                 .collect(Collectors.groupingBy(
@@ -88,7 +83,22 @@ public class SeatService {
         List<SeatMapResponse.ZoneMap> zoneMaps = zones.stream()
                 .map(zone -> {
                     Map<String, List<EventSeat>> rowMap =
-                            grouped.getOrDefault(zone.getId(), new LinkedHashMap<>());
+                            grouped.getOrDefault(zone.getId(), Map.of());
+
+                    List<EventSeat> zoneSeats = rowMap.values().stream()
+                            .flatMap(List::stream)
+                            .toList();
+
+                    int totalSeats = zoneSeats.size();
+                    int availableCount = (int) zoneSeats.stream()
+                            .filter(s -> s.getStatus() == SeatStatus.AVAILABLE)
+                            .count();
+                    int lockedCount = (int) zoneSeats.stream()
+                            .filter(s -> s.getStatus() == SeatStatus.LOCKED)
+                            .count();
+                    int soldCount = (int) zoneSeats.stream()
+                            .filter(s -> s.getStatus() == SeatStatus.SOLD)
+                            .count();
 
                     List<SeatMapResponse.RowMap> rows = rowMap.entrySet().stream()
                             .sorted(Map.Entry.comparingByKey())
@@ -98,6 +108,7 @@ public class SeatService {
                                             .sorted(Comparator.comparingInt(EventSeat::getSeatNumber))
                                             .map(s -> SeatMapResponse.SeatItem.builder()
                                                     .seatId(s.getId())
+                                                    .zoneId(zone.getId())
                                                     .seatNumber(s.getSeatNumber())
                                                     .rowLabel(entry.getKey())
                                                     .status(s.getStatus())
@@ -114,6 +125,10 @@ public class SeatService {
                             .zoneName(zone.getName())
                             .price(zone.getPrice())
                             .colorCode(zone.getColorCode())
+                            .totalSeats(totalSeats)
+                            .availableCount(availableCount)
+                            .lockedCount(lockedCount)
+                            .soldCount(soldCount)
                             .rows(rows)
                             .build();
                 })

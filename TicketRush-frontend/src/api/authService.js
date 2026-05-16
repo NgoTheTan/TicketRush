@@ -17,6 +17,13 @@ const authService = {
     return res.data; // { id, fullName, email, role, profile }
   },
 
+  updateAvatar: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.upload('/api/v1/auth/me/avatar', formData);
+    return res.data; // { avatarUrl }
+  },
+
   logout: async () => {
     await api.post('/api/v1/auth/logout', {}).catch(() => {});
     localStorage.removeItem('tr_token');

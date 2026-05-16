@@ -16,6 +16,7 @@ public class AuthResponse {
         private String fullName;
         private String email;
         private UserRole role;
+        private String avatarUrl;
 
         public static UserInfo from(User u) {
             return UserInfo.builder()
@@ -23,6 +24,7 @@ public class AuthResponse {
                     .fullName(u.getFullName())
                     .email(u.getEmail())
                     .role(u.getRole())
+                    .avatarUrl(u.getProfile() != null ? u.getProfile().getAvatarUrl() : null)
                     .build();
         }
     }
