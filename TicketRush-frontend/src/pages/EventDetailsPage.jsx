@@ -53,7 +53,7 @@ export default function EventDetailsPage({ eventId }) {
     if (!hasActiveHold) {
       startBooking(event);
     }
-    navigate(`/events/${eventId}/waiting`);
+    navigate(`/events/${eventId}/seats`);
   };
 
 

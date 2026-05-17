@@ -114,20 +114,20 @@ export default function SystemQueuePage() {
   }, [goToMain]);
 
   // Join hoặc resume system queue
+  // Luôn gọi API joinSystemQueue để backend quyết định:
+  //   - WAITING cũ → resume (giữ vị trí, idempotent khi tải lại)
+  //   - ADMITTED cũ → expire + tạo WAITING mới (buộc chờ lại khi login lại)
   const joinQueue = useCallback(async () => {
     if (!mountedRef.current) return;
     setPhase('joining');
     setErr('');
     try {
-      const stored = sessionStorage.getItem(SYS_QUEUE_KEY);
-      let token = stored;
-      if (!stored) {
-        const res = await queueService.joinSystemQueue();
-        token = res.queueToken;
-        sessionStorage.setItem(SYS_QUEUE_KEY, token);
-        setPos(res.position);
-        setWait(res.estimatedWaitSeconds);
-      }
+      const res = await queueService.joinSystemQueue();
+      const token = res.queueToken;
+      // Lưu token để poll có thể dùng khi trang bị reload giữa chừng
+      sessionStorage.setItem(SYS_QUEUE_KEY, token);
+      setPos(res.position);
+      setWait(res.estimatedWaitSeconds);
       if (mountedRef.current) startPolling(token);
     } catch (err) {
       if (!mountedRef.current) return;

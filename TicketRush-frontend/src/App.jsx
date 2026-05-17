@@ -14,7 +14,6 @@ import OrderConfirmationPage from './pages/OrderConfirmationPage.jsx';
 import BookingSuccessPage from './pages/BookingSuccessPage.jsx';
 import MyTicketsPage from './pages/MyTicketsPage.jsx';
 import TicketDetailsPage from './pages/TicketDetailsPage.jsx';
-import VirtualWaitingRoomPage from './pages/VirtualWaitingRoomPage.jsx';
 import SystemQueuePage from './pages/SystemQueuePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 
@@ -52,9 +51,6 @@ function Router() {
 
   m = matchRoute('/events/:id/checkout', path);
   if (m) return <RequireAuth><OrderConfirmationPage eventId={m.id} /></RequireAuth>;
-
-  m = matchRoute('/events/:id/waiting', path);
-  if (m) return <RequireAuth><VirtualWaitingRoomPage eventId={m.id} /></RequireAuth>;
 
   m = matchRoute('/tickets/:id', path);
   if (m) return <RequireAuth><TicketDetailsPage ticketId={m.id} /></RequireAuth>;

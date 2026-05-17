@@ -206,30 +206,38 @@ public class QueueService {
 
     /**
      * POST /api/v1/queue/system/join
-     * Xuất hiện ngay sau khi đăng nhập.
-     * Idempotent: nếu còn session hợp lệ thì trả về cái cũ.
+     * Gọi ngay sau khi đăng nhập thành công.
+     *
+     * Logic:
+     * - Nếu user đang có session WAITING (chưa vào được) → resume (idempotent, không mất vị trí khi tải lại).
+     * - Nếu user đã có session ADMITTED trước đó → coi là login mới, expire session cũ, tạo WAITING mới.
+     *   Điều này đảm bảo mỗi lần đăng nhập đều phải chờ queue, tránh bypass khi TTL còn hạn.
      */
     @Transactional
     public JoinQueueResponse joinSystemQueue(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.AUTH_USER_NOT_FOUND));
 
-        // Dùng query mới không cần bind List<String> để tránh lỗi PostgreSQL 'text = record'
         List<QueueSession> existing = queueSessionRepository
                 .findSystemQueueActiveByUserId(userId);
 
         if (!existing.isEmpty()) {
             QueueSession session = existing.get(0);
-            if (session.getStatus() == QueueStatus.ADMITTED
-                    && session.getAccessExpiresAt() != null
-                    && session.getAccessExpiresAt().isAfter(Instant.now())) {
-                log.info("[SystemQueue] User={} resuming ADMITTED session={}", userId, session.getId());
-                return toJoinResponse(session, true);
-            }
+
+            // WAITING → resume (giữ vị trí khi user tải lại trang)
             if (session.getStatus() == QueueStatus.WAITING) {
                 log.info("[SystemQueue] User={} resuming WAITING session={} pos={}",
                         userId, session.getId(), session.getPosition());
                 return toJoinResponse(session, true);
+            }
+
+            // ADMITTED → đây là lần đăng nhập mới, expire session cũ để bắt buộc chờ lại
+            if (session.getStatus() == QueueStatus.ADMITTED) {
+                log.info("[SystemQueue] User={} has old ADMITTED session={}, expiring for fresh login",
+                        userId, session.getId());
+                session.setStatus(QueueStatus.EXPIRED);
+                queueSessionRepository.save(session);
+                // fall through → tạo WAITING mới
             }
         }
 
