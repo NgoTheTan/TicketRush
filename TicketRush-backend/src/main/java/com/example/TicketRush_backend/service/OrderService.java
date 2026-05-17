@@ -13,10 +13,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.example.TicketRush_backend.common.AppException;
 import com.example.TicketRush_backend.common.ErrorCode;
 import com.example.TicketRush_backend.dto.checkout.CheckoutResponse;
+import com.example.TicketRush_backend.dto.mail.TicketEmailMessage;
 import com.example.TicketRush_backend.dto.order.OrderResponse;
 import com.example.TicketRush_backend.dto.ws.DashboardUpdateMessage;
 import com.example.TicketRush_backend.dto.ws.OrderUpdateMessage;
@@ -38,7 +41,9 @@ import com.example.TicketRush_backend.repository.SeatHoldRepository;
 import com.example.TicketRush_backend.repository.TicketRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -49,6 +54,7 @@ public class OrderService {
     private final TicketRepository ticketRepository;
     private final CustomerProfileRepository customerProfileRepository;
     private final SeatBroadcastService seatBroadcastService;
+    private final EmailService emailService;
 
     // ── Customer: Create Order from Hold ──────────────────────
 
@@ -133,6 +139,7 @@ public class OrderService {
         }
 
         List<CheckoutResponse.TicketDetail> ticketDetails = new ArrayList<>();
+        List<TicketEmailMessage.TicketInfo> ticketEmailItems = new ArrayList<>();
 
         for (OrderItem item : order.getItems()) {
             // SELECT FOR UPDATE trên từng ghế
@@ -169,6 +176,13 @@ public class OrderService {
                     .status(ticket.getStatus().name())
                     .issuedAt(ticket.getIssuedAt())
                     .build());
+            ticketEmailItems.add(new TicketEmailMessage.TicketInfo(
+                    ticket.getId(),
+                    ticket.getTicketCode().toString(),
+                    item.getZoneName(),
+                    item.getRowLabel(),
+                    item.getSeatNumber(),
+                    item.getUnitPrice()));
         }
 
         Instant now = Instant.now();
@@ -190,6 +204,8 @@ public class OrderService {
         broadcastOrderUpdate("ORDER_PAID", order);
         // Broadcast dashboard stats update
         broadcastDashboardStats(eventId);
+
+        sendTicketQrEmailAfterCommit(buildTicketEmailMessage(order, ticketEmailItems));
 
         return CheckoutResponse.builder()
                 .order(CheckoutResponse.OrderDetail.builder()
@@ -438,6 +454,41 @@ public class OrderService {
                 .email(o.getUser().getEmail())
                 .phone(phone)
                 .build();
+    }
+
+    private TicketEmailMessage buildTicketEmailMessage(Order order, List<TicketEmailMessage.TicketInfo> tickets) {
+        return new TicketEmailMessage(
+                order.getUser().getEmail(),
+                order.getUser().getFullName(),
+                order.getOrderCode(),
+                order.getTotalAmount(),
+                order.getEvent().getName(),
+                order.getEvent().getVenue(),
+                order.getEvent().getEventDate(),
+                List.copyOf(tickets));
+    }
+
+    private void sendTicketQrEmailAfterCommit(TicketEmailMessage message) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    sendTicketQrEmailBestEffort(message);
+                }
+            });
+            return;
+        }
+
+        sendTicketQrEmailBestEffort(message);
+    }
+
+    private void sendTicketQrEmailBestEffort(TicketEmailMessage message) {
+        try {
+            emailService.sendTicketQrEmail(message);
+        } catch (RuntimeException | LinkageError ex) {
+            log.warn("Ticket QR email failed for order {}. Checkout remains successful.",
+                    message.orderCode(), ex);
+        }
     }
 
     /**

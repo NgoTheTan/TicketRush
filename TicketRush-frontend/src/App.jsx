@@ -8,6 +8,7 @@ import CustomerLayout from './components/layout/CustomerLayout.jsx';
 // Pages
 import SignInPage from './pages/SignInPage.jsx';
 import SignUpPage from './pages/SignUpPage.jsx';
+import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import EventDetailsPage from './pages/EventDetailsPage.jsx';
 import SeatSelectionPage from './pages/SeatSelectionPage.jsx';
@@ -33,12 +34,19 @@ function RequireAuth({ children }) {
 function Router() {
   const { path } = useRouter();
   const customer = (page) => <CustomerLayout>{page}</CustomerLayout>;
+  const authModal = (modal) => customer(
+    <>
+      <HomePage />
+      {modal}
+    </>
+  );
 
   // Static routes
   if (path === '/' || path === '') return customer(<HomePage />);
-  if (path === '/login') return <SignInPage />;
+  if (path === '/login') return authModal(<SignInPage modal />);
+  if (path === '/forgot-password') return authModal(<ForgotPasswordPage modal />);
   if (path === '/system-queue') return <RequireAuth><SystemQueuePage /></RequireAuth>;
-  if (path === '/register') return <SignUpPage />;
+  if (path === '/register') return authModal(<SignUpPage modal />);
   if (path === '/booking-success') return <RequireAuth>{customer(<BookingSuccessPage />)}</RequireAuth>;
   if (path === '/my-tickets') return <RequireAuth>{customer(<MyTicketsPage />)}</RequireAuth>;
   if (path === '/profile') return <RequireAuth>{customer(<ProfilePage />)}</RequireAuth>;

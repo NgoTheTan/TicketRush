@@ -2,9 +2,12 @@ package com.example.TicketRush_backend.controller;
 
 import com.example.TicketRush_backend.common.ApiResponse;
 import com.example.TicketRush_backend.dto.auth.AuthResponse;
+import com.example.TicketRush_backend.dto.auth.ForgotPasswordRequest;
 import com.example.TicketRush_backend.dto.auth.LoginRequest;
 import com.example.TicketRush_backend.dto.auth.RegisterRequest;
+import com.example.TicketRush_backend.dto.auth.ResetPasswordRequest;
 import com.example.TicketRush_backend.dto.auth.UpdateProfileRequest;
+import com.example.TicketRush_backend.dto.auth.VerifyResetOtpRequest;
 import com.example.TicketRush_backend.entity.User;
 import com.example.TicketRush_backend.security.SecurityUtils;
 import com.example.TicketRush_backend.service.AuthService;
@@ -35,6 +38,24 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest req) {
         AuthResponse data = authService.login(req);
         return ResponseEntity.ok(ApiResponse.ok(data));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
+        authService.forgotPassword(req);
+        return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
+    @PostMapping("/verify-reset-otp")
+    public ResponseEntity<ApiResponse<Void>> verifyResetOtp(@Valid @RequestBody VerifyResetOtpRequest req) {
+        authService.verifyResetOtp(req);
+        return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        authService.resetPassword(req);
+        return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PostMapping("/logout")

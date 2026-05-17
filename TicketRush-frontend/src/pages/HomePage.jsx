@@ -102,9 +102,9 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-950/80 via-purple-900/65 to-purple-900/35" />
           <div className="relative px-6 md:px-10 lg:px-12 pt-14 pb-12">
             <h1 className="text-4xl lg:text-6xl font-black tracking-tight mb-4 leading-tight">
-              Khám phá sự kiện<br className="hidden lg:block" /> đỉnh cao
+              Khám phá sự kiện đỉnh cao
             </h1>
-            <p className="text-lg text-indigo-100 max-w-xl">
+            <p className="text-lg text-indigo-100 max-w-4xl">
               Đặt vé dễ dàng cho các sự kiện âm nhạc, hội thảo và giải trí hàng đầu.
             </p>
           </div>

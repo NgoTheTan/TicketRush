@@ -23,4 +23,9 @@ Desktop.ini
 # ----------------------------------------------------------------------
 *.log
 
+# Local secrets / environment overrides
+.env
+.env.*
+!.env.example
+
 /uploads/

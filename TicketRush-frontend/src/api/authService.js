@@ -12,6 +12,21 @@ const authService = {
     return res.data; // { token, user }
   },
 
+  forgotPassword: async (email) => {
+    const res = await api.post('/api/v1/auth/forgot-password', { email });
+    return res.data;
+  },
+
+  verifyResetOtp: async (payload) => {
+    const res = await api.post('/api/v1/auth/verify-reset-otp', payload);
+    return res.data;
+  },
+
+  resetPassword: async (payload) => {
+    const res = await api.post('/api/v1/auth/reset-password', payload);
+    return res.data;
+  },
+
   me: async () => {
     const res = await api.get('/api/v1/auth/me');
     return res.data; // { id, fullName, email, role, profile }
