@@ -49,8 +49,8 @@ export default function ProfilePage() {
       showToast('Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP', 'error');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      showToast('Ảnh đại diện không được vượt quá 2MB', 'error');
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Ảnh đại diện không được vượt quá 5MB', 'error');
       return;
     }
 
