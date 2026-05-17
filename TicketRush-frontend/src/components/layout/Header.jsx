@@ -184,6 +184,9 @@ export default function Header() {
         <div className="flex items-center gap-3 ml-auto shrink-0">
           {isAuthenticated ? (
             <div ref={accountMenuRef} className="relative flex items-center gap-2">
+              <span className="hidden md:block text-sm text-slate-600 max-w-[120px] truncate">
+                {user?.fullName}
+              </span>
               <button
                 type="button"
                 onClick={() => setShowAccountMenu((v) => !v)}
@@ -197,9 +200,6 @@ export default function Header() {
                   avatarInitial
                 )}
               </button>
-              <span className="hidden md:block text-sm text-slate-600 max-w-[120px] truncate">
-                {user?.fullName}
-              </span>
 
               {showAccountMenu && (
                 <div className="absolute right-0 top-full mt-3 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50" role="menu">

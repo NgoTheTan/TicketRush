@@ -89,6 +89,26 @@ export default function ProfilePage() {
         dateOfBirth: form.dateOfBirth || undefined,
         gender:      form.gender || undefined,
       });
+      setProfile(prev => ({
+        ...prev,
+        fullName: form.fullName,
+        profile: {
+          ...(prev?.profile ?? {}),
+          phone: form.phone,
+          dateOfBirth: form.dateOfBirth,
+          gender: form.gender,
+        },
+      }));
+      updateUser(prev => ({
+        ...prev,
+        fullName: form.fullName,
+        profile: {
+          ...(prev?.profile ?? {}),
+          phone: form.phone,
+          dateOfBirth: form.dateOfBirth,
+          gender: form.gender,
+        },
+      }));
       showToast('Đã cập nhật thông tin!', 'success');
     } catch (err) {
       showToast(err.message || 'Cập nhật thất bại', 'error');
