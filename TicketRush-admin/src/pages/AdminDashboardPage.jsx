@@ -11,7 +11,7 @@ import { useWebSocket } from '../hooks/useWebSocket.js';
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
 
-function StatCard({ icon, label, value, sub, color = 'indigo', highlight = false }) {
+function StatCard({ icon, label, value, sub, color = 'indigo', highlight = false, className = '' }) {
   const colors = {
     indigo: 'bg-indigo-50 text-indigo-600',
     green:  'bg-emerald-50 text-emerald-600',
@@ -20,7 +20,7 @@ function StatCard({ icon, label, value, sub, color = 'indigo', highlight = false
   };
   return (
     <div className={`bg-white rounded-xl p-5 border shadow-sm transition-all duration-300
-      ${highlight ? 'border-indigo-300 shadow-indigo-100' : 'border-slate-100'}`}>
+      ${highlight ? 'border-indigo-300 shadow-indigo-100' : 'border-slate-100'} ${className}`}>
       <div className="flex items-center gap-3 mb-3">
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colors[color]}`}>
           <span className="material-symbols-outlined text-[20px]">{icon}</span>
@@ -288,9 +288,10 @@ export default function AdminDashboardPage() {
             {dashboard && s && (
               <>
                 {/* KPI Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                   <StatCard icon="payments" label="Tổng doanh thu" color="green"
-                    value={formatCurrency(s.totalRevenue)} sub="Chỉ tính đơn đã thanh toán" />
+                    value={formatCurrency(s.totalRevenue)} sub="Chỉ tính đơn đã thanh toán"
+                    className="sm:col-span-2 lg:col-span-1" />
                   <StatCard icon="chair" label="Tỷ lệ lấp đầy" color="amber"
                     value={`${s.fillRate.toFixed(1)}%`} sub={`${s.soldSeats}/${s.totalSeats} ghế`} />
                   <StatCard icon="lock" label="Ghế đang giữ" color="red"

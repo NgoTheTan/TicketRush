@@ -1,5 +1,4 @@
 // src/pages/BookingSuccessPage.jsx
-import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { useBooking } from '../contexts/BookingContext.jsx';
 import { formatCurrency, formatDate } from '../components/ui/index.jsx';
@@ -21,7 +20,7 @@ export default function BookingSuccessPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcf8ff] flex items-center justify-center p-4 font-[Inter]">
+    <div className="min-h-full flex items-center justify-center p-4 font-[Inter]">
       <div className="w-full max-w-2xl bg-white rounded-xl shadow-[0px_10px_30px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden">
         {/* Success header */}
         <div className="bg-gradient-to-br from-emerald-500 to-teal-600 px-8 pt-10 pb-8 text-white text-center relative overflow-hidden">

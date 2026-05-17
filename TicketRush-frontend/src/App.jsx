@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import { BookingProvider } from './contexts/BookingContext.jsx';
 import { RouterProvider, useRouter, matchRoute } from './contexts/RouterContext.jsx';
 import { ToastContainer } from './components/ui/index.jsx';
+import CustomerLayout from './components/layout/CustomerLayout.jsx';
 
 // Pages
 import SignInPage from './pages/SignInPage.jsx';
@@ -31,31 +32,32 @@ function RequireAuth({ children }) {
 
 function Router() {
   const { path } = useRouter();
+  const customer = (page) => <CustomerLayout>{page}</CustomerLayout>;
 
   // Static routes
-  if (path === '/' || path === '') return <HomePage />;
+  if (path === '/' || path === '') return customer(<HomePage />);
   if (path === '/login') return <SignInPage />;
   if (path === '/system-queue') return <RequireAuth><SystemQueuePage /></RequireAuth>;
   if (path === '/register') return <SignUpPage />;
-  if (path === '/booking-success') return <RequireAuth><BookingSuccessPage /></RequireAuth>;
-  if (path === '/my-tickets') return <RequireAuth><MyTicketsPage /></RequireAuth>;
-  if (path === '/profile') return <RequireAuth><ProfilePage /></RequireAuth>;
+  if (path === '/booking-success') return <RequireAuth>{customer(<BookingSuccessPage />)}</RequireAuth>;
+  if (path === '/my-tickets') return <RequireAuth>{customer(<MyTicketsPage />)}</RequireAuth>;
+  if (path === '/profile') return <RequireAuth>{customer(<ProfilePage />)}</RequireAuth>;
   if (path === '/logout') return <LogoutSplashPage />;
 
   // Dynamic routes
   let m;
 
   m = matchRoute('/events/:id', path);
-  if (m) return <EventDetailsPage eventId={m.id} />;
+  if (m) return customer(<EventDetailsPage eventId={m.id} />);
 
   m = matchRoute('/events/:id/seats', path);
-  if (m) return <RequireAuth><SeatSelectionPage eventId={m.id} /></RequireAuth>;
+  if (m) return <RequireAuth>{customer(<SeatSelectionPage eventId={m.id} />)}</RequireAuth>;
 
   m = matchRoute('/events/:id/checkout', path);
-  if (m) return <RequireAuth><OrderConfirmationPage eventId={m.id} /></RequireAuth>;
+  if (m) return <RequireAuth>{customer(<OrderConfirmationPage eventId={m.id} />)}</RequireAuth>;
 
   m = matchRoute('/tickets/:id', path);
-  if (m) return <RequireAuth><TicketDetailsPage ticketId={m.id} /></RequireAuth>;
+  if (m) return <RequireAuth>{customer(<TicketDetailsPage ticketId={m.id} />)}</RequireAuth>;
 
   // 404
   return (

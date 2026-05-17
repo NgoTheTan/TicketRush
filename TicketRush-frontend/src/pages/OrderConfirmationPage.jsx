@@ -1,6 +1,5 @@
 // src/pages/OrderConfirmationPage.jsx
 import { useState, useEffect, useRef } from 'react';
-import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { useBooking } from '../contexts/BookingContext.jsx';
 import { orderService } from '../api/services.js';
@@ -89,7 +88,7 @@ export default function OrderConfirmationPage({ eventId }) {
       setPendingOrder(null);
       showToast('Đã hủy đơn hàng. Ghế đã được trả lại.', 'info');
       navigate(`/events/${eventId}/seats`);
-    } catch (err) {
+    } catch {
       // Nếu order đã cancel rồi hoặc đã paid → vẫn quay lại
       clearHold();
       navigate(`/events/${eventId}/seats`);
@@ -100,20 +99,18 @@ export default function OrderConfirmationPage({ eventId }) {
 
   const eventName = currentEvent?.name || order?.event?.name || `Sự kiện #${eventId}`;
 
-  if (loading) return <><Header /><div className="flex justify-center py-32"><Spinner size="lg" /></div></>;
+  if (loading) return <div className="flex justify-center py-32"><Spinner size="lg" /></div>;
 
   if (error) return (
-    <><Header />
     <div className="max-w-2xl mx-auto py-20 px-6 text-center">
       <p className="text-red-600 mb-4">{error}</p>
       <button onClick={() => navigate(`/events/${eventId}/seats`)}
         className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">Quay lại chọn ghế</button>
-    </div></>
+    </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#fcf8ff] font-[Inter]">
-      <Header />
+    <div className="font-[Inter]">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <button
           onClick={handleCancel}

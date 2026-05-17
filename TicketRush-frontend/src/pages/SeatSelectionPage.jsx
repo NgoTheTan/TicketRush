@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { useBooking } from '../contexts/BookingContext.jsx';
 import { useWebSocket } from '../hooks/useWebSocket.js';
@@ -217,8 +216,7 @@ export default function SeatSelectionPage({ eventId }) {
   const eventName = currentEvent?.name || `Sự kiện #${eventId}`;
 
   return (
-    <div className="min-h-screen bg-[#fcf8ff] font-[Inter]">
-      <Header />
+    <div className="font-[Inter]">
       <div className="max-w-screen-xl mx-auto px-4 py-6">
         {/* Top bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">

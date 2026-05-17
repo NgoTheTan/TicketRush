@@ -158,7 +158,10 @@ export default function SeatLayoutConfigPage({ eventId }) {
       handlePaint(r, c);
     } else {
       // Polygon Mode: Add point
-      setPolygonPoints(prev => [...prev, { row: r, col: c }]);
+      setPolygonPoints(prev => {
+        if (prev.some(p => p.row === r && p.col === c)) return prev;
+        return [...prev, { row: r, col: c }];
+      });
     }
   };
 

@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { orderService } from '../api/services.js';
-import { Spinner, EmptyState, Badge, formatCurrency, formatDate, showToast } from '../components/ui/index.jsx';
+import { Spinner, EmptyState, Badge, formatCurrency, formatDate, showToast, CustomSelect } from '../components/ui/index.jsx';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 
 const STATUS_OPTS = [
@@ -254,13 +254,6 @@ export default function OrderManagementPage() {
           </div>
           <div className="flex items-center gap-3">
             <WsIndicator connected={wsConnected} newCount={newOrderCount} />
-            <button
-              onClick={load}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-            >
-              <span className="material-symbols-outlined text-[15px]">refresh</span>
-              Làm mới
-            </button>
           </div>
         </div>
 
@@ -271,10 +264,11 @@ export default function OrderManagementPage() {
             <input value={searchInput} onChange={e => handleSearchChange(e.target.value)}
               placeholder="Tìm theo mã đơn, email..." className="flex-1 text-sm outline-none" />
           </div>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
-            {STATUS_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <CustomSelect
+            value={statusFilter}
+            onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
+            options={STATUS_OPTS}
+          />
         </div>
 
         {loading ? <div className="flex justify-center py-20"><Spinner size="lg" /></div>

@@ -1,6 +1,5 @@
 // src/pages/ProfilePage.jsx
 import { useState, useEffect, useRef } from 'react';
-import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import authService from '../api/authService.js';
@@ -144,17 +143,13 @@ export default function ProfilePage() {
   };
 
   if (loading) return (
-    <>
-      <Header />
-      <div className="flex justify-center py-32">
-        <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-      </div>
-    </>
+    <div className="flex justify-center py-32">
+      <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+    </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#fcf8ff] font-[Inter]">
-      <Header />
+    <div className="font-[Inter]">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <h1 className="text-2xl font-black text-slate-900 mb-1">Tài khoản của tôi</h1>
         <p className="text-sm text-slate-500 mb-8">Quản lý thông tin cá nhân và bảo mật</p>

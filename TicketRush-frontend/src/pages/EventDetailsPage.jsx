@@ -1,12 +1,11 @@
 // src/pages/EventDetailsPage.jsx
 import { useState, useEffect, useCallback } from 'react';
-import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useBooking } from '../contexts/BookingContext.jsx';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import eventService from '../api/eventService.js';
-import { Spinner, ErrorState, Badge, formatCurrency, eventStatusLabel, eventStatusVariant, formatDate, showToast } from '../components/ui/index.jsx';
+import { Spinner, ErrorState, Badge, formatCurrency, eventStatusLabel, eventStatusVariant, formatDate } from '../components/ui/index.jsx';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
@@ -57,8 +56,8 @@ export default function EventDetailsPage({ eventId }) {
   };
 
 
-  if (loading) return <><Header /><div className="flex justify-center py-32"><Spinner size="lg" /></div></>;
-  if (error) return <><Header /><div className="max-w-2xl mx-auto py-20"><ErrorState message={error} onRetry={() => window.location.reload()} /></div></>;
+  if (loading) return <div className="flex justify-center py-32"><Spinner size="lg" /></div>;
+  if (error) return <div className="max-w-2xl mx-auto py-20"><ErrorState message={error} onRetry={() => window.location.reload()} /></div>;
   if (!event) return null;
 
   const canBook = event.status === 'ON_SALE';
@@ -66,9 +65,7 @@ export default function EventDetailsPage({ eventId }) {
   const availableSeats = event.zones?.reduce((s, z) => s + (z.availableSeats || 0), 0) || 0;
 
   return (
-    <div className="min-h-screen bg-[#fcf8ff] font-[Inter]">
-      <Header />
-
+    <div className="font-[Inter]">
       {/* Banner */}
       <div className="relative h-72 lg:h-96 bg-slate-800 overflow-hidden">
         {event.imageUrl

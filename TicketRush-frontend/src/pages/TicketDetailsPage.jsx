@@ -1,6 +1,5 @@
 // src/pages/TicketDetailsPage.jsx
 import { useState, useEffect, useRef } from 'react';
-import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { ticketService } from '../api/services.js';
 import { Spinner, ErrorState, formatDate, formatCurrency } from '../components/ui/index.jsx';
@@ -76,13 +75,12 @@ export default function TicketDetailsPage({ ticketId }) {
       .finally(() => setLoading(false));
   }, [ticketId]);
 
-  if (loading) return <><Header /><div className="flex justify-center py-32"><Spinner size="lg" /></div></>;
-  if (error) return <><Header /><div className="max-w-lg mx-auto py-20 px-6"><ErrorState message={error} /></div></>;
+  if (loading) return <div className="flex justify-center py-32"><Spinner size="lg" /></div>;
+  if (error) return <div className="max-w-lg mx-auto py-20 px-6"><ErrorState message={error} /></div>;
   if (!ticket) return null;
 
   return (
-    <div className="min-h-screen bg-[#fcf8ff] font-[Inter]">
-      <Header />
+    <div className="font-[Inter]">
       <div className="max-w-lg mx-auto px-4 py-10">
         <button onClick={() => navigate('/my-tickets')}
           className="text-sm text-indigo-600 hover:text-indigo-700 mb-6 flex items-center gap-1">

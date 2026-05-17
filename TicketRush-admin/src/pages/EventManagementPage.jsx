@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
-import { Spinner, EmptyState, Badge, eventStatusLabel, eventStatusVariant, formatDate, showToast, useConfirm } from '../components/ui/index.jsx';
+import { Spinner, EmptyState, Badge, eventStatusLabel, eventStatusVariant, formatDate, showToast, useConfirm, CustomSelect } from '../components/ui/index.jsx';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả' },
@@ -125,10 +125,11 @@ export default function EventManagementPage() {
             <input value={searchInput} onChange={e => handleSearchChange(e.target.value)}
               placeholder="Tìm sự kiện..." className="flex-1 text-sm outline-none" />
           </div>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white">
-            {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <CustomSelect
+            value={statusFilter}
+            onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
+            options={STATUS_OPTIONS}
+          />
         </div>
 
         {loading ? <div className="flex justify-center py-20"><Spinner size="lg" /></div> : events.length === 0 ? (

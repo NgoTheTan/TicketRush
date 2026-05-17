@@ -83,7 +83,7 @@ export function ToastContainer() {
   );
 }
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 export function showToast(message, type = 'info') {
   if (_setToast) {
@@ -318,4 +318,74 @@ export function eventStatusVariant(status) {
 
 export function orderStatusLabel(status) {
   return { PENDING: 'Chờ thanh toán', PAID: 'Đã thanh toán', EXPIRED: 'Hết hạn', CANCELLED: 'Đã hủy' }[status] || status;
+}
+
+// ── Custom Select Dropdown ─────────────────────────────────────
+export function CustomSelect({ value, onChange, options = [], className = '' }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const selectedOption = options.find(o => o.value === value) || options[0];
+
+  const handleSelect = (val) => {
+    onChange?.({ target: { value: val } }); // Mock event object to keep compatibility
+    setIsOpen(false);
+  };
+
+  return (
+    <div className={`relative ${className}`} ref={containerRef}>
+      {/* Trigger */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between w-full min-w-[160px] px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-medium text-slate-700 shadow-sm"
+      >
+        <span className="truncate">{selectedOption?.label || 'Chọn...'}</span>
+        <span className={`material-symbols-outlined text-[18px] text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-indigo-500' : ''}`}>
+          expand_more
+        </span>
+      </button>
+
+      {/* Options Dropdown */}
+      <div
+        className={`absolute left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden transition-all duration-200 origin-top
+          ${isOpen 
+            ? 'opacity-100 scale-100 pointer-events-auto translate-y-0' 
+            : 'opacity-0 scale-95 pointer-events-none -translate-y-2'}`}
+      >
+        <div className="py-1 max-h-60 overflow-y-auto">
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => handleSelect(opt.value)}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-all flex items-center justify-between
+                  ${isSelected 
+                    ? 'bg-indigo-50 text-indigo-700 font-semibold' 
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'}`}
+              >
+                <span className="truncate">{opt.label}</span>
+                {isSelected && (
+                  <span className="material-symbols-outlined text-indigo-600 text-[16px]">check</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }

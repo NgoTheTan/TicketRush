@@ -272,15 +272,7 @@ export default function EventSeatViewPage({ eventId }) {
                       </button>
                     )}
 
-                    {/* Làm mới */}
-                    <button
-                      onClick={load}
-                      disabled={acting}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[15px]">refresh</span>
-                      Làm mới
-                    </button>
+
                   </div>
                 </div>
 
