@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from '../components/layout/Header.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import authService from '../api/authService.js';
 import api from '../api/apiClient.js';
 import { Button, showToast } from '../components/ui/index.jsx';
@@ -11,6 +12,7 @@ const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEN
 
 export default function ProfilePage() {
   const { navigate } = useRouter();
+  const { updateUser } = useAuth();
   const avatarInputRef = useRef(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,13 @@ export default function ProfilePage() {
     try {
       const result = await authService.updateAvatar(file);
       setProfile(prev => ({
+        ...prev,
+        profile: {
+          ...(prev?.profile ?? {}),
+          avatarUrl: result.avatarUrl,
+        },
+      }));
+      updateUser(prev => ({
         ...prev,
         profile: {
           ...(prev?.profile ?? {}),

@@ -28,6 +28,18 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((updater) => {
+    setUser((current) => {
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      if (next) {
+        localStorage.setItem('tr_user', JSON.stringify(next));
+      } else {
+        localStorage.removeItem('tr_user');
+      }
+      return next;
+    });
+  }, []);
+
   const login = useCallback(async (email, password) => {
     setLoading(true);
     try {
@@ -61,7 +73,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       user, token, loading,
       isAuthenticated,
-      login, register, logout,
+      login, register, logout, updateUser,
     }}>
       {children}
     </AuthContext.Provider>

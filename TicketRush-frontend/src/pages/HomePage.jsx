@@ -47,12 +47,13 @@ function EventCard({ event, onClick }) {
 }
 
 export default function HomePage() {
-  const { navigate } = useRouter();
+  const { navigate, params } = useRouter();
+  const initialSearch = params?.search || '';
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState(initialSearch);
+  const [searchInput, setSearchInput] = useState(initialSearch);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [meta, setMeta] = useState(null);
@@ -104,16 +105,28 @@ export default function HomePage() {
     setSuggestions([]);
     setShowSuggestions(false);
     setPage(0);
-    setSearch(eventName);
+    navigate('/', { search: eventName });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setPage(0);
-    setSearch(searchInput);
     setSuggestions([]);
     setShowSuggestions(false);
+    const keyword = searchInput.trim();
+    if (keyword) {
+      navigate('/', { search: keyword });
+    } else {
+      navigate('/');
+    }
   };
+
+  useEffect(() => {
+    const routeSearch = params?.search || '';
+    setSearch(routeSearch);
+    setSearchInput(routeSearch);
+    setPage(0);
+  }, [params?.search]);
 
   useEffect(() => { load(search, page); }, [search, page]);
 
@@ -121,7 +134,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#fcf8ff] font-[Inter]">
-      <Header />
+      <Header key={params?.search || 'all-events'} />
       {/* Hero */}
       <div className="relative bg-gradient-to-br from-indigo-900 to-purple-900 text-white">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1200')] bg-cover bg-center opacity-20" />
@@ -181,14 +194,14 @@ export default function HomePage() {
             <h2 className="text-2xl font-bold text-slate-900">{search ? `Kết quả cho "${search}"` : 'Sự kiện đang mở bán'}</h2>
             {meta && <p className="text-sm text-slate-500 mt-1">{meta.totalElements} sự kiện</p>}
           </div>
-          {search && <button onClick={() => { setSearch(''); setSearchInput(''); setPage(0); }} className="text-sm text-indigo-600 font-medium">Xóa bộ lọc</button>}
+          {search && <button onClick={() => { setSearch(''); setSearchInput(''); setPage(0); navigate('/'); }} className="text-sm text-indigo-600 font-medium">Xóa bộ lọc</button>}
         </div>
         {loading && <div className="flex justify-center py-20"><Spinner size="lg" /></div>}
         {error && !loading && <ErrorState message={error} onRetry={() => load(search, page)} />}
         {!loading && !error && events.length === 0 && (
           <EmptyState icon="🎭" title="Không có sự kiện nào"
             description={search ? `Không tìm thấy sự kiện cho "${search}"` : 'Chưa có sự kiện nào. Hãy quay lại sau!'}
-            action={search && <button onClick={() => { setSearch(''); setSearchInput(''); }} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">Xem tất cả</button>} />
+            action={search && <button onClick={() => { setSearch(''); setSearchInput(''); navigate('/'); }} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">Xem tất cả</button>} />
         )}
         {!loading && events.length > 0 && (
           <>
