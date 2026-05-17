@@ -67,6 +67,7 @@ export default function ProfilePage() {
       }));
       updateUser(prev => ({
         ...prev,
+        avatarUrl: result.avatarUrl,
         profile: {
           ...(prev?.profile ?? {}),
           avatarUrl: result.avatarUrl,

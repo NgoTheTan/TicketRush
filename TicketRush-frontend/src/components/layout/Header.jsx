@@ -108,7 +108,7 @@ export default function Header() {
     ...(isAuthenticated ? [{ label: 'Vé của tôi', to: '/my-tickets' }] : []),
   ];
 
-  const avatarUrl = user?.profile?.avatarUrl;
+  const avatarUrl = user?.profile?.avatarUrl || user?.avatarUrl;
   const avatarInitial = (user?.fullName || user?.email || 'U').trim()[0]?.toUpperCase() || 'U';
 
   return (
