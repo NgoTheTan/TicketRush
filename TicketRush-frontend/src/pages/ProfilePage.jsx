@@ -23,6 +23,7 @@ export default function ProfilePage() {
   // Form state
   const [form, setForm] = useState({ fullName: '', phone: '', dateOfBirth: '', gender: '' });
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [showPasswords, setShowPasswords] = useState({ currentPassword: false, newPassword: false, confirmPassword: false });
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -268,10 +269,22 @@ export default function ProfilePage() {
             ].map(({ key, label }) => (
               <div key={key}>
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">{label}</label>
-                <input type="password" value={pwForm[key]}
-                  onChange={e => setPwForm(p => ({ ...p, [key]: e.target.value }))}
-                  className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
-                    ${errors[key] ? 'border-red-400' : 'border-slate-200'}`} />
+                <div className="relative">
+                  <input type={showPasswords[key] ? 'text' : 'password'} value={pwForm[key]}
+                    onChange={e => setPwForm(p => ({ ...p, [key]: e.target.value }))}
+                    className={`w-full px-3 py-2.5 pr-11 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                      ${errors[key] ? 'border-red-400' : 'border-slate-200'}`} />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords(p => ({ ...p, [key]: !p[key] }))}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                    aria-label={showPasswords[key] ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      {showPasswords[key] ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
                 {errors[key] && <p className="text-xs text-red-600 mt-1">{errors[key]}</p>}
               </div>
             ))}
