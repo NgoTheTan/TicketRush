@@ -12,7 +12,7 @@ const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEN
 
 function EventCard({ event, onClick }) {
   return (
-    <div onClick={onClick} className="bg-white rounded-xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group">
+    <div onClick={onClick} className="bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group">
       <div className="relative h-48 bg-slate-100 overflow-hidden">
         {event.imageUrl ? (
           <img src={toFullUrl(event.imageUrl)} alt={event.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -102,11 +102,11 @@ export default function HomePage() {
 
       <div className="relative bg-gradient-to-br from-indigo-900 to-purple-900 text-white">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1200')] bg-cover bg-center opacity-20" />
-        <div className="relative max-w-screen-xl mx-auto px-6 pt-16 pb-12">
-          <h1 className="text-4xl lg:text-6xl font-black tracking-tight mb-4 leading-tight">
-            Khám phá sự kiện<br className="hidden lg:block" /> đỉnh cao
+        <div className="relative max-w-screen-xl mx-auto px-6 pt-16 pb-14">
+          <h1 className="text-5xl lg:text-7xl font-black tracking-tight leading-[1.08] text-sky-300 mb-6">
+            Khám phá<br />sự kiện<br />đỉnh cao
           </h1>
-          <p className="text-lg text-indigo-200 max-w-xl">
+          <p className="text-lg font-bold text-indigo-100 max-w-2xl">
             Đặt vé dễ dàng cho các sự kiện âm nhạc, hội thảo và giải trí hàng đầu.
           </p>
         </div>
@@ -115,7 +115,7 @@ export default function HomePage() {
       <div className="max-w-screen-xl mx-auto px-6 pt-8 pb-12">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">{search ? `Kết quả cho "${search}"` : 'Sự kiện đang mở bán'}</h2>
+            <h2 className="text-2xl font-bold text-indigo-600">{search ? `Kết quả cho "${search}"` : 'Sự kiện đang mở bán'}</h2>
             {meta && <p className="text-sm text-slate-500 mt-1">{meta.totalElements} sự kiện</p>}
           </div>
           {search && <button onClick={clearSearch} className="text-sm text-indigo-600 font-medium">Xóa bộ lọc</button>}

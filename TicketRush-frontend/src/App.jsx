@@ -16,6 +16,7 @@ import MyTicketsPage from './pages/MyTicketsPage.jsx';
 import TicketDetailsPage from './pages/TicketDetailsPage.jsx';
 import SystemQueuePage from './pages/SystemQueuePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import LogoutSplashPage from './pages/LogoutSplashPage.jsx';
 
 
 function RequireAuth({ children }) {
@@ -39,6 +40,7 @@ function Router() {
   if (path === '/booking-success') return <RequireAuth><BookingSuccessPage /></RequireAuth>;
   if (path === '/my-tickets') return <RequireAuth><MyTicketsPage /></RequireAuth>;
   if (path === '/profile') return <RequireAuth><ProfilePage /></RequireAuth>;
+  if (path === '/logout') return <LogoutSplashPage />;
 
   // Dynamic routes
   let m;

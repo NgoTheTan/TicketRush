@@ -1,6 +1,7 @@
 // src/pages/MyTicketsPage.jsx
 import { useState, useEffect } from 'react';
 import Header from '../components/layout/Header.jsx';
+import Footer from '../components/layout/Footer.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { ticketService } from '../api/services.js';
 import { Spinner, EmptyState, ErrorState, Badge, formatDate, formatCurrency } from '../components/ui/index.jsx';
@@ -32,7 +33,7 @@ export default function MyTicketsPage() {
     <div className="min-h-screen bg-[#fcf8ff] font-[Inter]">
       <Header />
       <div className="max-w-screen-lg mx-auto px-6 py-10">
-        <h1 className="text-2xl font-black text-slate-900 mb-2">Vé của tôi</h1>
+        <h1 className="text-2xl font-black text-indigo-600 mb-2">Vé của tôi</h1>
         <p className="text-sm text-slate-500 mb-8">Quản lý và xem lịch sử vé đã đặt</p>
 
         {loading && <div className="flex justify-center py-20"><Spinner size="lg" /></div>}
@@ -102,6 +103,7 @@ export default function MyTicketsPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

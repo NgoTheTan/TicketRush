@@ -51,7 +51,7 @@ export default function Header() {
   const handleLogout = async () => {
     setShowAccountMenu(false);
     await logout();
-    navigate('/');
+    navigate('/logout');
   };
 
   const handleProfileClick = () => {
@@ -112,7 +112,7 @@ export default function Header() {
   const avatarInitial = (user?.fullName || user?.email || 'U').trim()[0]?.toUpperCase() || 'U';
 
   return (
-    <header className="bg-white border-b border-slate-100 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] sticky top-0 z-50">
+    <header className="bg-white border-b border-sky-100 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] sticky top-0 z-50">
       <div className="flex items-center gap-6 px-6 lg:px-12 h-20 w-full max-w-screen-2xl mx-auto">
         <button
           onClick={() => navigate('/')}
@@ -122,19 +122,23 @@ export default function Header() {
           TicketRush
         </button>
 
-        <nav className="hidden md:flex items-center gap-6 shrink-0">
+        <nav className="hidden md:flex items-center gap-2 shrink-0">
           {navLinks.map((link) => (
             <button
               key={link.to}
               onClick={() => navigate(link.to)}
-              className={`text-sm font-medium transition-colors ${path === link.to ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900'}`}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                path === link.to
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600'
+              }`}
             >
-              {link.label}
+              {link.label} »
             </button>
           ))}
         </nav>
 
-        <form onSubmit={handleSubmit} className="hidden lg:block flex-1 max-w-xl relative">
+        <form onSubmit={handleSubmit} className="hidden lg:block flex-1 max-w-xl ml-auto relative">
           <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus-within:border-indigo-300 focus-within:bg-white transition-colors">
             <span className="material-symbols-outlined text-slate-400 text-[20px]">search</span>
             <input
@@ -184,7 +188,7 @@ export default function Header() {
         <div className="flex items-center gap-3 ml-auto shrink-0">
           {isAuthenticated ? (
             <div ref={accountMenuRef} className="relative flex items-center gap-2">
-              <span className="hidden md:block text-sm text-slate-600 max-w-[120px] truncate">
+              <span className="hidden md:block text-sm font-bold text-slate-800 max-w-[120px] truncate">
                 {user?.fullName}
               </span>
               <button

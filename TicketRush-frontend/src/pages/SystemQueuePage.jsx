@@ -157,7 +157,7 @@ export default function SystemQueuePage() {
   const handleLogout = async () => {
     sessionStorage.removeItem(SYS_QUEUE_KEY);
     await logout();
-    navigate('/login');
+    navigate('/logout');
   };
 
   return (
