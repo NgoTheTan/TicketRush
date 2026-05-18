@@ -14,6 +14,7 @@ public enum ErrorCode {
     AUTH_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT,      "AUTH_EMAIL_ALREADY_EXISTS","Email này đã được sử dụng"),
     AUTH_INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED,   "AUTH_INVALID_CREDENTIALS", "Email hoặc mật khẩu không đúng"),
     AUTH_USER_NOT_FOUND     (HttpStatus.NOT_FOUND,      "AUTH_USER_NOT_FOUND",      "Tài khoản không tồn tại"),
+    AUTH_GOOGLE_TOKEN_INVALID(HttpStatus.UNAUTHORIZED,  "AUTH_GOOGLE_TOKEN_INVALID","Đăng nhập Google không hợp lệ"),
     AUTH_RESET_OTP_INVALID  (HttpStatus.BAD_REQUEST,    "AUTH_RESET_OTP_INVALID",   "Mã OTP không hợp lệ"),
     AUTH_RESET_OTP_EXPIRED  (HttpStatus.GONE,           "AUTH_RESET_OTP_EXPIRED",   "Mã OTP đã hết hạn, vui lòng yêu cầu mã mới"),
 

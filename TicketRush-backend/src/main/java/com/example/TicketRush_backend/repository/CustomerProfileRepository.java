@@ -33,6 +33,7 @@ public interface CustomerProfileRepository extends JpaRepository<CustomerProfile
         JOIN customer_profiles cp ON cp.user_id = o.user_id
         WHERE o.event_id = :eventId
           AND o.status   = 'PAID'
+          AND cp.date_of_birth IS NOT NULL
         GROUP BY age_group
         ORDER BY MIN(EXTRACT(YEAR FROM AGE(cp.date_of_birth)))
     """, nativeQuery = true)
@@ -49,6 +50,7 @@ public interface CustomerProfileRepository extends JpaRepository<CustomerProfile
         JOIN customer_profiles cp ON cp.user_id = o.user_id
         WHERE o.event_id = :eventId
           AND o.status   = 'PAID'
+          AND cp.gender IS NOT NULL
         GROUP BY cp.gender
     """, nativeQuery = true)
     List<Object[]> findAudienceByGender(@Param("eventId") Long eventId);

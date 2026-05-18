@@ -4,6 +4,7 @@ import com.example.TicketRush_backend.common.AppException;
 import com.example.TicketRush_backend.common.ErrorCode;
 import com.example.TicketRush_backend.dto.auth.AuthResponse;
 import com.example.TicketRush_backend.dto.auth.ForgotPasswordRequest;
+import com.example.TicketRush_backend.dto.auth.GoogleLoginRequest;
 import com.example.TicketRush_backend.dto.auth.LoginRequest;
 import com.example.TicketRush_backend.dto.auth.RegisterRequest;
 import com.example.TicketRush_backend.dto.auth.ResetPasswordRequest;
@@ -16,6 +17,7 @@ import com.example.TicketRush_backend.entity.User;
 import com.example.TicketRush_backend.enums.UserRole;
 import com.example.TicketRush_backend.repository.PasswordResetOtpRepository;
 import com.example.TicketRush_backend.repository.UserRepository;
+import com.example.TicketRush_backend.security.GoogleTokenVerifier;
 import com.example.TicketRush_backend.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,6 +46,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
+    private final GoogleTokenVerifier googleTokenVerifier;
 
     @Value("${app.auth.password-reset-otp-ttl-minutes:10}")
     private int passwordResetOtpTtlMinutes;
@@ -73,7 +76,7 @@ public class AuthService {
 
         CustomerProfile profile = CustomerProfile.builder()
                 .user(user)
-                .phone(req.getPhone())
+                .phone(blankToNull(req.getPhone()))
                 .dateOfBirth(req.getDateOfBirth())
                 .gender(req.getGender())
                 .build();
@@ -102,6 +105,62 @@ public class AuthService {
                 .token(token)
                 .user(AuthResponse.UserInfo.from(user))
                 .build();
+    }
+
+    @Transactional
+    public AuthResponse loginWithGoogle(GoogleLoginRequest req) {
+        GoogleTokenVerifier.GoogleUserInfo googleUser = googleTokenVerifier.verify(req.getCredential());
+        User user = userRepository.findByEmail(googleUser.email())
+                .orElseGet(() -> createGoogleCustomer(googleUser));
+
+        if (user.getRole() != UserRole.CUSTOMER) {
+            throw new AppException(ErrorCode.AUTH_INVALID_CREDENTIALS,
+                    Map.of("message", "Đăng nhập Google chỉ hỗ trợ tài khoản khách hàng"));
+        }
+
+        syncGoogleProfile(user, googleUser);
+
+        String token = jwtUtil.generateToken(user);
+        return AuthResponse.builder()
+                .token(token)
+                .user(AuthResponse.UserInfo.from(user))
+                .build();
+    }
+
+    private User createGoogleCustomer(GoogleTokenVerifier.GoogleUserInfo googleUser) {
+        User user = User.builder()
+                .email(googleUser.email())
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .fullName(googleUser.fullName())
+                .role(UserRole.CUSTOMER)
+                .build();
+
+        CustomerProfile profile = CustomerProfile.builder()
+                .user(user)
+                .avatarUrl(blankToNull(googleUser.pictureUrl()))
+                .build();
+
+        user.setProfile(profile);
+        return userRepository.save(user);
+    }
+
+    private void syncGoogleProfile(User user, GoogleTokenVerifier.GoogleUserInfo googleUser) {
+        if ((user.getFullName() == null || user.getFullName().isBlank()) && !googleUser.fullName().isBlank()) {
+            user.setFullName(googleUser.fullName());
+        }
+
+        if (user.getProfile() == null) {
+            CustomerProfile profile = CustomerProfile.builder()
+                    .user(user)
+                    .avatarUrl(blankToNull(googleUser.pictureUrl()))
+                    .build();
+            user.setProfile(profile);
+        } else if ((user.getProfile().getAvatarUrl() == null || user.getProfile().getAvatarUrl().isBlank())
+                && !googleUser.pictureUrl().isBlank()) {
+            user.getProfile().setAvatarUrl(googleUser.pictureUrl());
+        }
+
+        userRepository.save(user);
     }
 
     @Transactional
@@ -250,7 +309,7 @@ public class AuthService {
         // Cập nhật CustomerProfile
         if (user.getRole() == com.example.TicketRush_backend.enums.UserRole.CUSTOMER) {
             customerProfileRepository.findByUserId(userId).ifPresent(profile -> {
-                if (req.getPhone() != null)       profile.setPhone(req.getPhone());
+                if (req.getPhone() != null)       profile.setPhone(blankToNull(req.getPhone()));
                 if (req.getDateOfBirth() != null) profile.setDateOfBirth(req.getDateOfBirth());
                 if (req.getGender() != null)      profile.setGender(req.getGender());
                 customerProfileRepository.save(profile);
@@ -273,6 +332,10 @@ public class AuthService {
 
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim();
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     private String generateOtp() {

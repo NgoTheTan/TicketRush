@@ -17,6 +17,7 @@ public class AuthResponse {
         private String email;
         private UserRole role;
         private String avatarUrl;
+        private boolean profileComplete;
 
         public static UserInfo from(User u) {
             return UserInfo.builder()
@@ -25,7 +26,15 @@ public class AuthResponse {
                     .email(u.getEmail())
                     .role(u.getRole())
                     .avatarUrl(u.getProfile() != null ? u.getProfile().getAvatarUrl() : null)
+                    .profileComplete(isProfileComplete(u))
                     .build();
+        }
+
+        private static boolean isProfileComplete(User u) {
+            if (u.getRole() != UserRole.CUSTOMER) return true;
+            return u.getProfile() != null
+                    && u.getProfile().getDateOfBirth() != null
+                    && u.getProfile().getGender() != null;
         }
     }
 }

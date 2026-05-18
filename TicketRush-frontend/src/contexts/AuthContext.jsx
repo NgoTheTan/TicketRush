@@ -1,5 +1,5 @@
 // src/contexts/AuthContext.jsx
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 import authService from '../api/authService.js';
 
 const AuthContext = createContext(null);
@@ -51,6 +51,17 @@ export function AuthProvider({ children }) {
     }
   }, [saveAuth]);
 
+  const loginWithGoogle = useCallback(async (credential) => {
+    setLoading(true);
+    try {
+      const data = await authService.loginWithGoogle(credential);
+      saveAuth(data.token, data.user);
+      return data.user;
+    } finally {
+      setLoading(false);
+    }
+  }, [saveAuth]);
+
   const register = useCallback(async (payload) => {
     setLoading(true);
     try {
@@ -73,7 +84,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{
       user, token, loading,
       isAuthenticated,
-      login, register, logout, updateUser,
+      login, loginWithGoogle, register, logout, updateUser,
     }}>
       {children}
     </AuthContext.Provider>

@@ -1,18 +1,20 @@
 // src/pages/SignInPage.jsx
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { Button, showToast } from '../components/ui/index.jsx';
+import GoogleAuthButton from '../components/auth/GoogleAuthButton.jsx';
 
 function modalQuery(params) {
   return params?.returnUrl ? { returnUrl: params.returnUrl } : undefined;
 }
 
 export default function SignInPage({ modal = false }) {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const { navigate, params } = useRouter();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPw, setShowPw] = useState(false);
 
@@ -29,6 +31,21 @@ export default function SignInPage({ modal = false }) {
   const openRegister = () => navigate('/register', modalQuery(params));
   const openForgotPassword = () => navigate('/forgot-password', modalQuery(params));
 
+  const redirectAfterLogin = useCallback((user, requireProfileCompletion = false) => {
+    if (user.role === 'ADMIN') {
+      navigate('/admin/dashboard');
+      return;
+    }
+
+    const dest = params.returnUrl || '/';
+    if (requireProfileCompletion && user.profileComplete === false) {
+      navigate('/profile', { completeProfile: '1', returnUrl: dest });
+      return;
+    }
+
+    navigate('/system-queue', { returnUrl: dest });
+  }, [navigate, params.returnUrl]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -36,18 +53,32 @@ export default function SignInPage({ modal = false }) {
     try {
       const user = await login(form.email, form.password);
       showToast('Đăng nhập thành công!', 'success');
-      if (user.role === 'ADMIN') {
-        navigate('/admin/dashboard');
-      } else {
-        const dest = params.returnUrl || '/';
-        navigate('/system-queue', { returnUrl: dest });
-      }
+      redirectAfterLogin(user);
     } catch (err) {
       setError(err.message || 'Đăng nhập thất bại');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleGoogleCredential = useCallback(async (response) => {
+    if (!response?.credential) {
+      setError('Google không trả về mã xác thực. Vui lòng thử lại.');
+      return;
+    }
+
+    setError('');
+    setGoogleLoading(true);
+    try {
+      const user = await loginWithGoogle(response.credential);
+      showToast('Đăng nhập Google thành công!', 'success');
+      redirectAfterLogin(user, true);
+    } catch (err) {
+      setError(err.message || 'Đăng nhập Google thất bại');
+    } finally {
+      setGoogleLoading(false);
+    }
+  }, [loginWithGoogle, redirectAfterLogin]);
 
   const formCard = (
     <div className="relative w-full max-w-5xl max-h-[calc(100vh-3rem)] overflow-y-auto flex flex-col md:flex-row min-h-[600px] bg-white shadow-[0px_24px_80px_rgba(15,23,42,0.24)] rounded-xl">
@@ -140,14 +171,11 @@ export default function SignInPage({ modal = false }) {
             <div className="relative flex justify-center text-xs text-slate-400 bg-white px-2">Hoặc tiếp tục với</div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {['Google', 'Facebook'].map(p => (
-              <button key={p} type="button"
-                className="py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-                {p}
-              </button>
-            ))}
-          </div>
+          <GoogleAuthButton
+            loading={googleLoading}
+            onCredential={handleGoogleCredential}
+            onError={setError}
+          />
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Chưa có tài khoản?{' '}

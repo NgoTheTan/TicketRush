@@ -10,7 +10,7 @@ const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
 
 export default function ProfilePage() {
-  const { navigate } = useRouter();
+  const { navigate, params } = useRouter();
   const { updateUser } = useAuth();
   const avatarInputRef = useRef(null);
   const [profile, setProfile] = useState(null);
@@ -24,6 +24,7 @@ export default function ProfilePage() {
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPasswords, setShowPasswords] = useState({ currentPassword: false, newPassword: false, confirmPassword: false });
   const [errors, setErrors] = useState({});
+  const completingProfile = params.completeProfile === '1';
 
   useEffect(() => {
     authService.me().then(data => {
@@ -39,6 +40,22 @@ export default function ProfilePage() {
   }, []);
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const validateInfo = () => {
+    const nextErrors = {};
+    const phone = form.phone.trim();
+    if (phone && !/^[0-9]{10,11}$/.test(phone)) {
+      nextErrors.phone = 'Số điện thoại không hợp lệ';
+    }
+    if (completingProfile && !form.dateOfBirth) {
+      nextErrors.dateOfBirth = 'Vui lòng nhập ngày sinh';
+    }
+    if (completingProfile && !form.gender) {
+      nextErrors.gender = 'Vui lòng chọn giới tính';
+    }
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
@@ -82,11 +99,15 @@ export default function ProfilePage() {
 
   const handleSaveInfo = async (e) => {
     e.preventDefault();
+    if (!validateInfo()) return;
+
+    const nextProfileComplete = Boolean(form.dateOfBirth && form.gender);
+
     setSaving(true);
     try {
       await api.put('/api/v1/auth/me', {
-        fullName:    form.fullName || undefined,
-        phone:       form.phone || undefined,
+        fullName:    form.fullName.trim() || undefined,
+        phone:       form.phone.trim() || null,
         dateOfBirth: form.dateOfBirth || undefined,
         gender:      form.gender || undefined,
       });
@@ -103,6 +124,7 @@ export default function ProfilePage() {
       updateUser(prev => ({
         ...prev,
         fullName: form.fullName,
+        profileComplete: nextProfileComplete,
         profile: {
           ...(prev?.profile ?? {}),
           phone: form.phone,
@@ -111,6 +133,9 @@ export default function ProfilePage() {
         },
       }));
       showToast('Đã cập nhật thông tin!', 'success');
+      if (completingProfile) {
+        navigate('/system-queue', { returnUrl: params.returnUrl || '/' });
+      }
     } catch (err) {
       showToast(err.message || 'Cập nhật thất bại', 'error');
     } finally { setSaving(false); }
@@ -151,8 +176,14 @@ export default function ProfilePage() {
   return (
     <div className="font-[Inter]">
       <div className="max-w-2xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-black text-slate-900 mb-1">Tài khoản của tôi</h1>
-        <p className="text-sm text-slate-500 mb-8">Quản lý thông tin cá nhân và bảo mật</p>
+        <h1 className="text-2xl font-black text-slate-900 mb-1">
+          {completingProfile ? 'Bổ sung thông tin cá nhân' : 'Tài khoản của tôi'}
+        </h1>
+        <p className="text-sm text-slate-500 mb-8">
+          {completingProfile
+            ? 'Vui lòng nhập ngày sinh và giới tính để tiếp tục.'
+            : 'Quản lý thông tin cá nhân và bảo mật'}
+        </p>
 
         {/* Avatar & role */}
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 mb-6 flex flex-wrap items-center gap-4">
@@ -200,15 +231,17 @@ export default function ProfilePage() {
           </div>
         </div>
         {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-slate-100 rounded-xl mb-6">
-          {[{ id: 'info', label: 'Thông tin cá nhân' }, { id: 'password', label: 'Đổi mật khẩu' }].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all
-                ${tab === t.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+        {!completingProfile && (
+          <div className="flex gap-1 p-1 bg-slate-100 rounded-xl mb-6">
+            {[{ id: 'info', label: 'Thông tin cá nhân' }, { id: 'password', label: 'Đổi mật khẩu' }].map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all
+                  ${tab === t.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Info tab */}
         {tab === 'info' && (
@@ -228,29 +261,35 @@ export default function ProfilePage() {
                   <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Số điện thoại</label>
                   <input value={form.phone} onChange={e => set('phone', e.target.value)}
                     placeholder="09xxxxxxxx"
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                      ${errors.phone ? 'border-red-400' : 'border-slate-200'}`} />
+                  {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Ngày sinh</label>
                     <input type="date" value={form.dateOfBirth} onChange={e => set('dateOfBirth', e.target.value)}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                        ${errors.dateOfBirth ? 'border-red-400' : 'border-slate-200'}`} />
+                    {errors.dateOfBirth && <p className="text-xs text-red-600 mt-1">{errors.dateOfBirth}</p>}
                   </div>
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Giới tính</label>
                     <select value={form.gender} onChange={e => set('gender', e.target.value)}
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                        ${errors.gender ? 'border-red-400' : 'border-slate-200'}`}>
                       <option value="">-- Chọn --</option>
                       <option value="MALE">Nam</option>
                       <option value="FEMALE">Nữ</option>
                       <option value="OTHER">Khác</option>
                     </select>
+                    {errors.gender && <p className="text-xs text-red-600 mt-1">{errors.gender}</p>}
                   </div>
                 </div>
 
             <div className="pt-2 flex gap-3">
-              <Button type="submit" loading={saving}>Lưu thay đổi</Button>
-              <Button type="button" variant="secondary" onClick={() => navigate('/')}>Huỷ</Button>
+              <Button type="submit" loading={saving}>{completingProfile ? 'Tiếp tục' : 'Lưu thay đổi'}</Button>
+              {!completingProfile && <Button type="button" variant="secondary" onClick={() => navigate('/')}>Huỷ</Button>}
             </div>
           </form>
         )}

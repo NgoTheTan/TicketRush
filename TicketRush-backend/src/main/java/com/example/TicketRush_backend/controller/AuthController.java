@@ -3,6 +3,7 @@ package com.example.TicketRush_backend.controller;
 import com.example.TicketRush_backend.common.ApiResponse;
 import com.example.TicketRush_backend.dto.auth.AuthResponse;
 import com.example.TicketRush_backend.dto.auth.ForgotPasswordRequest;
+import com.example.TicketRush_backend.dto.auth.GoogleLoginRequest;
 import com.example.TicketRush_backend.dto.auth.LoginRequest;
 import com.example.TicketRush_backend.dto.auth.RegisterRequest;
 import com.example.TicketRush_backend.dto.auth.ResetPasswordRequest;
@@ -37,6 +38,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest req) {
         AuthResponse data = authService.login(req);
+        return ResponseEntity.ok(ApiResponse.ok(data));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithGoogle(@Valid @RequestBody GoogleLoginRequest req) {
+        AuthResponse data = authService.loginWithGoogle(req);
         return ResponseEntity.ok(ApiResponse.ok(data));
     }
 
@@ -83,6 +90,10 @@ public class AuthController {
         userInfo.put("email", user.getEmail());
         userInfo.put("role", user.getRole());
         userInfo.put("profile", profileInfo);
+        userInfo.put("profileComplete", user.getRole() != com.example.TicketRush_backend.enums.UserRole.CUSTOMER
+                || (user.getProfile() != null
+                && user.getProfile().getDateOfBirth() != null
+                && user.getProfile().getGender() != null));
 
         return ResponseEntity.ok(ApiResponse.ok(userInfo));
     }

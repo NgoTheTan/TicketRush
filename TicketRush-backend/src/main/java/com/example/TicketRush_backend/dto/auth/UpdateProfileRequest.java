@@ -11,7 +11,7 @@ public class UpdateProfileRequest {
     @Size(min = 2, max = 255, message = "Họ tên phải từ 2 đến 255 ký tự")
     private String fullName;
 
-    @Pattern(regexp = "^[0-9]{10,11}$", message = "Số điện thoại không hợp lệ")
+    @Pattern(regexp = "^$|^[0-9]{10,11}$", message = "Số điện thoại không hợp lệ")
     private String phone;
 
     @Past(message = "Ngày sinh phải là ngày trong quá khứ")

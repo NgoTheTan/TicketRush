@@ -7,6 +7,11 @@ const authService = {
     return res.data; // { token, user }
   },
 
+  loginWithGoogle: async (credential) => {
+    const res = await api.post('/api/v1/auth/google', { credential });
+    return res.data; // { token, user }
+  },
+
   register: async (payload) => {
     const res = await api.post('/api/v1/auth/register', payload);
     return res.data; // { token, user }

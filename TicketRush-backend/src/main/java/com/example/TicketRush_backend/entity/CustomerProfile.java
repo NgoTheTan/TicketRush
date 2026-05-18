@@ -41,10 +41,10 @@ public class CustomerProfile {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private String phone;
 
-    @Column(name = "date_of_birth", nullable = false)
+    @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
     @Column(name = "avatar_url", length = 1000)
@@ -55,7 +55,7 @@ public class CustomerProfile {
     // private Gender gender;
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(nullable = false, columnDefinition = "gender_type")
+    @Column(columnDefinition = "gender_type")
     private Gender gender;
 
     @CreationTimestamp

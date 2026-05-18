@@ -32,6 +32,9 @@ public class StartupSchemaPatcher implements ApplicationContextInitializer<Confi
             statement.executeUpdate("ALTER TABLE events ADD COLUMN IF NOT EXISTS queue_active BOOLEAN NOT NULL DEFAULT FALSE");
             statement.executeUpdate("ALTER TABLE events ADD COLUMN IF NOT EXISTS location_url VARCHAR(1000)");
             statement.executeUpdate("ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(1000)");
+            statement.executeUpdate("ALTER TABLE customer_profiles ALTER COLUMN phone DROP NOT NULL");
+            statement.executeUpdate("ALTER TABLE customer_profiles ALTER COLUMN date_of_birth DROP NOT NULL");
+            statement.executeUpdate("ALTER TABLE customer_profiles ALTER COLUMN gender DROP NOT NULL");
             log.info("Patched events missing columns before JPA validation");
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to patch missing queue_active column", ex);

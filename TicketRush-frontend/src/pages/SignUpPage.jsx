@@ -1,8 +1,9 @@
 // src/pages/SignUpPage.jsx
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { Button, showToast } from '../components/ui/index.jsx';
+import GoogleAuthButton from '../components/auth/GoogleAuthButton.jsx';
 
 const SignUpFieldContext = createContext(null);
 const PASSWORD_RULES = [
@@ -70,13 +71,15 @@ function Field({ label, name, type = 'text', placeholder, children }) {
 }
 
 export default function SignUpPage({ modal = false }) {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const { navigate, params } = useRouter();
   const [form, setForm] = useState({
     fullName: '', email: '', password: '', confirmPassword: '',
     phone: '', dateOfBirth: '', gender: 'MALE',
   });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
   const [errors, setErrors] = useState({});
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
@@ -109,7 +112,7 @@ export default function SignUpPage({ modal = false }) {
     else if (!passwordMeetsRules) e.password = 'Mật khẩu chưa đáp ứng đủ tiêu chí';
     if (!form.confirmPassword) e.confirmPassword = 'Vui lòng nhập lại mật khẩu';
     else if (!confirmMatches) e.confirmPassword = 'Mật khẩu không khớp';
-    if (!/^[0-9]{10,11}$/.test(form.phone)) e.phone = 'Số điện thoại không hợp lệ';
+    if (form.phone.trim() && !/^[0-9]{10,11}$/.test(form.phone.trim())) e.phone = 'Số điện thoại không hợp lệ';
     if (!form.dateOfBirth) e.dateOfBirth = 'Vui lòng nhập ngày sinh';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -121,10 +124,10 @@ export default function SignUpPage({ modal = false }) {
     setLoading(true);
     try {
       await register({
-        fullName: form.fullName,
-        email: form.email,
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
         password: form.password,
-        phone: form.phone,
+        phone: form.phone.trim() || null,
         dateOfBirth: form.dateOfBirth,
         gender: form.gender,
       });
@@ -140,6 +143,35 @@ export default function SignUpPage({ modal = false }) {
       setLoading(false);
     }
   };
+
+  const redirectAfterGoogleLogin = useCallback((user) => {
+    const dest = params.returnUrl || '/';
+    if (user.role === 'CUSTOMER' && user.profileComplete === false) {
+      navigate('/profile', { completeProfile: '1', returnUrl: dest });
+      return;
+    }
+
+    navigate('/system-queue', { returnUrl: dest });
+  }, [navigate, params.returnUrl]);
+
+  const handleGoogleCredential = useCallback(async (response) => {
+    if (!response?.credential) {
+      setAuthError('Google không trả về mã xác thực. Vui lòng thử lại.');
+      return;
+    }
+
+    setAuthError('');
+    setGoogleLoading(true);
+    try {
+      const user = await loginWithGoogle(response.credential);
+      showToast('Đăng nhập Google thành công!', 'success');
+      redirectAfterGoogleLogin(user);
+    } catch (err) {
+      setAuthError(err.message || 'Đăng nhập Google thất bại');
+    } finally {
+      setGoogleLoading(false);
+    }
+  }, [loginWithGoogle, redirectAfterGoogleLogin]);
 
   const fieldProps = { form, errors, setValue: set };
 
@@ -170,6 +202,22 @@ export default function SignUpPage({ modal = false }) {
         {/* Form */}
         <SignUpFieldContext.Provider value={fieldProps}>
         <form onSubmit={handleSubmit} className="px-8 py-6 space-y-4">
+          {authError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">{authError}</div>
+          )}
+
+          <GoogleAuthButton
+            loading={googleLoading}
+            text="signup_with"
+            onCredential={handleGoogleCredential}
+            onError={setAuthError}
+          />
+
+          <div className="relative py-1">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+            <div className="relative flex justify-center text-xs text-slate-400 bg-white px-2">Hoặc đăng ký bằng email</div>
+          </div>
+
           <Field label="Họ và tên" name="fullName" placeholder="Nguyễn Văn A" />
           <Field label="Email" name="email" type="email" placeholder="email@example.com" />
 
@@ -229,7 +277,7 @@ export default function SignUpPage({ modal = false }) {
             <ConfirmPasswordStatus complete={confirmMatches} visible={showConfirmCriteria} />
           </div>
 
-          <Field label="Số điện thoại" name="phone" type="tel" placeholder="09xxxxxxxx" />
+          <Field label="Số điện thoại (tùy chọn)" name="phone" type="tel" placeholder="09xxxxxxxx" />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Ngày sinh" name="dateOfBirth" type="date" />
