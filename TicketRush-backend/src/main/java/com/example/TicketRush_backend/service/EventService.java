@@ -5,10 +5,14 @@ import com.example.TicketRush_backend.common.ErrorCode;
 import com.example.TicketRush_backend.dto.event.CreateEventRequest;
 import com.example.TicketRush_backend.dto.event.EventResponse;
 import com.example.TicketRush_backend.dto.event.UpdateEventRequest;
+import com.example.TicketRush_backend.dto.ws.DashboardUpdateMessage;
+import com.example.TicketRush_backend.dto.ws.OrderUpdateMessage;
 import com.example.TicketRush_backend.dto.seat.CreateSeatZonesRequest;
 import com.example.TicketRush_backend.dto.seat.SeatZoneResponse;
 import com.example.TicketRush_backend.entity.*;
 import com.example.TicketRush_backend.enums.EventStatus;
+import com.example.TicketRush_backend.enums.HoldStatus;
+import com.example.TicketRush_backend.enums.NotificationType;
 import com.example.TicketRush_backend.enums.OrderStatus;
 import com.example.TicketRush_backend.enums.SeatStatus;
 import com.example.TicketRush_backend.repository.*;
@@ -19,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +41,7 @@ public class EventService {
     private final QueueSessionRepository queueSessionRepository;
     private final TicketRepository ticketRepository;
     private final SeatBroadcastService seatBroadcastService;
+    private final NotificationService notificationService;
 
     // ── Public / Customer ──────────────────────────────────────
 
@@ -128,9 +134,15 @@ public class EventService {
     public EventResponse changeStatus(Long eventId, EventStatus targetStatus) {
         Event event = findOrThrow(eventId);
         validateTransition(event.getStatus(), targetStatus);
+        if (targetStatus == EventStatus.CANCELLED) {
+            cancelOrdersRefundAndReleaseSeats(event);
+        }
         event.setStatus(targetStatus);
         Event saved = eventRepository.save(event);
         seatBroadcastService.broadcastEventListUpdate();
+        if (targetStatus == EventStatus.CANCELLED) {
+            broadcastDashboardStats(eventId);
+        }
         return EventResponse.basic(saved);
     }
 
@@ -271,6 +283,138 @@ public class EventService {
         if (!valid) {
             throw new AppException(ErrorCode.EVENT_INVALID_STATUS_TRANSITION,
                     Map.of("currentStatus", current, "requestedStatus", target));
+        }
+    }
+
+    private void cancelOrdersRefundAndReleaseSeats(Event event) {
+        Long eventId = event.getId();
+        List<Order> orders = orderRepository.findByEventId(eventId);
+        List<Ticket> ticketsToDelete = new ArrayList<>();
+
+        for (Order order : orders) {
+            OrderStatus oldStatus = order.getStatus();
+            if (oldStatus == OrderStatus.CANCELLED || oldStatus == OrderStatus.EXPIRED) {
+                continue;
+            }
+
+            boolean wasPaid = oldStatus == OrderStatus.PAID;
+            order.setStatus(OrderStatus.CANCELLED);
+            orderRepository.save(order);
+
+            SeatHold hold = order.getHold();
+            if (hold != null && hold.getStatus() == HoldStatus.ACTIVE) {
+                hold.setStatus(HoldStatus.RELEASED);
+                hold.setReleasedAt(java.time.Instant.now());
+                seatHoldRepository.save(hold);
+            }
+
+            if (order.getItems() != null) {
+                for (OrderItem item : order.getItems()) {
+                    if (item.getTicket() != null) {
+                        ticketsToDelete.add(item.getTicket());
+                        item.setTicket(null);
+                    }
+                }
+            }
+
+            String customerMessage = wasPaid
+                    ? "Xin lỗi, sự kiện \"" + event.getName() + "\" đã bị hủy. Đơn "
+                            + "đặt " + describeSeats(order) + " đã được hủy. Hệ thống đã ghi nhận hoàn tiền "
+                            + order.getTotalAmount().toPlainString() + " VND cho bạn và vé liên quan đã được xóa."
+                    : "Xin lỗi, sự kiện \"" + event.getName() + "\" đã bị hủy. Đơn "
+                            + "đặt " + describeSeats(order) + " đã được hủy và ghế đã được trả lại.";
+
+            notificationService.createForUser(
+                    order.getUser(),
+                    NotificationType.EVENT_CANCELLED_REFUND,
+                    "Sự kiện bị hủy",
+                    customerMessage,
+                    "/my-tickets",
+                    eventId,
+                    order.getId());
+
+            notificationService.createForAdmins(
+                    NotificationType.ORDER_CANCELLED,
+                    "Đơn hàng đã bị hủy",
+                    "Đơn " + order.getOrderCode() + " đã bị hủy do sự kiện \"" + event.getName() + "\" bị hủy.",
+                    "/admin/orders",
+                    eventId,
+                    order.getId());
+
+            seatBroadcastService.broadcastOrderStatusChanged(
+                    OrderUpdateMessage.builder()
+                            .type("ORDER_CANCELLED")
+                            .orderId(order.getId())
+                            .orderCode(order.getOrderCode())
+                            .eventId(eventId)
+                            .eventName(event.getName())
+                            .status(OrderStatus.CANCELLED.name())
+                            .totalAmount(order.getTotalAmount())
+                            .customerName(order.getUser() != null ? order.getUser().getFullName() : null)
+                            .customerEmail(order.getUser() != null ? order.getUser().getEmail() : null)
+                            .ticketCount(order.getItems() != null ? order.getItems().size() : 0)
+                            .build());
+        }
+
+        if (!ticketsToDelete.isEmpty()) {
+            ticketRepository.deleteAll(ticketsToDelete);
+        }
+
+        List<Long> releasedSeatIds = new ArrayList<>();
+        for (EventSeat seat : eventSeatRepository.findByEventId(eventId)) {
+            if (seat.getStatus() != SeatStatus.AVAILABLE || seat.getHeldBy() != null || seat.getHeldUntil() != null) {
+                seat.setStatus(SeatStatus.AVAILABLE);
+                seat.setHeldBy(null);
+                seat.setHeldUntil(null);
+                seat.setPriceAtSale(null);
+                eventSeatRepository.save(seat);
+                releasedSeatIds.add(seat.getId());
+            }
+        }
+
+        if (!releasedSeatIds.isEmpty()) {
+            seatBroadcastService.broadcastMultipleSeatsAvailable(eventId, releasedSeatIds);
+        }
+    }
+
+    private String describeSeats(Order order) {
+        if (order.getItems() == null || order.getItems().isEmpty()) {
+            return "ghế đã chọn";
+        }
+
+        List<String> seats = order.getItems().stream()
+                .map(item -> item.getRowLabel() + item.getSeatNumber())
+                .toList();
+        return (seats.size() == 1 ? "ghế " : "các ghế ") + String.join(", ", seats);
+    }
+
+    private void broadcastDashboardStats(Long eventId) {
+        try {
+            long sold = eventSeatRepository.countByEventIdAndStatus(eventId, SeatStatus.SOLD);
+            long locked = eventSeatRepository.countByEventIdAndStatus(eventId, SeatStatus.LOCKED);
+            long available = eventSeatRepository.countByEventIdAndStatus(eventId, SeatStatus.AVAILABLE);
+            long total = sold + locked + available;
+            double fillRate = total == 0 ? 0.0 : BigDecimal.valueOf((double) sold / total * 100)
+                    .setScale(2, RoundingMode.HALF_UP)
+                    .doubleValue();
+
+            BigDecimal revenue = orderRepository.sumRevenueByEventId(eventId, OrderStatus.PAID);
+            long pending = orderRepository.searchOrdersByStatus("", OrderStatus.PENDING, Pageable.unpaged())
+                    .getTotalElements();
+
+            seatBroadcastService.broadcastDashboardUpdate(
+                    DashboardUpdateMessage.builder()
+                            .eventId(eventId)
+                            .soldSeats(sold)
+                            .lockedSeats(locked)
+                            .availableSeats(available)
+                            .totalSeats(total)
+                            .fillRate(fillRate)
+                            .totalRevenue(revenue)
+                            .pendingOrders(pending)
+                            .build());
+        } catch (Exception ignored) {
+            // Dashboard push is best-effort; REST reads remain authoritative.
         }
     }
 

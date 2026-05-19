@@ -1,6 +1,7 @@
 import { useRouter } from '../../contexts/RouterContext.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useDashboardState } from '../../contexts/DashboardStateContext.jsx';
+import NotificationCenter from '../notifications/NotificationCenter.jsx';
 
 const menuItems = [
   { icon: 'dashboard', label: 'Dashboard', to: '/admin/dashboard' },
@@ -137,6 +138,8 @@ export default function AdminLayout({ children }) {
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>
+
+      <NotificationCenter />
     </div>
   );
 }

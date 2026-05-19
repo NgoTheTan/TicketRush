@@ -25,7 +25,7 @@ export function useWebSocket(topic, onMessage, enabled = true, onConnect) {
   useEffect(() => { onMsgRef.current = onMessage; }, [onMessage]);
   useEffect(() => { onConRef.current = onConnect; }, [onConnect]);
 
-  const connect = useCallback(() => {
+  const connect = useCallback((cancelledRef) => {
     if (!topic || !enabled) return;
 
     // Lazy import để tránh lỗi khi package chưa install
@@ -33,10 +33,16 @@ export function useWebSocket(topic, onMessage, enabled = true, onConnect) {
       import('@stomp/stompjs'),
       import('sockjs-client'),
     ]).then(([{ Client }, { default: SockJS }]) => {
+      if (cancelledRef.current || clientRef.current?.active) return;
+
       const client = new Client({
         webSocketFactory: () => new SockJS(WS_URL),
         reconnectDelay: 5000,
         onConnect: () => {
+          if (cancelledRef.current) {
+            client.deactivate();
+            return;
+          }
           // Notify caller immediately on connect
           onConRef.current?.();
           subRef.current = client.subscribe(topic, (frame) => {
@@ -66,13 +72,17 @@ export function useWebSocket(topic, onMessage, enabled = true, onConnect) {
   }, [topic, enabled]);
 
   useEffect(() => {
-    connect();
+    const cancelledRef = { current: false };
+    connect(cancelledRef);
     return () => {
+      cancelledRef.current = true;
       subRef.current?.unsubscribe();
-      if (clientRef.current?.active) {
-        clientRef.current.deactivate();
-      }
+      subRef.current = null;
+      const client = clientRef.current;
       clientRef.current = null;
+      if (client?.active) {
+        client.deactivate();
+      }
     };
   }, [connect]);
 }

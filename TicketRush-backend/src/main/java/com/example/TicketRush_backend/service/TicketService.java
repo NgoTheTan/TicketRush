@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TicketService {
@@ -24,6 +26,14 @@ public class TicketService {
                 ? ticketRepository.findByUserIdAndStatus(userId, status, pageable)
                 : ticketRepository.findByUserId(userId, pageable);
         return page.map(TicketResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TicketResponse> getMyTicketsForEvent(Long userId, Long eventId) {
+        return ticketRepository.findByUserIdAndEventIdOrderByIssuedAtDesc(userId, eventId)
+                .stream()
+                .map(TicketResponse::from)
+                .toList();
     }
 
     @Transactional(readOnly = true)

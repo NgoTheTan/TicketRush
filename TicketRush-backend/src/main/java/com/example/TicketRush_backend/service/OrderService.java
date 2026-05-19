@@ -31,6 +31,7 @@ import com.example.TicketRush_backend.entity.SeatHold;
 import com.example.TicketRush_backend.entity.SeatHoldItem;
 import com.example.TicketRush_backend.entity.Ticket;
 import com.example.TicketRush_backend.enums.HoldStatus;
+import com.example.TicketRush_backend.enums.NotificationType;
 import com.example.TicketRush_backend.enums.OrderStatus;
 import com.example.TicketRush_backend.enums.SeatStatus;
 import com.example.TicketRush_backend.enums.TicketStatus;
@@ -55,6 +56,7 @@ public class OrderService {
     private final CustomerProfileRepository customerProfileRepository;
     private final SeatBroadcastService seatBroadcastService;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     // ── Customer: Create Order from Hold ──────────────────────
 
@@ -109,6 +111,14 @@ public class OrderService {
         broadcastOrderUpdate("ORDER_CREATED", order);
         // Broadcast dashboard stats update
         broadcastDashboardStats(order.getEvent().getId());
+        notificationService.createForAdmins(
+                NotificationType.ORDER_PENDING,
+                "Đơn hàng đang chờ xử lý",
+                "Đơn " + order.getOrderCode() + " của " + order.getUser().getFullName()
+                        + " đang chờ thanh toán cho sự kiện \"" + order.getEvent().getName() + "\".",
+                "/admin/orders",
+                order.getEvent().getId(),
+                order.getId());
 
         return response;
     }
@@ -205,6 +215,23 @@ public class OrderService {
         // Broadcast dashboard stats update
         broadcastDashboardStats(eventId);
 
+        notificationService.createForUser(
+                order.getUser(),
+                NotificationType.BOOKING_SUCCESS,
+                "Đặt vé thành công",
+                "Bạn đã thành công đặt vé cho " + describeSeats(order)
+                        + " của sự kiện \"" + order.getEvent().getName() + "\".",
+                ticketDetails.isEmpty() ? "/my-tickets" : "/tickets/" + ticketDetails.get(0).getTicketId(),
+                eventId,
+                order.getId());
+        notificationService.createForAdmins(
+                NotificationType.ORDER_PAID,
+                "Đơn hàng đã thanh toán",
+                "Đơn " + order.getOrderCode() + " đã được thanh toán thành công.",
+                "/admin/orders",
+                eventId,
+                order.getId());
+
         sendTicketQrEmailAfterCommit(buildTicketEmailMessage(order, ticketEmailItems));
 
         return CheckoutResponse.builder()
@@ -273,6 +300,13 @@ public class OrderService {
             broadcastOrderUpdate("ORDER_CANCELLED", order);
             // Broadcast dashboard stats
             broadcastDashboardStats(eventId);
+            notificationService.createForAdmins(
+                    NotificationType.ORDER_CANCELLED,
+                    "Đơn hàng đã bị hủy",
+                    "Đơn " + order.getOrderCode() + " đã bị khách hàng hủy trước khi thanh toán.",
+                    "/admin/orders",
+                    eventId,
+                    order.getId());
         }
     }
 
@@ -314,6 +348,25 @@ public class OrderService {
 
         broadcastOrderUpdate("ORDER_" + newStatus.name(), order);
         broadcastDashboardStats(order.getEvent().getId());
+
+        if (newStatus == OrderStatus.CANCELLED && oldStatus != OrderStatus.CANCELLED) {
+            notificationService.createForUser(
+                    order.getUser(),
+                    NotificationType.ORDER_CANCELLED,
+                    "Đơn hàng đã bị hủy",
+                    "Đơn đặt " + describeSeats(order) + " của sự kiện \""
+                            + order.getEvent().getName() + "\" đã bị hủy.",
+                    "/my-tickets",
+                    order.getEvent().getId(),
+                    order.getId());
+            notificationService.createForAdmins(
+                    NotificationType.ORDER_CANCELLED,
+                    "Đơn hàng đã bị hủy",
+                    "Đơn " + order.getOrderCode() + " đã chuyển sang trạng thái hủy.",
+                    "/admin/orders",
+                    order.getEvent().getId(),
+                    order.getId());
+        }
 
         return buildOrderResponse(order);
     }
@@ -466,6 +519,17 @@ public class OrderService {
                 order.getEvent().getVenue(),
                 order.getEvent().getEventDate(),
                 List.copyOf(tickets));
+    }
+
+    private String describeSeats(Order order) {
+        if (order.getItems() == null || order.getItems().isEmpty()) {
+            return "ghế đã chọn";
+        }
+
+        List<String> seats = order.getItems().stream()
+                .map(item -> item.getRowLabel() + item.getSeatNumber())
+                .toList();
+        return (seats.size() == 1 ? "ghế " : "các ghế ") + String.join(", ", seats);
     }
 
     private void sendTicketQrEmailAfterCommit(TicketEmailMessage message) {

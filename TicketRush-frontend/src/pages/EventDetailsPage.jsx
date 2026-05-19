@@ -5,10 +5,13 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 import { useBooking } from '../contexts/BookingContext.jsx';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 import eventService from '../api/eventService.js';
+import { ticketService } from '../api/services.js';
 import { Spinner, ErrorState, Badge, formatCurrency, eventStatusLabel, eventStatusVariant, formatDate } from '../components/ui/index.jsx';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
+const ticketStatusLabel = (status) => ({ VALID: 'Hợp lệ', USED: 'Đã dùng', CANCELLED: 'Đã hủy' }[status] || status);
+const ticketStatusVariant = (status) => ({ VALID: 'success', USED: 'default', CANCELLED: 'error' }[status] || 'default');
 
 export default function EventDetailsPage({ eventId }) {
   const { navigate } = useRouter();
@@ -17,6 +20,8 @@ export default function EventDetailsPage({ eventId }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [ownedTickets, setOwnedTickets] = useState([]);
+  const [ownedTicketsLoading, setOwnedTicketsLoading] = useState(false);
 
   const loadEvent = useCallback(() => {
     if (!eventId) return;
@@ -27,7 +32,38 @@ export default function EventDetailsPage({ eventId }) {
       .finally(() => setLoading(false));
   }, [eventId]);
 
-  useEffect(() => { loadEvent(); }, [loadEvent]);
+  useEffect(() => {
+    const timer = window.setTimeout(loadEvent, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadEvent]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (!isAuthenticated || !eventId) {
+        setOwnedTickets([]);
+        setOwnedTicketsLoading(false);
+        return;
+      }
+
+      setOwnedTicketsLoading(true);
+      ticketService.myTicketsForEvent(eventId)
+        .then(data => {
+          if (!cancelled) setOwnedTickets(data || []);
+        })
+        .catch(() => {
+          if (!cancelled) setOwnedTickets([]);
+        })
+        .finally(() => {
+          if (!cancelled) setOwnedTicketsLoading(false);
+        });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [eventId, isAuthenticated]);
 
   // Lắng nghe WebSocket: khi admin mở bán / thay đổi status → tự reload
   const handleEventsWs = useCallback((msg) => {
@@ -198,6 +234,55 @@ export default function EventDetailsPage({ eventId }) {
             )}
 
             <p className="text-xs text-slate-400 text-center mt-3">Tối đa 2 vé mỗi sự kiện</p>
+
+            {isAuthenticated && (
+              <div className="mt-5 border-t border-slate-100 pt-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h4 className="text-sm font-bold text-slate-900">Vé bạn đã có</h4>
+                  {ownedTickets.length > 0 && (
+                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-600">
+                      {ownedTickets.length} vé
+                    </span>
+                  )}
+                </div>
+
+                {ownedTicketsLoading ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-3 text-xs font-medium text-slate-500">
+                    <Spinner size="sm" />
+                    Đang tải vé...
+                  </div>
+                ) : ownedTickets.length > 0 ? (
+                  <div className="space-y-2">
+                    {ownedTickets.map(ticket => (
+                      <button
+                        key={ticket.ticketId}
+                        type="button"
+                        onClick={() => navigate(`/tickets/${ticket.ticketId}`)}
+                        className="flex w-full items-start gap-3 rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-3 text-left transition-colors hover:bg-indigo-50"
+                      >
+                        <span className="material-symbols-outlined mt-0.5 text-[18px] text-indigo-600">confirmation_number</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-bold text-slate-900">
+                            {ticket.seat?.zoneName || 'Khu vực'} - Hàng {ticket.seat?.rowLabel}, ghế {ticket.seat?.seatNumber}
+                          </span>
+                          <span className="mt-1 block text-xs text-slate-500">
+                            Mã đơn {ticket.order?.orderCode || '—'} · {formatCurrency(ticket.seat?.price)}
+                          </span>
+                        </span>
+                        <span className="flex shrink-0 flex-col items-end gap-2">
+                          <Badge label={ticketStatusLabel(ticket.status)} variant={ticketStatusVariant(ticket.status)} />
+                          <span className="material-symbols-outlined text-[16px] text-slate-400">chevron_right</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-3 text-xs font-medium text-slate-500">
+                    Bạn chưa có vé nào cho sự kiện này.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useRouter } from '../../contexts/RouterContext.jsx';
 import eventService from '../../api/eventService.js';
 import Footer from './Footer.jsx';
+import NotificationCenter from '../notifications/NotificationCenter.jsx';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
@@ -218,6 +219,8 @@ export default function CustomerLayout({ children }) {
                   <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
                   Vé của tôi
                 </button>
+
+                <NotificationCenter />
 
                 <div ref={accountMenuRef} className="relative">
                   <button

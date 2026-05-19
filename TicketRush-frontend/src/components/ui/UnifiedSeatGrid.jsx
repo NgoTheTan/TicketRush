@@ -13,6 +13,25 @@ export default function UnifiedSeatGrid({
 
   if (!zones.length) return null;
 
+  const grid = {};
+  const colSet = new Set();
+  const heldSeatIdSet = new Set(currentHeldSeatIds);
+
+  for (const zone of zones) {
+    for (const row of zone.rows ?? []) {
+      if (!grid[row.rowLabel]) grid[row.rowLabel] = {};
+      for (const seat of row.seats ?? []) {
+        grid[row.rowLabel][seat.seatNumber] = { seat, zone };
+        colSet.add(seat.seatNumber);
+      }
+    }
+  }
+
+  const cols = [...colSet].sort((a, b) => a - b);
+  const rowLabels = Object.keys(grid).sort(compareRowLabels);
+
+  if (!rowLabels.length || !cols.length) return null;
+
   const zoneList = zones.map(zone => ({
     id: zone.zoneId,
     name: zone.zoneName,
@@ -49,87 +68,27 @@ export default function UnifiedSeatGrid({
         <div className="w-2/3 mx-auto h-2.5 bg-gradient-to-r from-transparent via-slate-300 to-transparent rounded-full" />
       </div>
 
-      <div className="space-y-8">
-        {zones.map(zone => (
-          <ZoneSeatGrid
-            key={zone.zoneId}
-            zone={zone}
-            mode={mode}
-            actingSeatId={actingSeatId}
-            currentHeldSeatIds={currentHeldSeatIds}
-            onSeatClick={onSeatClick}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ZoneSeatGrid({ zone, mode, actingSeatId, currentHeldSeatIds, onSeatClick }) {
-  const rows = [...(zone.rows ?? [])]
-    .filter(row => row.seats?.length)
-    .sort((a, b) => compareRowLabels(a.rowLabel, b.rowLabel));
-
-  const cols = [...new Set(
-    rows.flatMap(row => (row.seats ?? []).map(seat => seat.seatNumber))
-  )].sort((a, b) => a - b);
-
-  if (!rows.length || !cols.length) return null;
-
-  const grid = {};
-  for (const row of rows) {
-    grid[row.rowLabel] = {};
-    for (const seat of row.seats ?? []) {
-      grid[row.rowLabel][seat.seatNumber] = seat;
-    }
-  }
-
-  const counts = countSeats(rows);
-  const zoneColor = zone.colorCode || '#6366f1';
-
-  return (
-    <section>
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <div
-            className="w-3.5 h-3.5 rounded shrink-0"
-            style={{ backgroundColor: zoneColor }}
-          />
-          <h3 className="font-bold text-sm text-slate-800 truncate">{zone.zoneName}</h3>
-          {zone.price != null && (
-            <span className="text-xs font-semibold text-indigo-600">
-              {formatVnd(zone.price)}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-3 text-[11px] text-slate-500">
-          <span>{counts.available}/{counts.total} còn trống</span>
-          {counts.locked > 0 && <span>{counts.locked} đang giữ</span>}
-          {counts.sold > 0 && <span>{counts.sold} đã bán</span>}
-        </div>
-      </div>
-
       <div className="overflow-x-auto">
         <div className="w-fit mx-auto">
           <div className="mb-1"><ColumnNumbers cols={cols} /></div>
 
-          {rows.map(row => (
-            <div key={`${zone.zoneId}-${row.rowLabel}`} className="flex items-center gap-1 mb-1">
+          {rowLabels.map(rowLabel => (
+            <div key={rowLabel} className="flex items-center gap-1 mb-1">
               <span className="text-[10px] text-slate-400 font-mono w-5 text-center shrink-0 select-none">
-                {row.rowLabel}
+                {rowLabel}
               </span>
               {cols.map(col => {
-                const seat = grid[row.rowLabel][col];
-                if (!seat) return <div key={col} className="w-6 h-6 shrink-0" />;
+                const cell = grid[rowLabel][col];
+                if (!cell) return <div key={col} className="w-6 h-6 shrink-0" />;
                 return (
                   <SeatCell
-                    key={seat.seatId}
-                    seat={seat}
-                    zone={zone}
+                    key={cell.seat.seatId}
+                    seat={cell.seat}
+                    zone={cell.zone}
                     mode={mode}
-                    acting={actingSeatId === seat.seatId}
-                    isHeldByMe={currentHeldSeatIds.includes(seat.seatId)}
-                    onClick={onSeatClick ? () => onSeatClick(seat, zone) : undefined}
+                    acting={actingSeatId === cell.seat.seatId}
+                    isHeldByMe={heldSeatIdSet.has(cell.seat.seatId)}
+                    onClick={onSeatClick ? () => onSeatClick(cell.seat, cell.zone) : undefined}
                   />
                 );
               })}
@@ -139,7 +98,7 @@ function ZoneSeatGrid({ zone, mode, actingSeatId, currentHeldSeatIds, onSeatClic
           <div className="mt-1"><ColumnNumbers cols={cols} /></div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -171,7 +130,11 @@ function SeatCell({ seat, zone, mode, acting, onClick, isHeldByMe }) {
     extraCls = 'cursor-not-allowed opacity-70';
     tooltip = 'Đã bán';
   } else if (mode === 'user' && heldByMe) {
-    style = { backgroundColor: '#4f46e5', borderColor: '#4338ca', boxShadow: '0 0 0 2px #a5b4fc' };
+    style = {
+      backgroundColor: darkenColor(zoneColor, 24),
+      borderColor: darkenColor(zoneColor, 54),
+      boxShadow: `0 0 0 2px ${colorWithAlpha(zoneColor, 0.36)}`,
+    };
     extraCls = 'cursor-pointer active:scale-90';
     tooltip = 'Đang chọn (của bạn)';
     interactive = true;
@@ -201,28 +164,9 @@ function SeatCell({ seat, zone, mode, acting, onClick, isHeldByMe }) {
   );
 }
 
-function countSeats(rows) {
-  const counts = { total: 0, available: 0, locked: 0, sold: 0 };
-  for (const row of rows) {
-    for (const seat of row.seats ?? []) {
-      counts.total += 1;
-      if (seat.status === 'AVAILABLE') counts.available += 1;
-      else if (seat.status === 'LOCKED') counts.locked += 1;
-      else if (seat.status === 'SOLD') counts.sold += 1;
-    }
-  }
-  return counts;
-}
-
 function compareRowLabels(a = '', b = '') {
   if (a.length !== b.length) return a.length - b.length;
   return a.localeCompare(b);
-}
-
-function formatVnd(value) {
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return '';
-  return amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 }
 
 function adjustBorder(hex) {
@@ -232,5 +176,25 @@ function adjustBorder(hex) {
     const g = Math.max(0, ((n >> 8) & 0xff) - 40);
     const b = Math.max(0, (n & 0xff) - 40);
     return `rgb(${r},${g},${b})`;
+  } catch { return hex; }
+}
+
+function darkenColor(hex, amount) {
+  try {
+    const n = parseInt(hex.replace('#', ''), 16);
+    const r = Math.max(0, ((n >> 16) & 0xff) - amount);
+    const g = Math.max(0, ((n >> 8) & 0xff) - amount);
+    const b = Math.max(0, (n & 0xff) - amount);
+    return `rgb(${r},${g},${b})`;
+  } catch { return hex; }
+}
+
+function colorWithAlpha(hex, alpha) {
+  try {
+    const n = parseInt(hex.replace('#', ''), 16);
+    const r = (n >> 16) & 0xff;
+    const g = (n >> 8) & 0xff;
+    const b = n & 0xff;
+    return `rgba(${r},${g},${b},${alpha})`;
   } catch { return hex; }
 }

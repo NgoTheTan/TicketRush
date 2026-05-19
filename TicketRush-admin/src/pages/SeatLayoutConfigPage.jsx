@@ -1,11 +1,24 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { memo, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
-import { Button, Spinner, formatCurrency, showToast } from '../components/ui/index.jsx';
+import { Button, Spinner, showToast } from '../components/ui/index.jsx';
 
 const GRID_ROWS = 25;
 const GRID_COLS = 40;
+const CELL_SIZE = 28;
+const CELL_CENTER_OFFSET = 12;
+const EDGE_LABEL_OFFSET = 13;
+const RECTANGLE_RESIZE_HANDLES = [
+  { key: 'nw', label: 'góc trên trái', cursor: 'nwse-resize', style: { left: -7, top: -7 } },
+  { key: 'n', label: 'cạnh trên', cursor: 'ns-resize', style: { left: '50%', top: -7, transform: 'translateX(-50%)' } },
+  { key: 'ne', label: 'góc trên phải', cursor: 'nesw-resize', style: { right: -7, top: -7 } },
+  { key: 'e', label: 'cạnh phải', cursor: 'ew-resize', style: { right: -7, top: '50%', transform: 'translateY(-50%)' } },
+  { key: 'se', label: 'góc dưới phải', cursor: 'nwse-resize', style: { right: -7, bottom: -7 } },
+  { key: 's', label: 'cạnh dưới', cursor: 'ns-resize', style: { left: '50%', bottom: -7, transform: 'translateX(-50%)' } },
+  { key: 'sw', label: 'góc dưới trái', cursor: 'nesw-resize', style: { left: -7, bottom: -7 } },
+  { key: 'w', label: 'cạnh trái', cursor: 'ew-resize', style: { left: -7, top: '50%', transform: 'translateY(-50%)' } },
+];
 const ZONE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 
 // Generate a random ID for zones
@@ -52,8 +65,297 @@ const getPolygonBoundary = (vs) => {
   return boundary;
 };
 
+const getPointBounds = (points) => points.reduce((bounds, point) => ({
+  minRow: Math.min(bounds.minRow, point.row),
+  maxRow: Math.max(bounds.maxRow, point.row),
+  minCol: Math.min(bounds.minCol, point.col),
+  maxCol: Math.max(bounds.maxCol, point.col),
+}), {
+  minRow: GRID_ROWS - 1,
+  maxRow: 0,
+  minCol: GRID_COLS - 1,
+  maxCol: 0,
+});
+
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const getResizedRectangleFrame = (frame, handle, point) => {
+  const currentTop = frame.row;
+  const currentLeft = frame.col;
+  const currentBottom = frame.row + frame.rows - 1;
+  const currentRight = frame.col + frame.cols - 1;
+
+  let top = currentTop;
+  let left = currentLeft;
+  let bottom = currentBottom;
+  let right = currentRight;
+
+  if (handle.includes('n')) top = clamp(point.row, 0, currentBottom);
+  if (handle.includes('s')) bottom = clamp(point.row, currentTop, GRID_ROWS - 1);
+  if (handle.includes('w')) left = clamp(point.col, 0, currentRight);
+  if (handle.includes('e')) right = clamp(point.col, currentLeft, GRID_COLS - 1);
+
+  return {
+    row: top,
+    col: left,
+    rows: bottom - top + 1,
+    cols: right - left + 1,
+  };
+};
+
+const isSameRectangleFrame = (a, b) => (
+  a?.row === b?.row
+  && a?.col === b?.col
+  && a?.rows === b?.rows
+  && a?.cols === b?.cols
+);
+
+const parseHexColor = (hex) => {
+  if (typeof hex !== 'string') return null;
+
+  const normalized = hex.replace('#', '').trim();
+  const value = normalized.length === 3
+    ? normalized.split('').map(ch => ch + ch).join('')
+    : normalized;
+
+  if (!/^[\da-f]{6}$/i.test(value)) return null;
+
+  const n = parseInt(value, 16);
+  return {
+    r: (n >> 16) & 0xff,
+    g: (n >> 8) & 0xff,
+    b: n & 0xff,
+  };
+};
+
+const colorWithAlpha = (hex, alpha) => {
+  const rgb = parseHexColor(hex);
+  if (!rgb) return hex;
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+};
+
+const getReadableTextColor = (hex) => {
+  const rgb = parseHexColor(hex);
+  if (!rgb) return '#ffffff';
+
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+  return luminance > 0.62 ? '#0f172a' : '#ffffff';
+};
+
+const isSamePoint = (a, b) => a?.row === b?.row && a?.col === b?.col;
+
+const getPointCenter = (point) => ({
+  x: point.col * CELL_SIZE + CELL_CENTER_OFFSET,
+  y: point.row * CELL_SIZE + CELL_CENTER_OFFSET,
+});
+
+const getEdgeLengthText = (start, end) => {
+  const dx = Math.abs(end.col - start.col);
+  const dy = Math.abs(end.row - start.row);
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+  if (length === 0) return null;
+  return dx === 0 || dy === 0 ? String(length) : length.toFixed(1);
+};
+
+const getEdgeLabel = (start, end) => {
+  const text = getEdgeLengthText(start, end);
+  if (!text) return null;
+
+  const startCenter = getPointCenter(start);
+  const endCenter = getPointCenter(end);
+  const dx = endCenter.x - startCenter.x;
+  const dy = endCenter.y - startCenter.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+  if (length === 0) return null;
+
+  let nx = -dy / length;
+  let ny = dx / length;
+  if (ny > 0 || (ny === 0 && nx > 0)) {
+    nx *= -1;
+    ny *= -1;
+  }
+
+  const width = Math.max(18, text.length * 6 + 8);
+  const x = Math.min(Math.max((startCenter.x + endCenter.x) / 2 + nx * EDGE_LABEL_OFFSET, width / 2), GRID_COLS * CELL_SIZE - width / 2);
+  const y = Math.min(Math.max((startCenter.y + endCenter.y) / 2 + ny * EDGE_LABEL_OFFSET, 8), GRID_ROWS * CELL_SIZE - 8);
+
+  return { text, x, y, width };
+};
+
+function EdgeLengthLabel({ edge, muted = false }) {
+  const label = getEdgeLabel(edge.start, edge.end);
+  if (!label) return null;
+
+  return (
+    <g opacity={muted ? 0.72 : 1}>
+      <rect
+        x={label.x - label.width / 2}
+        y={label.y - 8}
+        width={label.width}
+        height="16"
+        rx="4"
+        fill="#ffffff"
+        stroke={muted ? '#cbd5e1' : '#94a3b8'}
+      />
+      <text
+        x={label.x}
+        y={label.y + 0.5}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="#0f172a"
+        fontSize="10"
+        fontWeight="700"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+      >
+        {label.text}
+      </text>
+    </g>
+  );
+}
+
+const PolygonOverlay = memo(function PolygonOverlay({
+  polygonLinePoints,
+  polygonPoints,
+  polygonEdges,
+  previewEdge,
+  drawingStrokeColor,
+}) {
+  return (
+    <svg className="absolute pointer-events-none" style={{ left: 24, top: 24, width: GRID_COLS * CELL_SIZE, height: GRID_ROWS * CELL_SIZE, zIndex: 10 }}>
+      {polygonPoints.length > 0 && (
+        <polyline
+          points={polygonLinePoints}
+          fill="none"
+          stroke={drawingStrokeColor}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+      {previewEdge && (
+        <line
+          x1={getPointCenter(previewEdge.start).x}
+          y1={getPointCenter(previewEdge.start).y}
+          x2={getPointCenter(previewEdge.end).x}
+          y2={getPointCenter(previewEdge.end).y}
+          stroke={drawingStrokeColor}
+          strokeWidth="3"
+          strokeDasharray="6,6"
+          opacity="0.6"
+          strokeLinecap="round"
+        />
+      )}
+      {polygonEdges.map(edge => (
+        <EdgeLengthLabel key={edge.key} edge={edge} />
+      ))}
+      {previewEdge && <EdgeLengthLabel edge={previewEdge} muted />}
+      {polygonPoints.map((p, i) => (
+        <circle
+          key={i}
+          cx={getPointCenter(p).x}
+          cy={getPointCenter(p).y}
+          r={i === 0 && polygonPoints.length >= 3 ? '6' : '5'}
+          fill="#fff"
+          stroke={drawingStrokeColor}
+          strokeWidth={i === 0 && polygonPoints.length >= 3 ? '3' : '2'}
+        />
+      ))}
+    </svg>
+  );
+});
+
+const SeatGrid = memo(function SeatGrid({
+  gridRef,
+  grid,
+  zonesById,
+  canEdit,
+  drawMode,
+  onCellMouseDown,
+  onCellMouseEnter,
+  onGridMouseLeave,
+}) {
+  return (
+    <div ref={gridRef} className="flex flex-col gap-1" onMouseLeave={onGridMouseLeave}>
+      {grid.map((row, rowIndex) => (
+        <SeatRow
+          key={rowIndex}
+          row={row}
+          rowIndex={rowIndex}
+          zonesById={zonesById}
+          canEdit={canEdit}
+          drawMode={drawMode}
+          onCellMouseDown={onCellMouseDown}
+          onCellMouseEnter={onCellMouseEnter}
+        />
+      ))}
+    </div>
+  );
+});
+
+const SeatRow = memo(function SeatRow({
+  row,
+  rowIndex,
+  zonesById,
+  canEdit,
+  drawMode,
+  onCellMouseDown,
+  onCellMouseEnter,
+}) {
+  return (
+    <div className="flex gap-1">
+      {row.map((cell, colIndex) => {
+        const zone = cell ? zonesById.get(cell) : null;
+
+        return (
+          <SeatDraftCell
+            key={`${rowIndex}-${colIndex}`}
+            cell={cell}
+            zoneColor={zone?.colorCode}
+            rowIndex={rowIndex}
+            colIndex={colIndex}
+            canEdit={canEdit}
+            drawMode={drawMode}
+            onCellMouseDown={onCellMouseDown}
+            onCellMouseEnter={onCellMouseEnter}
+          />
+        );
+      })}
+    </div>
+  );
+});
+
+const SeatDraftCell = memo(function SeatDraftCell({
+  cell,
+  zoneColor,
+  rowIndex,
+  colIndex,
+  canEdit,
+  drawMode,
+  onCellMouseDown,
+  onCellMouseEnter,
+}) {
+  const isPolygonMode = drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON';
+  const cursorClass = isPolygonMode ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400' : drawMode === 'RECTANGLE' ? 'cursor-default' : 'cursor-crosshair';
+  const emptyClass = !cell ? 'bg-slate-100 border-slate-200 hover:bg-slate-200' : 'shadow-sm';
+
+  return (
+    <div
+      onMouseDown={() => canEdit && onCellMouseDown(rowIndex, colIndex)}
+      onMouseEnter={() => canEdit && onCellMouseEnter(rowIndex, colIndex)}
+      className={`w-6 h-6 rounded-t-lg rounded-b-sm border-b-2 transition-transform active:scale-90 ${cursorClass} ${emptyClass}`}
+      style={zoneColor ? { backgroundColor: zoneColor, borderColor: 'rgba(0,0,0,0.2)' } : undefined}
+    />
+  );
+});
+
 export default function SeatLayoutConfigPage({ eventId }) {
   const { navigate, goBack } = useRouter();
+  const gridRef = useRef(null);
+  const isMouseDownRef = useRef(false);
+  const brushPaintQueueRef = useRef(new Map());
+  const brushPaintFrameRef = useRef(null);
   const [event, setEvent] = useState(null);
   
   // Zones: { id, name, price, currency, colorCode }
@@ -68,12 +370,15 @@ export default function SeatLayoutConfigPage({ eventId }) {
   // App States
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isMouseDown, setIsMouseDown] = useState(false);
 
   // Polygon Draw Mode States
-  const [drawMode, setDrawMode] = useState('BRUSH'); // 'BRUSH' | 'POLYGON'
+  const [drawMode, setDrawMode] = useState('BRUSH'); // 'BRUSH' | 'POLYGON' | 'RECTANGLE' | 'ERASE_BRUSH' | 'ERASE_POLYGON'
   const [polygonPoints, setPolygonPoints] = useState([]); // [{row, col}]
   const [hoverPoint, setHoverPoint] = useState(null); // {row, col}
+  const [rectangleSize, setRectangleSize] = useState({ cols: '10', rows: '5' });
+  const [rectangleFrame, setRectangleFrame] = useState(null); // {row, col, rows, cols}
+  const [rectangleDrag, setRectangleDrag] = useState(null); // {rowOffset, colOffset}
+  const [rectangleResize, setRectangleResize] = useState(null); // {handle, frame}
 
   // Load existing data
   useEffect(() => {
@@ -143,64 +448,258 @@ export default function SeatLayoutConfigPage({ eventId }) {
       .finally(() => setLoading(false));
   }, [eventId]);
 
-  const handlePaint = useCallback((r, c) => {
-    setGrid(prev => {
-      const next = [...prev];
-      next[r] = [...next[r]];
-      next[r][c] = (drawMode === 'ERASE_BRUSH' || drawMode === 'ERASE_POLYGON') ? null : activeZone;
-      return next;
-    });
-  }, [activeZone, drawMode]);
+  const canEdit = !event || event.status === 'UPCOMING';
 
-  const onMouseDown = (r, c) => {
-    if (drawMode === 'BRUSH' || drawMode === 'ERASE_BRUSH') {
-      setIsMouseDown(true);
-      handlePaint(r, c);
-    } else {
-      // Polygon Mode: Add point
-      setPolygonPoints(prev => {
-        if (prev.some(p => p.row === r && p.col === c)) return prev;
-        return [...prev, { row: r, col: c }];
-      });
+  const flushBrushPaintQueue = useCallback(() => {
+    if (brushPaintFrameRef.current !== null) {
+      cancelAnimationFrame(brushPaintFrameRef.current);
+      brushPaintFrameRef.current = null;
     }
-  };
 
-  const onMouseEnter = (r, c) => {
-    if (drawMode === 'BRUSH' || drawMode === 'ERASE_BRUSH') {
-      if (isMouseDown) handlePaint(r, c);
-    } else {
-      // Polygon Mode: Update hover point
-      if (polygonPoints.length > 0) {
-        setHoverPoint({ row: r, col: c });
+    const queuedCells = [...brushPaintQueueRef.current.values()];
+    brushPaintQueueRef.current.clear();
+    if (!queuedCells.length) return;
+
+    setGrid(prev => {
+      let next = prev;
+      let changed = false;
+      const clonedRows = new Map();
+
+      for (const { row, col, value } of queuedCells) {
+        if (prev[row][col] === value) continue;
+
+        if (!changed) {
+          next = [...prev];
+          changed = true;
+        }
+
+        let nextRow = clonedRows.get(row);
+        if (!nextRow) {
+          nextRow = [...prev[row]];
+          clonedRows.set(row, nextRow);
+          next[row] = nextRow;
+        }
+
+        nextRow[col] = value;
       }
-    }
-  };
 
-  const finishPolygon = () => {
-    if (polygonPoints.length < 3) {
-      showToast('Đa giác phải có ít nhất 3 điểm', 'error');
-      return;
+      return changed ? next : prev;
+    });
+  }, []);
+
+  const queueBrushPaint = useCallback((row, col) => {
+    const value = drawMode === 'ERASE_BRUSH' ? null : activeZone;
+    brushPaintQueueRef.current.set(`${row}-${col}`, { row, col, value });
+
+    if (brushPaintFrameRef.current === null) {
+      brushPaintFrameRef.current = requestAnimationFrame(flushBrushPaintQueue);
     }
-    
-    const boundaryPoints = getPolygonBoundary(polygonPoints);
-    
+  }, [activeZone, drawMode, flushBrushPaintQueue]);
+
+  const paintPolygon = useCallback((points, shouldErase) => {
+    const boundaryPoints = getPolygonBoundary(points);
+    const boundarySet = new Set(boundaryPoints.map(p => `${p.row}-${p.col}`));
+    const bounds = getPointBounds(points);
+    const value = shouldErase ? null : activeZone;
+
     setGrid(prev => {
-      const next = prev.map(row => [...row]);
-      for (let r = 0; r < GRID_ROWS; r++) {
-        for (let c = 0; c < GRID_COLS; c++) {
+      let next = prev;
+      let changed = false;
+      const clonedRows = new Map();
+
+      for (let r = bounds.minRow; r <= bounds.maxRow; r++) {
+        for (let c = bounds.minCol; c <= bounds.maxCol; c++) {
           const pt = { row: r, col: c };
-          // Check if point is inside polygon OR is exactly on the boundary
-          if (isPointInPolygon(pt, polygonPoints) || boundaryPoints.some(p => p.row === r && p.col === c)) {
-            next[r][c] = (drawMode === 'ERASE_POLYGON') ? null : activeZone;
+          if (isPointInPolygon(pt, points) || boundarySet.has(`${r}-${c}`)) {
+            if (prev[r][c] === value) continue;
+
+            if (!changed) {
+              next = [...prev];
+              changed = true;
+            }
+
+            let nextRow = clonedRows.get(r);
+            if (!nextRow) {
+              nextRow = [...prev[r]];
+              clonedRows.set(r, nextRow);
+              next[r] = nextRow;
+            }
+
+            nextRow[c] = value;
           }
         }
       }
-      return next;
+      return changed ? next : prev;
     });
+  }, [activeZone]);
+
+  const finishPolygon = useCallback((pointsOverride) => {
+    const points = Array.isArray(pointsOverride) ? pointsOverride : polygonPoints;
+
+    if (points.length < 3) {
+      showToast('Đa giác phải có ít nhất 3 điểm', 'error');
+      return;
+    }
+
+    paintPolygon(points, drawMode === 'ERASE_POLYGON');
     
     setPolygonPoints([]);
     setHoverPoint(null);
+  }, [drawMode, paintPolygon, polygonPoints]);
+
+  const cancelRectangle = () => {
+    setRectangleFrame(null);
+    setRectangleDrag(null);
+    setRectangleResize(null);
   };
+
+  const clampRectangleFrame = useCallback((frame) => ({
+    ...frame,
+    row: clamp(frame.row, 0, GRID_ROWS - frame.rows),
+    col: clamp(frame.col, 0, GRID_COLS - frame.cols),
+  }), []);
+
+  const getGridPointFromClient = useCallback((clientX, clientY) => {
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+
+    return {
+      row: clamp(Math.floor((clientY - rect.top) / CELL_SIZE), 0, GRID_ROWS - 1),
+      col: clamp(Math.floor((clientX - rect.left) / CELL_SIZE), 0, GRID_COLS - 1),
+    };
+  }, []);
+
+  const createRectangleFrame = () => {
+    const cols = Number(rectangleSize.cols);
+    const rows = Number(rectangleSize.rows);
+
+    if (!Number.isInteger(cols) || !Number.isInteger(rows) || cols < 1 || rows < 1) {
+      showToast('Chiều dài và chiều rộng phải là số nguyên dương', 'error');
+      return;
+    }
+
+    if (cols > GRID_COLS || rows > GRID_ROWS) {
+      showToast(`Kích thước tối đa là ${GRID_COLS} x ${GRID_ROWS}`, 'error');
+      return;
+    }
+
+    setPolygonPoints([]);
+    setHoverPoint(null);
+    setRectangleSize({ cols: String(cols), rows: String(rows) });
+    setRectangleFrame({
+      cols,
+      rows,
+      row: Math.floor((GRID_ROWS - rows) / 2),
+      col: Math.floor((GRID_COLS - cols) / 2),
+    });
+  };
+
+  const applyRectangleFrame = () => {
+    if (!rectangleFrame) {
+      showToast('Vui lòng tạo khung chữ nhật trước', 'error');
+      return;
+    }
+
+    if (!activeZone) {
+      showToast('Vui lòng chọn một khu vực ghế', 'error');
+      return;
+    }
+
+    setGrid(prev => {
+      let next = prev;
+      let changed = false;
+
+      for (let r = rectangleFrame.row; r < rectangleFrame.row + rectangleFrame.rows; r++) {
+        let nextRow = null;
+
+        for (let c = rectangleFrame.col; c < rectangleFrame.col + rectangleFrame.cols; c++) {
+          if (prev[r][c] === activeZone) continue;
+
+          if (!changed) {
+            next = [...prev];
+            changed = true;
+          }
+
+          if (!nextRow) {
+            nextRow = [...prev[r]];
+            next[r] = nextRow;
+          }
+
+          nextRow[c] = activeZone;
+        }
+      }
+      return changed ? next : prev;
+    });
+
+    cancelRectangle();
+  };
+
+  const startRectangleDrag = (event) => {
+    if (!canEdit || !rectangleFrame) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const point = getGridPointFromClient(event.clientX, event.clientY);
+    if (!point) return;
+
+    setRectangleDrag({
+      rowOffset: point.row - rectangleFrame.row,
+      colOffset: point.col - rectangleFrame.col,
+    });
+    setRectangleResize(null);
+  };
+
+  const startRectangleResize = (event, handle) => {
+    if (!canEdit || !rectangleFrame) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    setRectangleResize({ handle, frame: rectangleFrame });
+    setRectangleDrag(null);
+  };
+
+  const onMouseDown = useCallback((r, c) => {
+    if (!canEdit) return;
+
+    if (drawMode === 'BRUSH' || drawMode === 'ERASE_BRUSH') {
+      isMouseDownRef.current = true;
+      queueBrushPaint(r, c);
+    } else if (drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON') {
+      const clickedPoint = { row: r, col: c };
+      if (polygonPoints.length >= 3 && isSamePoint(clickedPoint, polygonPoints[0])) {
+        finishPolygon(polygonPoints);
+        return;
+      }
+
+      // Polygon Mode: Add point
+      setPolygonPoints(prev => {
+        if (prev.some(p => isSamePoint(p, clickedPoint))) return prev;
+        return [...prev, clickedPoint];
+      });
+    }
+  }, [canEdit, drawMode, finishPolygon, polygonPoints, queueBrushPaint]);
+
+  const onMouseEnter = useCallback((r, c) => {
+    if (!canEdit) return;
+
+    if (drawMode === 'BRUSH' || drawMode === 'ERASE_BRUSH') {
+      if (isMouseDownRef.current) queueBrushPaint(r, c);
+    } else if (drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON') {
+      // Polygon Mode: Update hover point
+      if (polygonPoints.length > 0) {
+        const nextPoint = { row: r, col: c };
+        setHoverPoint(prev => isSamePoint(prev, nextPoint) ? prev : nextPoint);
+      }
+    }
+  }, [canEdit, drawMode, polygonPoints.length, queueBrushPaint]);
+
+  const handleGridMouseLeave = useCallback(() => {
+    isMouseDownRef.current = false;
+    setHoverPoint(null);
+    flushBrushPaintQueue();
+  }, [flushBrushPaintQueue]);
 
   const cancelPolygon = () => {
     setPolygonPoints([]);
@@ -208,10 +707,76 @@ export default function SeatLayoutConfigPage({ eventId }) {
   };
   
   useEffect(() => {
-    const handleMouseUp = () => setIsMouseDown(false);
+    const handleMouseUp = () => {
+      isMouseDownRef.current = false;
+      flushBrushPaintQueue();
+    };
     window.addEventListener('mouseup', handleMouseUp);
     return () => window.removeEventListener('mouseup', handleMouseUp);
+  }, [flushBrushPaintQueue]);
+
+  useEffect(() => () => {
+    if (brushPaintFrameRef.current !== null) {
+      cancelAnimationFrame(brushPaintFrameRef.current);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!rectangleDrag) return undefined;
+
+    const handleMouseMove = (event) => {
+      const point = getGridPointFromClient(event.clientX, event.clientY);
+      if (!point) return;
+
+      setRectangleFrame(prev => {
+        if (!prev) return prev;
+
+        const nextFrame = clampRectangleFrame({
+          ...prev,
+          row: point.row - rectangleDrag.rowOffset,
+          col: point.col - rectangleDrag.colOffset,
+        });
+
+        return isSameRectangleFrame(prev, nextFrame) ? prev : nextFrame;
+      });
+    };
+
+    const handleMouseUp = () => setRectangleDrag(null);
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [clampRectangleFrame, getGridPointFromClient, rectangleDrag]);
+
+  useEffect(() => {
+    if (!rectangleResize) return undefined;
+
+    const handleMouseMove = (event) => {
+      const point = getGridPointFromClient(event.clientX, event.clientY);
+      if (!point) return;
+
+      const nextFrame = getResizedRectangleFrame(rectangleResize.frame, rectangleResize.handle, point);
+      setRectangleFrame(prev => isSameRectangleFrame(prev, nextFrame) ? prev : nextFrame);
+      setRectangleSize(prev => {
+        const nextSize = { cols: String(nextFrame.cols), rows: String(nextFrame.rows) };
+        return prev.cols === nextSize.cols && prev.rows === nextSize.rows ? prev : nextSize;
+      });
+    };
+
+    const handleMouseUp = () => setRectangleResize(null);
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [getGridPointFromClient, rectangleResize]);
 
   const addZone = () => {
     const newId = generateId();
@@ -229,7 +794,32 @@ export default function SeatLayoutConfigPage({ eventId }) {
       setActiveZone(prev => prev === id ? (newZones[0]?.id || '') : prev);
       return newZones;
     });
-    setGrid(prev => prev.map(row => row.map(cell => cell === id ? null : cell)));
+    setGrid(prev => {
+      let next = prev;
+      let changed = false;
+
+      for (let r = 0; r < GRID_ROWS; r++) {
+        let nextRow = null;
+
+        for (let c = 0; c < GRID_COLS; c++) {
+          if (prev[r][c] !== id) continue;
+
+          if (!changed) {
+            next = [...prev];
+            changed = true;
+          }
+
+          if (!nextRow) {
+            nextRow = [...prev[r]];
+            next[r] = nextRow;
+          }
+
+          nextRow[c] = null;
+        }
+      }
+
+      return changed ? next : prev;
+    });
   };
 
   const clearGrid = () => {
@@ -293,8 +883,37 @@ export default function SeatLayoutConfigPage({ eventId }) {
     } finally { setSaving(false); }
   };
 
+  const zonesById = useMemo(() => new Map(zones.map(z => [z.id, z])), [zones]);
+  const zoneCounts = useMemo(() => {
+    const counts = new Map();
+
+    for (const row of grid) {
+      for (const cell of row) {
+        if (cell !== null) counts.set(cell, (counts.get(cell) || 0) + 1);
+      }
+    }
+
+    return counts;
+  }, [grid]);
+  const polygonEdges = useMemo(() => polygonPoints.slice(1).map((point, index) => ({
+    start: polygonPoints[index],
+    end: point,
+    key: `${polygonPoints[index].row}-${polygonPoints[index].col}-${point.row}-${point.col}`,
+  })), [polygonPoints]);
+  const previewEdge = useMemo(() => (
+    polygonPoints.length > 0 && hoverPoint && !isSamePoint(polygonPoints[polygonPoints.length - 1], hoverPoint)
+      ? { start: polygonPoints[polygonPoints.length - 1], end: hoverPoint, key: 'preview' }
+      : null
+  ), [hoverPoint, polygonPoints]);
+  const polygonLinePoints = useMemo(() => (
+    polygonPoints.map(p => `${getPointCenter(p).x},${getPointCenter(p).y}`).join(' ')
+  ), [polygonPoints]);
+
   if (loading) return <AdminLayout><div className="flex justify-center py-20"><Spinner size="lg" /></div></AdminLayout>;
-  const canEdit = !event || event.status === 'UPCOMING';
+  const activeZoneConfig = zonesById.get(activeZone);
+  const activeZoneColor = activeZoneConfig?.colorCode || ZONE_COLORS[0];
+  const drawingStrokeColor = drawMode === 'ERASE_POLYGON' ? '#ef4444' : activeZoneColor;
+  const rectangleTextColor = getReadableTextColor(activeZoneColor);
 
   return (
     <AdminLayout>
@@ -318,26 +937,51 @@ export default function SeatLayoutConfigPage({ eventId }) {
           )}
 
           {/* Draw Modes */}
-          <div className="bg-slate-100 p-1 rounded-xl flex gap-1 mb-6">
-            <button 
-              onClick={() => { setDrawMode('BRUSH'); cancelPolygon(); }}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${drawMode === 'BRUSH' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
-              <span className="material-symbols-outlined text-[18px]">brush</span> Cọ vẽ
+          <div className="bg-slate-100 p-1.5 rounded-xl grid grid-cols-5 gap-1 mb-6">
+            <button
+              type="button"
+              aria-pressed={drawMode === 'BRUSH'}
+              title="Cọ vẽ"
+              onClick={() => { setDrawMode('BRUSH'); cancelPolygon(); cancelRectangle(); }}
+              className={`h-16 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${drawMode === 'BRUSH' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+              <span className="material-symbols-outlined text-[24px] leading-none">brush</span>
+              <span className="text-[10px] font-bold leading-none">Cọ vẽ</span>
             </button>
-            <button 
-              onClick={() => setDrawMode('POLYGON')}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${drawMode === 'POLYGON' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
-              <span className="material-symbols-outlined text-[18px]">pentagon</span> Đa giác
+            <button
+              type="button"
+              aria-pressed={drawMode === 'POLYGON'}
+              title="Đa giác"
+              onClick={() => { setDrawMode('POLYGON'); cancelRectangle(); }}
+              className={`h-16 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${drawMode === 'POLYGON' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+              <span className="material-symbols-outlined text-[24px] leading-none">pentagon</span>
+              <span className="text-[10px] font-bold leading-none">Đa giác</span>
             </button>
-            <button 
-              onClick={() => { setDrawMode('ERASE_BRUSH'); cancelPolygon(); }}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${drawMode === 'ERASE_BRUSH' ? 'bg-white shadow-sm text-red-600' : 'text-slate-500 hover:bg-slate-200'}`}>
-              <span className="material-symbols-outlined text-[18px]">ink_eraser</span> Cục tẩy
+            <button
+              type="button"
+              aria-pressed={drawMode === 'RECTANGLE'}
+              title="Chữ nhật"
+              onClick={() => { setDrawMode('RECTANGLE'); cancelPolygon(); }}
+              className={`h-16 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${drawMode === 'RECTANGLE' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+              <span className="material-symbols-outlined text-[24px] leading-none">crop_square</span>
+              <span className="text-[10px] font-bold leading-none">Chữ nhật</span>
             </button>
-            <button 
-              onClick={() => setDrawMode('ERASE_POLYGON')}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${drawMode === 'ERASE_POLYGON' ? 'bg-white shadow-sm text-red-600' : 'text-slate-500 hover:bg-slate-200'}`}>
-              <span className="material-symbols-outlined text-[18px]">format_shapes</span> Tẩy đa giác
+            <button
+              type="button"
+              aria-pressed={drawMode === 'ERASE_BRUSH'}
+              title="Cục tẩy"
+              onClick={() => { setDrawMode('ERASE_BRUSH'); cancelPolygon(); cancelRectangle(); }}
+              className={`h-16 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${drawMode === 'ERASE_BRUSH' ? 'bg-white shadow-sm text-red-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+              <span className="material-symbols-outlined text-[24px] leading-none">ink_eraser</span>
+              <span className="text-[10px] font-bold leading-none">Cục tẩy</span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={drawMode === 'ERASE_POLYGON'}
+              title="Tẩy đa giác"
+              onClick={() => { setDrawMode('ERASE_POLYGON'); cancelRectangle(); }}
+              className={`h-16 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${drawMode === 'ERASE_POLYGON' ? 'bg-white shadow-sm text-red-600' : 'text-slate-500 hover:bg-slate-200'}`}>
+              <span className="material-symbols-outlined text-[24px] leading-none">format_shapes</span>
+              <span className="text-[10px] font-bold leading-none">Tẩy đa giác</span>
             </button>
           </div>
 
@@ -346,8 +990,52 @@ export default function SeatLayoutConfigPage({ eventId }) {
             <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
               <p className="text-sm font-medium text-indigo-800 mb-3 text-center">Đang vẽ đa giác: {polygonPoints.length} điểm</p>
               <div className="flex gap-2">
-                <Button onClick={finishPolygon} fullWidth className="!py-2 !text-xs">Hoàn thành</Button>
+                <Button onClick={() => finishPolygon()} fullWidth className="!py-2 !text-xs">Hoàn thành</Button>
                 <Button onClick={cancelPolygon} variant="secondary" fullWidth className="!py-2 !text-xs">Hủy bỏ</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Rectangle actions */}
+          {drawMode === 'RECTANGLE' && (
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+              <p className="text-sm font-bold text-indigo-900 mb-3">Tạo khung chữ nhật</p>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <label className="text-xs font-semibold text-slate-600">
+                  Dài (cột)
+                  <input
+                    type="number"
+                    min="1"
+                    max={GRID_COLS}
+                    value={rectangleSize.cols}
+                    disabled={!canEdit}
+                    onChange={e => setRectangleSize(prev => ({ ...prev, cols: e.target.value }))}
+                    className="mt-1 w-full px-2 py-1.5 border border-indigo-100 rounded-lg bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60"
+                  />
+                </label>
+                <label className="text-xs font-semibold text-slate-600">
+                  Rộng (hàng)
+                  <input
+                    type="number"
+                    min="1"
+                    max={GRID_ROWS}
+                    value={rectangleSize.rows}
+                    disabled={!canEdit}
+                    onChange={e => setRectangleSize(prev => ({ ...prev, rows: e.target.value }))}
+                    className="mt-1 w-full px-2 py-1.5 border border-indigo-100 rounded-lg bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60"
+                  />
+                </label>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button onClick={createRectangleFrame} disabled={!canEdit} fullWidth className="!py-2 !text-xs">
+                  {rectangleFrame ? 'Cập nhật khung' : 'Tạo khung'}
+                </Button>
+                {rectangleFrame && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button onClick={applyRectangleFrame} disabled={!canEdit} fullWidth className="!py-2 !text-xs">Xác nhận vẽ</Button>
+                    <Button onClick={cancelRectangle} variant="secondary" fullWidth className="!py-2 !text-xs">Bỏ khung</Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -358,7 +1046,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
             
             <div className="space-y-3">
               {zones.map(z => {
-                const count = grid.flat().filter(id => id === z.id).length;
+                const count = zoneCounts.get(z.id) || 0;
                 return (
                   <div key={z.id} 
                     className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${activeZone === z.id ? 'border-indigo-500 bg-indigo-50/50' : 'border-transparent hover:bg-slate-50'}`}
@@ -424,52 +1112,72 @@ export default function SeatLayoutConfigPage({ eventId }) {
             
             {/* SVG Overlay for Polygon Drawing */}
             {(drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON') && (
-              <svg className="absolute pointer-events-none" style={{ left: 24, top: 24, width: GRID_COLS * 28, height: GRID_ROWS * 28, zIndex: 10 }}>
-                {polygonPoints.length > 0 && (
-                  <polyline
-                    points={polygonPoints.map(p => `${p.col * 28 + 12},${p.row * 28 + 12}`).join(' ')}
-                    fill="none" stroke={drawMode === 'ERASE_POLYGON' ? '#ef4444' : '#6366f1'} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-                  />
-                )}
-                {polygonPoints.length > 0 && hoverPoint && (
-                  <line 
-                    x1={polygonPoints[polygonPoints.length - 1].col * 28 + 12} 
-                    y1={polygonPoints[polygonPoints.length - 1].row * 28 + 12}
-                    x2={hoverPoint.col * 28 + 12} 
-                    y2={hoverPoint.row * 28 + 12}
-                    stroke={drawMode === 'ERASE_POLYGON' ? '#ef4444' : '#6366f1'} strokeWidth="3" strokeDasharray="6,6" opacity="0.6" strokeLinecap="round"
-                  />
-                )}
-                {polygonPoints.map((p, i) => (
-                  <circle key={i} cx={p.col * 28 + 12} cy={p.row * 28 + 12} r="5" fill="#fff" stroke={drawMode === 'ERASE_POLYGON' ? '#ef4444' : '#6366f1'} strokeWidth="2" />
-                ))}
-              </svg>
+              <PolygonOverlay
+                polygonLinePoints={polygonLinePoints}
+                polygonPoints={polygonPoints}
+                polygonEdges={polygonEdges}
+                previewEdge={previewEdge}
+                drawingStrokeColor={drawingStrokeColor}
+              />
             )}
 
-            <div className="flex flex-col gap-1" onMouseLeave={() => { setIsMouseDown(false); setHoverPoint(null); }}>
-              {grid.map((row, r) => (
-                <div key={r} className="flex gap-1">
-                  {row.map((cell, c) => {
-                    const zone = cell ? zones.find(z => z.id === cell) : null;
-                    return (
-                      <div key={`${r}-${c}`}
-                        onMouseDown={() => canEdit && onMouseDown(r, c)}
-                        onMouseEnter={() => canEdit && onMouseEnter(r, c)}
-                        className={`w-6 h-6 rounded-t-lg rounded-b-sm border-b-2 transition-transform active:scale-90 ${(drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON') ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400' : 'cursor-crosshair'} ${!cell ? 'bg-slate-100 border-slate-200 hover:bg-slate-200' : 'shadow-sm'}`}
-                        style={zone ? { backgroundColor: zone.colorCode, borderColor: 'rgba(0,0,0,0.2)' } : {}}
-                      />
-                    );
-                  })}
+            {drawMode === 'RECTANGLE' && rectangleFrame && (
+              <div
+                onMouseDown={startRectangleDrag}
+                className={`absolute z-20 rounded-md border-2 ${canEdit ? 'cursor-move' : 'cursor-not-allowed'}`}
+                style={{
+                  left: 24 + rectangleFrame.col * CELL_SIZE,
+                  top: 24 + rectangleFrame.row * CELL_SIZE,
+                  width: Math.max(8, rectangleFrame.cols * CELL_SIZE - 4),
+                  height: Math.max(8, rectangleFrame.rows * CELL_SIZE - 4),
+                  borderColor: activeZoneColor,
+                  backgroundColor: colorWithAlpha(activeZoneColor, 0.1),
+                  boxShadow: `0 0 0 2px ${colorWithAlpha(activeZoneColor, 0.18)}`,
+                }}
+              >
+                <div
+                  className="pointer-events-none absolute -top-7 left-0 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm whitespace-nowrap"
+                  style={{ backgroundColor: activeZoneColor, color: rectangleTextColor }}
+                >
+                  {rectangleFrame.cols} x {rectangleFrame.rows}
                 </div>
-              ))}
-            </div>
+                {canEdit && RECTANGLE_RESIZE_HANDLES.map(handle => (
+                  <button
+                    key={handle.key}
+                    type="button"
+                    aria-label={`Kéo ${handle.label} để đổi kích thước`}
+                    onMouseDown={(event) => startRectangleResize(event, handle.key)}
+                    className="absolute w-3.5 h-3.5 rounded-full border-2 border-white transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-offset-1"
+                    style={{
+                      ...handle.style,
+                      cursor: handle.cursor,
+                      backgroundColor: activeZoneColor,
+                      boxShadow: `0 1px 4px ${colorWithAlpha(activeZoneColor, 0.35)}`,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+
+            <SeatGrid
+              gridRef={gridRef}
+              grid={grid}
+              zonesById={zonesById}
+              canEdit={canEdit}
+              drawMode={drawMode}
+              onCellMouseDown={onMouseDown}
+              onCellMouseEnter={onMouseEnter}
+              onGridMouseLeave={handleGridMouseLeave}
+            />
           </div>
           
           <p className="text-xs text-slate-400 mt-6 text-center">
             {drawMode === 'BRUSH' || drawMode === 'ERASE_BRUSH' ? (
               <>Kéo chuột (Drag) để vẽ hoặc xóa nhanh nhiều ghế.</>
+            ) : drawMode === 'RECTANGLE' ? (
+              <>Tạo khung, kéo khung để di chuyển, kéo cạnh/góc để đổi kích thước rồi bấm <strong>Xác nhận vẽ</strong>.</>
             ) : (
-              <>Click để đánh dấu các đỉnh của đa giác. Bấm <strong>Hoàn thành</strong> để thực hiện.</>
+              <>Click để đánh dấu các đỉnh của đa giác. Bấm <strong>Hoàn thành</strong> để tự nối điểm cuối với điểm đầu.</>
             )}
           </p>
         </div>

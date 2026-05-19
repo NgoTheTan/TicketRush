@@ -34,6 +34,12 @@ public class TicketController {
         return ResponseEntity.ok(ApiResponse.ok(result.getContent(), ApiResponse.PageMeta.of(result)));
     }
 
+    @GetMapping("/my/events/{eventId}")
+    public ResponseEntity<ApiResponse<List<TicketResponse>>> myTicketsForEvent(@PathVariable Long eventId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        return ResponseEntity.ok(ApiResponse.ok(ticketService.getMyTicketsForEvent(userId, eventId)));
+    }
+
     @GetMapping("/{ticketId}")
     public ResponseEntity<ApiResponse<TicketResponse>> getTicket(@PathVariable Long ticketId) {
         Long userId = SecurityUtils.getCurrentUserId();

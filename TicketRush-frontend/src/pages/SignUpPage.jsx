@@ -1,5 +1,5 @@
 // src/pages/SignUpPage.jsx
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { Button, showToast } from '../components/ui/index.jsx';
@@ -53,14 +53,15 @@ function ConfirmPasswordStatus({ complete, visible }) {
   );
 }
 
-function Field({ label, name, type = 'text', placeholder, children }) {
+function Field({ label, name, type = 'text', placeholder, autoComplete = 'off', children }) {
   const { form, errors, setValue } = useContext(SignUpFieldContext);
 
   return (
     <div>
       <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">{label}</label>
       {children || (
-        <input type={type} value={form[name]} onChange={e => setValue(name, e.target.value)}
+        <input type={type} name={name} autoComplete={autoComplete}
+          value={form[name]} onChange={e => setValue(name, e.target.value)}
           placeholder={placeholder}
           className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
             ${errors[name] ? 'border-red-400' : 'border-slate-200'}`} />
@@ -85,6 +86,8 @@ export default function SignUpPage({ modal = false }) {
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const passwordInputRef = useRef(null);
+  const confirmPasswordInputRef = useRef(null);
 
   const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
@@ -97,8 +100,20 @@ export default function SignUpPage({ modal = false }) {
     };
   }, [modal]);
 
-  const closeModal = () => navigate('/');
-  const openLogin = () => navigate('/login', modalQuery(params));
+  const clearSensitiveFields = useCallback(() => {
+    [passwordInputRef, confirmPasswordInputRef].forEach((ref) => {
+      if (ref.current) ref.current.value = '';
+    });
+    setForm((current) => ({ ...current, password: '', confirmPassword: '' }));
+  }, []);
+
+  const navigateAfterClearingSensitiveFields = useCallback((to, queryParams) => {
+    clearSensitiveFields();
+    window.requestAnimationFrame(() => navigate(to, queryParams));
+  }, [clearSensitiveFields, navigate]);
+
+  const closeModal = () => navigateAfterClearingSensitiveFields('/');
+  const openLogin = () => navigateAfterClearingSensitiveFields('/login', modalQuery(params));
   const passwordMeetsRules = PASSWORD_RULES.every((rule) => rule.test(form.password));
   const confirmMatches = form.password.length > 0 && form.confirmPassword === form.password;
   const showPasswordCriteria = passwordTouched && form.password.length > 0;
@@ -132,7 +147,7 @@ export default function SignUpPage({ modal = false }) {
         gender: form.gender,
       });
       showToast('Đăng ký thành công!', 'success');
-      navigate('/system-queue', { returnUrl: params.returnUrl || '/' });
+      navigateAfterClearingSensitiveFields('/system-queue', { returnUrl: params.returnUrl || '/' });
     } catch (err) {
       if (err.code === 'AUTH_EMAIL_ALREADY_EXISTS') {
         setErrors({ email: 'Email này đã được sử dụng' });
@@ -201,7 +216,7 @@ export default function SignUpPage({ modal = false }) {
 
         {/* Form */}
         <SignUpFieldContext.Provider value={fieldProps}>
-        <form onSubmit={handleSubmit} className="px-8 py-6 space-y-4">
+        <form onSubmit={handleSubmit} className="px-8 py-6 space-y-4" autoComplete="off">
           {authError && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">{authError}</div>
           )}
@@ -225,16 +240,22 @@ export default function SignUpPage({ modal = false }) {
             <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Mật khẩu</label>
             <div className="relative">
               <input
-                type={showPassword ? 'text' : 'password'}
+                ref={passwordInputRef}
+                type="text"
                 value={form.password}
                 onFocus={() => setPasswordTouched(true)}
                 onChange={(e) => {
                   setPasswordTouched(true);
                   set('password', e.target.value);
                 }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 placeholder="••••••••"
                 className={`w-full px-3 py-2.5 pr-10 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-                  ${errors.password ? 'border-red-400' : 'border-slate-200'}`}
+                  ${errors.password ? 'border-red-400' : 'border-slate-200'}
+                  ${showPassword ? '' : 'password-input-concealed'}`}
               />
               <button
                 type="button"
@@ -253,16 +274,22 @@ export default function SignUpPage({ modal = false }) {
             <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Xác nhận mật khẩu</label>
             <div className="relative">
               <input
-                type={showConfirmPassword ? 'text' : 'password'}
+                ref={confirmPasswordInputRef}
+                type="text"
                 value={form.confirmPassword}
                 onFocus={() => setConfirmPasswordTouched(true)}
                 onChange={(e) => {
                   setConfirmPasswordTouched(true);
                   set('confirmPassword', e.target.value);
                 }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 placeholder="••••••••"
                 className={`w-full px-3 py-2.5 pr-10 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-                  ${errors.confirmPassword ? 'border-red-400' : 'border-slate-200'}`}
+                  ${errors.confirmPassword ? 'border-red-400' : 'border-slate-200'}
+                  ${showConfirmPassword ? '' : 'password-input-concealed'}`}
               />
               <button
                 type="button"

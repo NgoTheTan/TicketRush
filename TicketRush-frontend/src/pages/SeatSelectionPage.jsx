@@ -77,7 +77,7 @@ export default function SeatSelectionPage({ eventId }) {
         .then(hold => { if (hold) updateHold(hold); })
         .catch(() => {});
     }
-  }, [eventId]);
+  }, [eventId, holdData, updateHold]);
 
   const holdDataRef = useRef(holdData);
   useEffect(() => {

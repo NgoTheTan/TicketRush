@@ -1,5 +1,5 @@
 // src/pages/SignInPage.jsx
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { Button, showToast } from '../components/ui/index.jsx';
@@ -17,6 +17,7 @@ export default function SignInPage({ modal = false }) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const passwordInputRef = useRef(null);
 
   useEffect(() => {
     if (!modal) return undefined;
@@ -27,9 +28,17 @@ export default function SignInPage({ modal = false }) {
     };
   }, [modal]);
 
-  const closeModal = () => navigate('/');
-  const openRegister = () => navigate('/register', modalQuery(params));
-  const openForgotPassword = () => navigate('/forgot-password', modalQuery(params));
+  const navigateAfterClearingPassword = useCallback((to, queryParams) => {
+    if (passwordInputRef.current) {
+      passwordInputRef.current.value = '';
+    }
+    setForm((current) => ({ ...current, password: '' }));
+    window.requestAnimationFrame(() => navigate(to, queryParams));
+  }, [navigate]);
+
+  const closeModal = () => navigateAfterClearingPassword('/');
+  const openRegister = () => navigateAfterClearingPassword('/register', modalQuery(params));
+  const openForgotPassword = () => navigateAfterClearingPassword('/forgot-password', modalQuery(params));
 
   const redirectAfterLogin = useCallback((user, requireProfileCompletion = false) => {
     if (user.role === 'ADMIN') {
@@ -124,14 +133,15 @@ export default function SignInPage({ modal = false }) {
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">{error}</div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="on">
             <div>
               <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Email</label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-[calc(0.75rem-1px)] flex items-center pointer-events-none">
                   <span className="material-symbols-outlined text-slate-400 text-[18px] leading-none">mail</span>
                 </span>
-                <input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))}
+                <input type="email" name="username" autoComplete="username"
+                  value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))}
                   placeholder="nhap@email.com" required
                   className="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
               </div>
@@ -152,7 +162,8 @@ export default function SignInPage({ modal = false }) {
                 <span className="absolute inset-y-0 left-[calc(0.75rem-1px)] flex items-center pointer-events-none">
                   <span className="material-symbols-outlined text-slate-400 text-[18px] leading-none">lock</span>
                 </span>
-                <input type={showPw ? 'text' : 'password'} value={form.password}
+                <input ref={passwordInputRef} type={showPw ? 'text' : 'password'}
+                  name="password" autoComplete="current-password" value={form.password}
                   onChange={e => setForm(p => ({...p, password: e.target.value}))}
                   placeholder="••••••••" required
                   className="w-full pl-10 pr-10 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />

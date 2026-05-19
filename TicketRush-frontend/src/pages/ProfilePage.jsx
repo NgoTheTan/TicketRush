@@ -296,7 +296,7 @@ export default function ProfilePage() {
 
         {/* Password tab */}
         {tab === 'password' && (
-          <form onSubmit={handleChangePassword} className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-5">
+          <form onSubmit={handleChangePassword} className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-5" autoComplete="off">
             {[
               { key: 'currentPassword', label: 'Mật khẩu hiện tại' },
               { key: 'newPassword',     label: 'Mật khẩu mới' },
@@ -305,10 +305,15 @@ export default function ProfilePage() {
               <div key={key}>
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">{label}</label>
                 <div className="relative">
-                  <input type={showPasswords[key] ? 'text' : 'password'} value={pwForm[key]}
+                  <input type="text" value={pwForm[key]}
                     onChange={e => setPwForm(p => ({ ...p, [key]: e.target.value }))}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     className={`w-full px-3 py-2.5 pr-11 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
-                      ${errors[key] ? 'border-red-400' : 'border-slate-200'}`} />
+                      ${errors[key] ? 'border-red-400' : 'border-slate-200'}
+                      ${showPasswords[key] ? '' : 'password-input-concealed'}`} />
                   <button
                     type="button"
                     onClick={() => setShowPasswords(p => ({ ...p, [key]: !p[key] }))}

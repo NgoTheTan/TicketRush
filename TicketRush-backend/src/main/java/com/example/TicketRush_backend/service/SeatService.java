@@ -188,9 +188,11 @@ public class SeatService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.AUTH_USER_NOT_FOUND));
 
-        Instant expiresAt = Instant.now().plus(holdDurationMinutes, ChronoUnit.MINUTES);
+        Instant now = Instant.now();
+        Instant newHoldExpiresAt = now.plus(holdDurationMinutes, ChronoUnit.MINUTES);
 
-        // 5. Tìm hoặc tạo SeatHold ACTIVE cho user+event
+        // 5. Tìm hoặc tạo SeatHold ACTIVE cho user+event.
+        // Nếu user đã giữ ghế trong hold này, giữ nguyên expiresAt để đồng hồ không reset khi chọn thêm ghế.
         SeatHold hold = seatHoldRepository
                 .findByUserIdAndEventIdAndStatus(userId, eventId, HoldStatus.ACTIVE)
                 .orElseGet(() -> {
@@ -198,14 +200,11 @@ public class SeatService {
                             .user(user)
                             .event(event)
                             .status(HoldStatus.ACTIVE)
-                            .expiresAt(expiresAt)
+                            .expiresAt(newHoldExpiresAt)
                             .build();
                     return seatHoldRepository.save(newHold);
                 });
-
-        // Reset expiry trên hold (mỗi lần hold ghế mới, đồng hồ reset)
-        hold.setExpiresAt(expiresAt);
-        seatHoldRepository.save(hold);
+        Instant expiresAt = hold.getExpiresAt();
 
         // Tạo SeatHoldItem
         BigDecimal price = seat.getZone().getPrice();

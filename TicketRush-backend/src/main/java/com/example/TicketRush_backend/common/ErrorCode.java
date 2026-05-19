@@ -48,6 +48,7 @@ public enum ErrorCode {
     // ── Ticket (6xxx) ─────────────────────────────────────────
     TICKET_NOT_FOUND         (HttpStatus.NOT_FOUND, "TICKET_NOT_FOUND",         "Vé không tồn tại"),
     TICKET_NOT_OWNED_BY_USER (HttpStatus.FORBIDDEN, "TICKET_NOT_OWNED_BY_USER", "Vé này không thuộc về bạn"),
+    NOTIFICATION_NOT_FOUND   (HttpStatus.NOT_FOUND, "NOTIFICATION_NOT_FOUND",   "Thông báo không tồn tại"),
 
 
     // ── Queue (7xxx) ──────────────────────────────────────────────────────────

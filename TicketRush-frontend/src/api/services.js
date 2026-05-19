@@ -60,6 +60,11 @@ export const ticketService = {
     const res = await api.get(`/api/v1/tickets/${ticketId}`);
     return res.data;
   },
+
+  myTicketsForEvent: async (eventId) => {
+    const res = await api.get(`/api/v1/tickets/my/events/${eventId}`);
+    return res.data;
+  },
 };
 
 // ── Queue service (always-on for ON_SALE events) ─────────────

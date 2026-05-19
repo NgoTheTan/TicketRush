@@ -1,5 +1,5 @@
 // src/pages/ForgotPasswordPage.jsx
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import authService from '../api/authService.js';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { Button, showToast } from '../components/ui/index.jsx';
@@ -69,6 +69,8 @@ export default function ForgotPasswordPage({ modal = false }) {
   const [confirmTouched, setConfirmTouched] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const newPasswordInputRef = useRef(null);
+  const confirmPasswordInputRef = useRef(null);
 
   useEffect(() => {
     if (!modal) return undefined;
@@ -80,8 +82,24 @@ export default function ForgotPasswordPage({ modal = false }) {
   }, [modal]);
 
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
-  const closeModal = () => navigate('/');
-  const openLogin = () => navigate('/login', modalQuery(params));
+  const clearSensitiveFields = useCallback(() => {
+    [newPasswordInputRef, confirmPasswordInputRef].forEach((ref) => {
+      if (ref.current) ref.current.value = '';
+    });
+    setForm((current) => ({ ...current, newPassword: '', confirmPassword: '' }));
+  }, []);
+
+  const navigateAfterClearingSensitiveFields = useCallback((to, queryParams) => {
+    clearSensitiveFields();
+    window.requestAnimationFrame(() => navigate(to, queryParams));
+  }, [clearSensitiveFields, navigate]);
+
+  const closeModal = () => navigateAfterClearingSensitiveFields('/');
+  const openLogin = () => navigateAfterClearingSensitiveFields('/login', modalQuery(params));
+  const returnToVerify = () => {
+    clearSensitiveFields();
+    setStep('verify');
+  };
   const passwordMeetsRules = PASSWORD_RULES.every((rule) => rule.test(form.newPassword));
   const confirmMatches = form.newPassword.length > 0 && form.confirmPassword === form.newPassword;
 
@@ -145,7 +163,7 @@ export default function ForgotPasswordPage({ modal = false }) {
         newPassword: form.newPassword,
       });
       showToast('Đổi mật khẩu thành công. Vui lòng đăng nhập lại.', 'success');
-      navigate('/login', modalQuery(params));
+      navigateAfterClearingSensitiveFields('/login', modalQuery(params));
     } catch (err) {
       if (err.code === 'AUTH_RESET_OTP_INVALID' || err.code === 'AUTH_RESET_OTP_EXPIRED') {
         setStep('verify');
@@ -188,7 +206,7 @@ export default function ForgotPasswordPage({ modal = false }) {
         )}
 
         {step === 'verify' ? (
-          <form onSubmit={submitOtp} className="px-8 py-6 space-y-5">
+          <form onSubmit={submitOtp} className="px-8 py-6 space-y-5" autoComplete="off">
             <div>
               <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Email</label>
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -203,6 +221,7 @@ export default function ForgotPasswordPage({ modal = false }) {
                       set('email', e.target.value);
                       setOtpSent(false);
                     }}
+                    autoComplete="email"
                     placeholder="email@example.com"
                     required
                     className={`h-[46px] w-full pl-10 pr-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.email ? 'border-red-400' : 'border-slate-200'}`}
@@ -228,6 +247,7 @@ export default function ForgotPasswordPage({ modal = false }) {
                 maxLength={6}
                 value={form.otp}
                 onChange={(e) => set('otp', e.target.value.replace(/\D/g, '').slice(0, 6))}
+                autoComplete="one-time-code"
                 placeholder="123456"
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm tracking-[0.3em] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.otp ? 'border-red-400' : 'border-slate-200'}`}
               />
@@ -244,7 +264,7 @@ export default function ForgotPasswordPage({ modal = false }) {
             </p>
           </form>
         ) : (
-          <form onSubmit={submitReset} className="px-8 py-6 space-y-4">
+          <form onSubmit={submitReset} className="px-8 py-6 space-y-4" autoComplete="off">
             <div className="flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
               <span className="material-symbols-outlined text-[18px] leading-none">check_circle</span>
               <span className="min-w-0 truncate">{form.email.trim()}</span>
@@ -254,15 +274,20 @@ export default function ForgotPasswordPage({ modal = false }) {
               <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Mật khẩu mới</label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  ref={newPasswordInputRef}
+                  type="text"
                   value={form.newPassword}
                   onFocus={() => setPasswordTouched(true)}
                   onChange={(e) => {
                     setPasswordTouched(true);
                     set('newPassword', e.target.value);
                   }}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   placeholder="••••••••"
-                  className={`w-full px-3 py-2.5 pr-10 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.newPassword ? 'border-red-400' : 'border-slate-200'}`}
+                  className={`w-full px-3 py-2.5 pr-10 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.newPassword ? 'border-red-400' : 'border-slate-200'} ${showPassword ? '' : 'password-input-concealed'}`}
                 />
                 <button
                   type="button"
@@ -281,15 +306,20 @@ export default function ForgotPasswordPage({ modal = false }) {
               <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Xác nhận mật khẩu mới</label>
               <div className="relative">
                 <input
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  ref={confirmPasswordInputRef}
+                  type="text"
                   value={form.confirmPassword}
                   onFocus={() => setConfirmTouched(true)}
                   onChange={(e) => {
                     setConfirmTouched(true);
                     set('confirmPassword', e.target.value);
                   }}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   placeholder="••••••••"
-                  className={`w-full px-3 py-2.5 pr-10 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.confirmPassword ? 'border-red-400' : 'border-slate-200'}`}
+                  className={`w-full px-3 py-2.5 pr-10 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.confirmPassword ? 'border-red-400' : 'border-slate-200'} ${showConfirmPassword ? '' : 'password-input-concealed'}`}
                 />
                 <button
                   type="button"
@@ -307,7 +337,7 @@ export default function ForgotPasswordPage({ modal = false }) {
             <Button type="submit" loading={resetting} fullWidth>Đổi mật khẩu</Button>
 
             <div className="flex items-center justify-between text-sm">
-              <button type="button" onClick={() => setStep('verify')} className="font-semibold text-slate-500 hover:text-slate-700">
+              <button type="button" onClick={returnToVerify} className="font-semibold text-slate-500 hover:text-slate-700">
                 Đổi email
               </button>
             </div>
