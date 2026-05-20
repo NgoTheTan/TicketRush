@@ -19,6 +19,39 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     Page<Event> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
+    @Query("""
+        SELECT e FROM Event e
+        WHERE e.status = :status
+        AND (:searchPattern IS NULL OR LOWER(e.name) LIKE :searchPattern)
+        AND (:categoryLower IS NULL OR LOWER(e.category) = :categoryLower)
+        AND (
+            :cityMode IS NULL
+            OR (:cityMode = 'HANOI' AND LOWER(TRIM(e.city)) = 'hà nội')
+            OR (:cityMode = 'HCMC' AND LOWER(TRIM(e.city)) IN (
+                'thành phố hồ chí minh',
+                'tp. hồ chí minh',
+                'tp hồ chí minh',
+                'hồ chí minh'
+            ))
+            OR (:cityMode = 'OTHER' AND (
+                e.city IS NULL
+                OR LOWER(TRIM(e.city)) NOT IN (
+                    'hà nội',
+                    'thành phố hồ chí minh',
+                    'tp. hồ chí minh',
+                    'tp hồ chí minh',
+                    'hồ chí minh'
+                )
+            ))
+        )
+    """)
+    Page<Event> searchPublicEvents(
+            @Param("status") EventStatus status,
+            @Param("searchPattern") String searchPattern,
+            @Param("categoryLower") String categoryLower,
+            @Param("cityMode") String cityMode,
+            Pageable pageable);
+
     /**
      * Autocomplete suggestions: ON_SALE events containing keyword, sorted by similarity.
      * Returns max 10 results, prioritizing events that start with keyword.

@@ -3,8 +3,8 @@ import api from './apiClient.js';
 
 const eventService = {
   // Public - list events
-  list: async ({ search, page = 0, size = 12 } = {}) => {
-    const res = await api.get('/api/v1/events', { search, page, size });
+  list: async ({ search, category, city, page = 0, size = 12 } = {}) => {
+    const res = await api.get('/api/v1/events', { search, category, city, page, size });
     return { data: res.data, meta: res.meta };
   },
 

@@ -160,7 +160,7 @@ export default function EventManagementPage() {
                          {e.name}
                          <span className="material-symbols-outlined text-[14px] text-slate-300 group-hover:text-indigo-400 transition-colors">open_in_new</span>
                        </p>
-                       <p className="text-xs text-slate-400 mt-0.5">{e.venue}</p>
+                       <p className="text-xs text-slate-400 mt-0.5">{[e.venue, e.city].filter(Boolean).join(' • ')}</p>
                      </td>
                     <td className="px-6 py-4 text-slate-600 text-xs">{formatDate(e.eventDate)}</td>
                     <td className="px-6 py-4"><Badge label={eventStatusLabel(e.status)} variant={eventStatusVariant(e.status)} /></td>

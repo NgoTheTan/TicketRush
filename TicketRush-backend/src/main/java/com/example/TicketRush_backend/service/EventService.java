@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Service
@@ -45,14 +46,17 @@ public class EventService {
 
     // ── Public / Customer ──────────────────────────────────────
 
-    public Page<EventResponse> listPublicEvents(String search, Pageable pageable) {
-        Page<Event> page;
-        if (search != null && !search.isBlank()) {
-            page = eventRepository.findByStatusAndNameContainingIgnoreCase(
-                    EventStatus.ON_SALE, search, pageable);
-        } else {
-            page = eventRepository.findByStatus(EventStatus.ON_SALE, pageable);
-        }
+    public Page<EventResponse> listPublicEvents(String search, String category, String city, Pageable pageable) {
+        String searchPattern = toSearchPattern(search);
+        String categoryLower = toLowerFilter(category);
+        String cityMode = toCityMode(city);
+
+        Page<Event> page = eventRepository.searchPublicEvents(
+                EventStatus.ON_SALE,
+                searchPattern,
+                categoryLower,
+                cityMode,
+                pageable);
         return page.map(this::toSummaryResponse);
     }
 
@@ -68,7 +72,9 @@ public class EventService {
                     eventMap.put("id", e.getId());
                     eventMap.put("name", e.getName());
                     eventMap.put("imageUrl", e.getImageUrl() != null ? e.getImageUrl() : "");
+                    eventMap.put("category", e.getCategory() != null ? e.getCategory() : "");
                     eventMap.put("venue", e.getVenue() != null ? e.getVenue() : "");
+                    eventMap.put("city", e.getCity() != null ? e.getCity() : "");
                     return eventMap;
                 })
                 .toList();
@@ -101,7 +107,9 @@ public class EventService {
         Event event = Event.builder()
                 .name(req.getName())
                 .description(req.getDescription())
+                .category(req.getCategory())
                 .venue(req.getVenue())
+                .city(req.getCity())
                 .eventDate(req.getEventDate())
                 .imageUrl(req.getImageUrl())
                 .locationUrl(req.getLocationUrl())
@@ -120,7 +128,9 @@ public class EventService {
 
         if (req.getName() != null)        event.setName(req.getName());
         if (req.getDescription() != null) event.setDescription(req.getDescription());
+        if (req.getCategory() != null)    event.setCategory(req.getCategory());
         if (req.getVenue() != null)       event.setVenue(req.getVenue());
+        if (req.getCity() != null)        event.setCity(req.getCity());
         if (req.getEventDate() != null)   event.setEventDate(req.getEventDate());
         if (req.getImageUrl() != null)    event.setImageUrl(req.getImageUrl());
         if (req.getLocationUrl() != null) event.setLocationUrl(req.getLocationUrl());
@@ -423,6 +433,33 @@ public class EventService {
                 .orElseThrow(() -> new AppException(ErrorCode.EVENT_NOT_FOUND));
     }
 
+    private String normalizeFilter(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String toSearchPattern(String value) {
+        String normalized = normalizeFilter(value);
+        return normalized == null ? null : "%" + normalized.toLowerCase(Locale.ROOT) + "%";
+    }
+
+    private String toLowerFilter(String value) {
+        String normalized = normalizeFilter(value);
+        return normalized == null ? null : normalized.toLowerCase(Locale.ROOT);
+    }
+
+    private String toCityMode(String city) {
+        if (city == null || city.isBlank()) {
+            return null;
+        }
+
+        return switch (city.trim().toLowerCase(Locale.ROOT)) {
+            case "hà nội" -> "HANOI";
+            case "thành phố hồ chí minh", "tp. hồ chí minh", "tp hồ chí minh", "hồ chí minh" -> "HCMC";
+            case "vị trí khác" -> "OTHER";
+            default -> null;
+        };
+    }
+
     private EventResponse toSummaryResponse(Event e) {
         long available = eventSeatRepository.countByEventIdAndStatus(e.getId(), SeatStatus.AVAILABLE);
         long sold      = eventSeatRepository.countByEventIdAndStatus(e.getId(), SeatStatus.SOLD);
@@ -435,7 +472,8 @@ public class EventService {
                 .orElse(BigDecimal.ZERO);
 
         return EventResponse.builder()
-                .id(e.getId()).name(e.getName()).venue(e.getVenue())
+                .id(e.getId()).name(e.getName()).category(e.getCategory())
+                .venue(e.getVenue()).city(e.getCity())
                 .eventDate(e.getEventDate()).imageUrl(e.getImageUrl())
                 .locationUrl(e.getLocationUrl())
                 .status(e.getStatus()).createdAt(e.getCreatedAt())
@@ -458,7 +496,8 @@ public class EventService {
 
         return EventResponse.builder()
                 .id(e.getId()).name(e.getName()).description(e.getDescription())
-                .venue(e.getVenue()).eventDate(e.getEventDate()).imageUrl(e.getImageUrl())
+                .category(e.getCategory())
+                .venue(e.getVenue()).city(e.getCity()).eventDate(e.getEventDate()).imageUrl(e.getImageUrl())
                 .locationUrl(e.getLocationUrl())
                 .status(e.getStatus()).createdAt(e.getCreatedAt())
                 .zones(zones)
@@ -470,7 +509,8 @@ public class EventService {
         long locked  = eventSeatRepository.countByEventIdAndStatus(e.getId(), SeatStatus.LOCKED);
         long avail   = eventSeatRepository.countByEventIdAndStatus(e.getId(), SeatStatus.AVAILABLE);
         return EventResponse.builder()
-                .id(e.getId()).name(e.getName()).venue(e.getVenue())
+                .id(e.getId()).name(e.getName()).category(e.getCategory())
+                .venue(e.getVenue()).city(e.getCity())
                 .eventDate(e.getEventDate()).status(e.getStatus()).createdAt(e.getCreatedAt())
                 .imageUrl(e.getImageUrl()).locationUrl(e.getLocationUrl())
                 .totalSeats(sold + locked + avail).soldSeats(sold)

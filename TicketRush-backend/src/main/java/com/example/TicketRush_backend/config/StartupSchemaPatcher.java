@@ -31,6 +31,8 @@ public class StartupSchemaPatcher implements ApplicationContextInitializer<Confi
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("ALTER TABLE events ADD COLUMN IF NOT EXISTS queue_active BOOLEAN NOT NULL DEFAULT FALSE");
             statement.executeUpdate("ALTER TABLE events ADD COLUMN IF NOT EXISTS location_url VARCHAR(1000)");
+            statement.executeUpdate("ALTER TABLE events ADD COLUMN IF NOT EXISTS city VARCHAR(255)");
+            statement.executeUpdate("ALTER TABLE events ADD COLUMN IF NOT EXISTS category VARCHAR(100)");
             statement.executeUpdate("ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(1000)");
             statement.executeUpdate("ALTER TABLE customer_profiles ALTER COLUMN phone DROP NOT NULL");
             statement.executeUpdate("ALTER TABLE customer_profiles ALTER COLUMN date_of_birth DROP NOT NULL");

@@ -45,8 +45,14 @@ public class Event {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(length = 100)
+    private String category;
+
     @Column(nullable = false, length = 500)
     private String venue;
+
+    @Column(length = 255)
+    private String city;
 
     @Column(name = "event_date", nullable = false)
     private Instant eventDate;

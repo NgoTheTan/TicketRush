@@ -224,7 +224,7 @@ export default function AdminDashboardPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className={`text-sm truncate ${e.id === selectedEventId ? 'font-bold text-indigo-700' : 'font-medium text-slate-700'}`}>{e.name}</p>
-                            <p className="text-xs text-slate-500 truncate">{e.venue}</p>
+                            <p className="text-xs text-slate-500 truncate">{[e.venue, e.city].filter(Boolean).join(' • ')}</p>
                           </div>
                         </button>
                       ))
@@ -261,10 +261,10 @@ export default function AdminDashboardPage() {
                   {selectedEvent.locationUrl ? (
                     <a href={selectedEvent.locationUrl} target="_blank" rel="noopener noreferrer"
                       className="hover:text-white underline underline-offset-2 transition-colors">
-                      {selectedEvent.venue}
+                      {[selectedEvent.venue, selectedEvent.city].filter(Boolean).join(' • ')}
                     </a>
                   ) : (
-                    <span>{selectedEvent.venue}</span>
+                    <span>{[selectedEvent.venue, selectedEvent.city].filter(Boolean).join(' • ')}</span>
                   )}
                 </span>
                 <span className="flex items-center gap-1.5">

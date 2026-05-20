@@ -15,7 +15,9 @@ public class EventResponse {
     private Long id;
     private String name;
     private String description;
+    private String category;
     private String venue;
+    private String city;
     private Instant eventDate;
     private String imageUrl;
     private String locationUrl;
@@ -58,7 +60,9 @@ public class EventResponse {
                 .id(e.getId())
                 .name(e.getName())
                 .description(e.getDescription())
+                .category(e.getCategory())
                 .venue(e.getVenue())
+                .city(e.getCity())
                 .eventDate(e.getEventDate())
                 .imageUrl(e.getImageUrl())
                 .locationUrl(e.getLocationUrl())

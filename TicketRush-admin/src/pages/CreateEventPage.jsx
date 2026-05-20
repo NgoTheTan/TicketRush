@@ -5,6 +5,16 @@ import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
 import { Button, showToast } from '../components/ui/index.jsx';
 
+const CATEGORY_OPTIONS = [
+  { value: '', label: 'Chọn thể loại' },
+  { value: 'Ca nhạc', label: 'Ca nhạc' },
+  { value: 'Sân khấu & Nghệ thuật', label: 'Sân khấu & Nghệ thuật' },
+  { value: 'Thể thao', label: 'Thể thao' },
+  { value: 'Hội thảo & Workshop', label: 'Hội thảo & Workshop' },
+  { value: 'Tham quan & Trải nghiệm', label: 'Tham quan & Trải nghiệm' },
+  { value: 'Khác', label: 'Khác' },
+];
+
 const Field = ({ label, name, required, errors, children }) => (
   <div>
     <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">
@@ -17,7 +27,7 @@ const Field = ({ label, name, required, errors, children }) => (
 
 export default function CreateEventPage() {
   const { navigate } = useRouter();
-  const [form, setForm] = useState({ name: '', description: '', venue: '', eventDate: '', locationUrl: '' });
+  const [form, setForm] = useState({ name: '', description: '', category: '', venue: '', city: '', eventDate: '', locationUrl: '' });
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -29,7 +39,9 @@ export default function CreateEventPage() {
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = 'Tên sự kiện không được để trống';
+    if (!form.category) e.category = 'Vui lòng chọn thể loại';
     if (!form.venue.trim()) e.venue = 'Địa điểm không được để trống';
+    if (!form.city.trim()) e.city = 'Thành phố không được để trống';
     if (!form.eventDate) e.eventDate = 'Vui lòng chọn ngày tổ chức';
     else if (new Date(form.eventDate) <= new Date()) e.eventDate = 'Ngày tổ chức phải trong tương lai';
     setErrors(e);
@@ -85,10 +97,35 @@ export default function CreateEventPage() {
               className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
           </Field>
 
+          <Field label="Thể loại" name="category" required errors={errors}>
+            <select
+              value={form.category}
+              onChange={e => set('category', e.target.value)}
+              className={`w-full px-3 py-2.5 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 ${form.category ? 'text-slate-900' : 'text-slate-400'} ${errors.category ? 'border-red-400' : 'border-slate-200'}`}
+            >
+              {CATEGORY_OPTIONS.map(option => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                  disabled={!option.value}
+                  className="text-slate-900"
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+
           <Field label="Địa điểm" name="venue" required errors={errors}>
             <input value={form.venue} onChange={e => set('venue', e.target.value)}
               placeholder="Nhà hát lớn Hà Nội"
               className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.venue ? 'border-red-400' : 'border-slate-200'}`} />
+          </Field>
+
+          <Field label="Thành phố" name="city" required errors={errors}>
+            <input value={form.city} onChange={e => set('city', e.target.value)}
+              placeholder="Hà Nội"
+              className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.city ? 'border-red-400' : 'border-slate-200'}`} />
           </Field>
 
           <Field label="Ngày & giờ tổ chức" name="eventDate" required errors={errors}>

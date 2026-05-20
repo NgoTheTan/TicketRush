@@ -3,10 +3,20 @@ import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
-import { Button, showToast, Spinner, ErrorState } from '../components/ui/index.jsx';
+import { Button, CustomSelect, showToast, Spinner, ErrorState } from '../components/ui/index.jsx';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
+
+const CATEGORY_OPTIONS = [
+  { value: '', label: 'Chọn thể loại' },
+  { value: 'Ca nhạc', label: 'Ca nhạc' },
+  { value: 'Sân khấu & Nghệ thuật', label: 'Sân khấu & Nghệ thuật' },
+  { value: 'Thể thao', label: 'Thể thao' },
+  { value: 'Hội thảo & Workshop', label: 'Hội thảo & Workshop' },
+  { value: 'Tham quan & Trải nghiệm', label: 'Tham quan & Trải nghiệm' },
+  { value: 'Khác', label: 'Khác' },
+];
 
 const Field = ({ label, name, required, errors, children }) => (
   <div>
@@ -27,7 +37,7 @@ const toDatetimeLocal = (isoString) => {
 
 export default function EditEventPage({ eventId }) {
   const { navigate, goBack } = useRouter();
-  const [form, setForm] = useState({ name: '', description: '', venue: '', eventDate: '', locationUrl: '', imageUrl: '' });
+  const [form, setForm] = useState({ name: '', description: '', category: '', venue: '', city: '', eventDate: '', locationUrl: '', imageUrl: '' });
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
@@ -42,7 +52,9 @@ export default function EditEventPage({ eventId }) {
         setForm({
           name: data.name || '',
           description: data.description || '',
+          category: data.category || '',
           venue: data.venue || '',
+          city: data.city || '',
           eventDate: toDatetimeLocal(data.eventDate),
           locationUrl: data.locationUrl || '',
           imageUrl: data.imageUrl || ''
@@ -57,7 +69,9 @@ export default function EditEventPage({ eventId }) {
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = 'Tên sự kiện không được để trống';
+    if (!form.category) e.category = 'Vui lòng chọn thể loại';
     if (!form.venue.trim()) e.venue = 'Địa điểm không được để trống';
+    if (!form.city.trim()) e.city = 'Thành phố không được để trống';
     if (!form.eventDate) e.eventDate = 'Vui lòng chọn ngày tổ chức';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -115,10 +129,25 @@ export default function EditEventPage({ eventId }) {
                 className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" />
             </Field>
 
+            <Field label="Thể loại" name="category" required errors={errors}>
+              <CustomSelect
+                value={form.category}
+                onChange={e => set('category', e.target.value)}
+                options={CATEGORY_OPTIONS}
+                className={errors.category ? 'rounded-xl ring-1 ring-red-400' : ''}
+              />
+            </Field>
+
             <Field label="Địa điểm" name="venue" required errors={errors}>
               <input value={form.venue} onChange={e => set('venue', e.target.value)}
                 placeholder="Nhà hát lớn Hà Nội"
                 className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.venue ? 'border-red-400' : 'border-slate-200'}`} />
+            </Field>
+
+            <Field label="Thành phố" name="city" required errors={errors}>
+              <input value={form.city} onChange={e => set('city', e.target.value)}
+                placeholder="Hà Nội"
+                className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.city ? 'border-red-400' : 'border-slate-200'}`} />
             </Field>
 
             <Field label="Ngày & giờ tổ chức" name="eventDate" required errors={errors}>
