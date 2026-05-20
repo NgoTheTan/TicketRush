@@ -7,6 +7,11 @@ import { useWebSocket } from '../hooks/useWebSocket.js';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
+const formatDateInputLabel = (value) => {
+  if (!value) return '';
+  const [year, month, day] = value.split('-');
+  return year && month && day ? `${day}/${month}/${year}` : value;
+};
 
 const CATEGORY_OPTIONS = [
   { value: '', label: 'Tất cả thể loại' },
@@ -109,17 +114,23 @@ export default function HomePage() {
   const initialSearch = params?.search || '';
   const initialCategory = params?.category || '';
   const initialCity = params?.city || '';
+  const initialFromDate = params?.fromDate || '';
+  const initialToDate = params?.toDate || '';
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState(initialSearch);
   const [category, setCategory] = useState(initialCategory);
   const [city, setCity] = useState(initialCity);
+  const [fromDate, setFromDate] = useState(initialFromDate);
+  const [toDate, setToDate] = useState(initialToDate);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [timeFilterOpen, setTimeFilterOpen] = useState(false);
+  const [dateDraft, setDateDraft] = useState({ fromDate: initialFromDate, toDate: initialToDate });
   const [meta, setMeta] = useState(null);
   const [page, setPage] = useState(0);
 
-  const load = useCallback(async (s, p, c, selectedCity) => {
+  const load = useCallback(async (s, p, c, selectedCity, selectedFromDate, selectedToDate) => {
     setLoading(true);
     setError(null);
     try {
@@ -127,6 +138,8 @@ export default function HomePage() {
         search: s || undefined,
         category: c || undefined,
         city: selectedCity || undefined,
+        fromDate: selectedFromDate || undefined,
+        toDate: selectedToDate || undefined,
         page: p,
         size: 12,
       });
@@ -141,7 +154,7 @@ export default function HomePage() {
 
   useWebSocket('/topic/events', (msg) => {
     if (msg?.type === 'EVENT_LIST_UPDATED') {
-      load(search, page, category, city);
+      load(search, page, category, city, fromDate, toDate);
     }
   });
 
@@ -149,34 +162,64 @@ export default function HomePage() {
     setSearch(params?.search || '');
     setCategory(params?.category || '');
     setCity(params?.city || '');
+    setFromDate(params?.fromDate || '');
+    setToDate(params?.toDate || '');
+    setDateDraft({ fromDate: params?.fromDate || '', toDate: params?.toDate || '' });
     setPage(0);
-  }, [params?.search, params?.category, params?.city]);
+  }, [params?.search, params?.category, params?.city, params?.fromDate, params?.toDate]);
 
   useEffect(() => {
-    load(search, page, category, city);
-  }, [search, page, category, city, load]);
+    load(search, page, category, city, fromDate, toDate);
+  }, [search, page, category, city, fromDate, toDate, load]);
 
   const updateFilters = (next) => {
     const nextSearch = Object.prototype.hasOwnProperty.call(next, 'search') ? next.search : search;
     const nextCategory = Object.prototype.hasOwnProperty.call(next, 'category') ? next.category : category;
     const nextCity = Object.prototype.hasOwnProperty.call(next, 'city') ? next.city : city;
+    const nextFromDate = Object.prototype.hasOwnProperty.call(next, 'fromDate') ? next.fromDate : fromDate;
+    const nextToDate = Object.prototype.hasOwnProperty.call(next, 'toDate') ? next.toDate : toDate;
 
     setSearch(nextSearch);
     setCategory(nextCategory);
     setCity(nextCity);
+    setFromDate(nextFromDate);
+    setToDate(nextToDate);
     setPage(0);
     navigate('/', {
       search: nextSearch || undefined,
       category: nextCategory || undefined,
       city: nextCity || undefined,
+      fromDate: nextFromDate || undefined,
+      toDate: nextToDate || undefined,
     });
   };
 
   const clearFilters = () => {
-    updateFilters({ search: '', category: '', city: '' });
+    updateFilters({ search: '', category: '', city: '', fromDate: '', toDate: '' });
+    setDateDraft({ fromDate: '', toDate: '' });
   };
 
-  const hasActiveFilters = Boolean(search || category || city);
+  const applyDateFilter = () => {
+    if (!dateDraft.fromDate || !dateDraft.toDate) return;
+    const [normalizedFromDate, normalizedToDate] = dateDraft.fromDate <= dateDraft.toDate
+      ? [dateDraft.fromDate, dateDraft.toDate]
+      : [dateDraft.toDate, dateDraft.fromDate];
+
+    updateFilters({ fromDate: normalizedFromDate, toDate: normalizedToDate });
+    setDateDraft({ fromDate: normalizedFromDate, toDate: normalizedToDate });
+    setTimeFilterOpen(false);
+  };
+
+  const clearDateFilter = () => {
+    setDateDraft({ fromDate: '', toDate: '' });
+    updateFilters({ fromDate: '', toDate: '' });
+  };
+
+  const hasActiveDateFilter = Boolean(fromDate && toDate);
+  const dateFilterLabel = hasActiveDateFilter
+    ? `${formatDateInputLabel(fromDate)} - ${formatDateInputLabel(toDate)}`
+    : 'Thời gian';
+  const hasActiveFilters = Boolean(search || category || city || fromDate || toDate);
   const activeFilterCount = [category, city].filter(Boolean).length;
 
   return (
@@ -223,12 +266,12 @@ export default function HomePage() {
 
       <div className="max-w-screen-xl mx-auto px-6 pt-8 pb-12">
         <div className="flex flex-col gap-5 mb-8">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-indigo-600">{search ? `Kết quả cho "${search}"` : 'Sự kiện đang mở bán'}</h2>
               {meta && <p className="text-sm text-slate-500 mt-1">{meta.totalElements} sự kiện</p>}
             </div>
-            <div className="relative flex items-center gap-3 shrink-0">
+            <div className="relative flex flex-wrap items-center justify-start sm:justify-end gap-3 w-full sm:w-auto">
               {hasActiveFilters && (
                 <button onClick={clearFilters} className="text-sm text-indigo-600 font-medium hover:text-indigo-700 whitespace-nowrap">
                   Xóa bộ lọc
@@ -236,7 +279,10 @@ export default function HomePage() {
               )}
               <button
                 type="button"
-                onClick={() => setFilterOpen((open) => !open)}
+                onClick={() => {
+                  setFilterOpen((open) => !open);
+                  setTimeFilterOpen(false);
+                }}
                 className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-colors ${
                   filterOpen || activeFilterCount
                     ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
@@ -249,6 +295,27 @@ export default function HomePage() {
                 {activeFilterCount > 0 && (
                   <span className="min-w-5 h-5 px-1.5 rounded-full bg-indigo-600 text-white text-[11px] leading-5 text-center">
                     {activeFilterCount}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTimeFilterOpen((open) => !open);
+                  setFilterOpen(false);
+                }}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition-colors ${
+                  timeFilterOpen || hasActiveDateFilter
+                    ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+                aria-expanded={timeFilterOpen}
+              >
+                <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                <span className="max-w-[180px] truncate">{dateFilterLabel}</span>
+                {hasActiveDateFilter && (
+                  <span className="min-w-5 h-5 px-1.5 rounded-full bg-indigo-600 text-white text-[11px] leading-5 text-center">
+                    1
                   </span>
                 )}
               </button>
@@ -285,12 +352,67 @@ export default function HomePage() {
                   </div>
                 </div>
               )}
+
+              {timeFilterOpen && (
+                <div className="absolute right-0 top-full mt-3 w-[min(92vw,420px)] bg-white rounded-xl border border-slate-200 shadow-xl p-5 z-30">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-slate-900">Lọc theo thời gian</h3>
+                    <button
+                      type="button"
+                      onClick={() => setTimeFilterOpen(false)}
+                      className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                      aria-label="Đóng lọc thời gian"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Từ ngày</span>
+                      <input
+                        type="date"
+                        value={dateDraft.fromDate}
+                        onChange={(e) => setDateDraft((draft) => ({ ...draft, fromDate: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Đến ngày</span>
+                      <input
+                        type="date"
+                        value={dateDraft.toDate}
+                        onChange={(e) => setDateDraft((draft) => ({ ...draft, toDate: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pt-5">
+                    <button
+                      type="button"
+                      onClick={clearDateFilter}
+                      className="text-sm font-semibold text-slate-500 hover:text-slate-700"
+                    >
+                      Xóa thời gian
+                    </button>
+                    <button
+                      type="button"
+                      onClick={applyDateFilter}
+                      disabled={!dateDraft.fromDate || !dateDraft.toDate}
+                      className="px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Áp dụng
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {loading && <div className="flex justify-center py-20"><Spinner size="lg" /></div>}
-        {error && !loading && <ErrorState message={error} onRetry={() => load(search, page, category, city)} />}
+        {error && !loading && <ErrorState message={error} onRetry={() => load(search, page, category, city, fromDate, toDate)} />}
         {!loading && !error && events.length === 0 && (
           <EmptyState
             icon="🎭"

@@ -1,5 +1,6 @@
 package com.example.TicketRush_backend.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -7,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,14 +31,16 @@ public class EventController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<EventResponse>>> listEvents(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String city,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size) {
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "category", required = false) String category,
+            @RequestParam(name = "city", required = false) String city,
+            @RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(name = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "12") int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
-        Page<EventResponse> result = eventService.listPublicEvents(search, category, city, pageable);
+        Page<EventResponse> result = eventService.listPublicEvents(search, category, city, fromDate, toDate, pageable);
 
         return ResponseEntity.ok(ApiResponse.ok(result.getContent(),
                 ApiResponse.PageMeta.of(result)));

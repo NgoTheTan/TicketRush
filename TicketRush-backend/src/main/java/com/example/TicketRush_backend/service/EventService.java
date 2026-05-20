@@ -19,9 +19,16 @@ import com.example.TicketRush_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -32,6 +39,19 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class EventService {
+
+    private static final ZoneId EVENT_FILTER_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final List<String> HCMC_CITY_NAMES = List.of(
+            "thÃ nh phá»‘ há»“ chÃ­ minh",
+            "tp. há»“ chÃ­ minh",
+            "tp há»“ chÃ­ minh",
+            "há»“ chÃ­ minh");
+    private static final List<String> KNOWN_CITY_NAMES = List.of(
+            "hÃ  ná»™i",
+            "thÃ nh phá»‘ há»“ chÃ­ minh",
+            "tp. há»“ chÃ­ minh",
+            "tp há»“ chÃ­ minh",
+            "há»“ chÃ­ minh");
 
     private final EventRepository eventRepository;
     private final SeatZoneRepository seatZoneRepository;
@@ -46,18 +66,80 @@ public class EventService {
 
     // ── Public / Customer ──────────────────────────────────────
 
-    public Page<EventResponse> listPublicEvents(String search, String category, String city, Pageable pageable) {
+    public Page<EventResponse> listPublicEvents(
+            String search,
+            String category,
+            String city,
+            LocalDate fromDate,
+            LocalDate toDate,
+            Pageable pageable) {
         String searchPattern = toSearchPattern(search);
         String categoryLower = toLowerFilter(category);
         String cityMode = toCityMode(city);
+        LocalDate normalizedFromDate = fromDate;
+        LocalDate normalizedToDate = toDate;
+        if (normalizedFromDate != null && normalizedToDate != null
+                && normalizedFromDate.isAfter(normalizedToDate)) {
+            LocalDate tmp = normalizedFromDate;
+            normalizedFromDate = normalizedToDate;
+            normalizedToDate = tmp;
+        }
 
-        Page<Event> page = eventRepository.searchPublicEvents(
-                EventStatus.ON_SALE,
+        Instant fromInstant = normalizedFromDate == null
+                ? null
+                : normalizedFromDate.atStartOfDay(EVENT_FILTER_ZONE).toInstant();
+        Instant toInstantExclusive = normalizedToDate == null
+                ? null
+                : normalizedToDate.plusDays(1).atStartOfDay(EVENT_FILTER_ZONE).toInstant();
+
+        Page<Event> page = eventRepository.findAll(publicEventsSpec(
                 searchPattern,
                 categoryLower,
-                cityMode,
-                pageable);
+                fromInstant,
+                toInstantExclusive,
+                cityMode), pageable);
         return page.map(this::toSummaryResponse);
+    }
+
+    private Specification<Event> publicEventsSpec(
+            String searchPattern,
+            String categoryLower,
+            Instant fromInstant,
+            Instant toInstantExclusive,
+            String cityMode) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("status"), EventStatus.ON_SALE));
+
+            if (searchPattern != null) {
+                predicates.add(cb.like(cb.lower(root.get("name")), searchPattern));
+            }
+            if (categoryLower != null) {
+                predicates.add(cb.equal(cb.lower(root.get("category")), categoryLower));
+            }
+            if (fromInstant != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("eventDate"), fromInstant));
+            }
+            if (toInstantExclusive != null) {
+                predicates.add(cb.lessThan(root.get("eventDate"), toInstantExclusive));
+            }
+            if (cityMode != null) {
+                Expression<String> normalizedCity = cb.lower(cb.trim(root.get("city")));
+                Predicate cityPredicate = switch (cityMode) {
+                    case "HANOI" -> cb.equal(normalizedCity, "hÃ  ná»™i");
+                    case "HCMC" -> normalizedCity.in(HCMC_CITY_NAMES);
+                    case "OTHER" -> cb.or(
+                            cb.isNull(root.get("city")),
+                            cb.not(normalizedCity.in(KNOWN_CITY_NAMES)));
+                    default -> null;
+                };
+                if (cityPredicate != null) {
+                    predicates.add(cityPredicate);
+                }
+            }
+
+            return cb.and(predicates.toArray(Predicate[]::new));
+        };
     }
 
     public List<Map<String, Object>> suggestEvents(String keyword) {
