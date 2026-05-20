@@ -1,62 +1,28 @@
-// src/components/ui/UnifiedSeatGrid.jsx  (admin)
-// Hiển thị toàn bộ ghế trên lưới tọa độ thống nhất.
-// Chỉ render các cột thực sự có ghế — không có ghost columns.
+// src/components/ui/UnifiedSeatGrid.jsx (admin)
 
 export default function UnifiedSeatGrid({ seatMap, onSeatClick, actingSeatId, mode = 'admin' }) {
-  if (!seatMap?.zones?.length) return null;
-
-  // ── Build index: rowLabel → colNum → { seat, zone } ──────────
-  const grid = {}; // { [rowLabel]: { [colNum]: { seat, zone } } }
-  const colSet = new Set(); // tập hợp các cột thực sự có ghế
-
-  for (const zone of seatMap.zones) {
-    for (const row of (zone.rows ?? [])) {
-      if (!grid[row.rowLabel]) grid[row.rowLabel] = {};
-      for (const seat of (row.seats ?? [])) {
-        grid[row.rowLabel][seat.seatNumber] = { seat, zone };
-        colSet.add(seat.seatNumber);
-      }
-    }
-  }
-
-  // Chỉ render các cột có ghế, theo thứ tự tăng dần
-  const cols = [...colSet].sort((a, b) => a - b);
-
-  // Sort rows: A, B, ..., Z, AA, AB, ...
-  const rowLabels = Object.keys(grid).sort((a, b) => {
-    if (a.length !== b.length) return a.length - b.length;
-    return a.localeCompare(b);
-  });
-
-  if (!rowLabels.length || !cols.length) return null;
-
-  const zoneList = seatMap.zones.map(z => ({
-    id: z.zoneId,
-    name: z.zoneName,
-    color: z.colorCode || '#6366f1',
-  }));
-
-  // ── Column header / footer row ────────────────────────────────
-  const ColNumbers = () => (
-    <div className="flex items-center gap-1 select-none">
-      {/* Spacer for row-label column */}
-      <div className="w-5 shrink-0" />
-      {cols.map(col => (
-        <div key={col} className="w-6 shrink-0 text-center text-[9px] text-slate-400 font-mono leading-none">
-          {col}
-        </div>
-      ))}
-    </div>
+  const zones = (seatMap?.zones ?? []).filter(zone =>
+    zone.rows?.some(row => row.seats?.length)
   );
+
+  if (!zones.length) return null;
+
+  const zoneList = zones.map(zone => ({
+    id: zone.zoneId,
+    name: zone.zoneName,
+    color: zone.colorCode || '#6366f1',
+  }));
 
   return (
     <div>
-      {/* Legend */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-6 text-xs text-slate-600">
-        {zoneList.map(z => (
-          <div key={z.id} className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: z.color, opacity: 0.85 }} />
-            <span>{z.name}</span>
+        {zoneList.map(zone => (
+          <div key={zone.id} className="flex items-center gap-1.5">
+            <div
+              className="w-4 h-4 rounded"
+              style={{ backgroundColor: zone.color, opacity: 0.85 }}
+            />
+            <span>{zone.name}</span>
           </div>
         ))}
         <span className="text-slate-300 select-none">|</span>
@@ -70,7 +36,6 @@ export default function UnifiedSeatGrid({ seatMap, onSeatClick, actingSeatId, mo
         </div>
       </div>
 
-      {/* Stage */}
       <div className="mb-8 text-center">
         <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mb-1.5">
           Sân khấu
@@ -78,52 +43,111 @@ export default function UnifiedSeatGrid({ seatMap, onSeatClick, actingSeatId, mo
         <div className="w-2/3 mx-auto h-2.5 bg-gradient-to-r from-transparent via-slate-300 to-transparent rounded-full" />
       </div>
 
-      {/* Grid wrapper */}
-      <div className="overflow-x-auto">
-        <div className="w-fit mx-auto space-y-0">
-          {/* Column numbers — top */}
-          <div className="mb-1"><ColNumbers /></div>
-
-          {/* Seat rows */}
-          {rowLabels.map(rowLabel => {
-            const rowCells = grid[rowLabel];
-            return (
-              <div key={rowLabel} className="flex items-center gap-1 mb-1">
-                {/* Row label */}
-                <span className="text-[10px] text-slate-400 font-mono w-5 text-center shrink-0 select-none">
-                  {rowLabel}
-                </span>
-                {/* Seat cells — only existing columns */}
-                {cols.map(col => {
-                  const cell = rowCells[col];
-                  if (!cell) {
-                    // Gap: this column has seats in other rows, but not here
-                    return <div key={col} className="w-6 h-6 shrink-0" />;
-                  }
-                  return (
-                    <SeatCell
-                      key={cell.seat.seatId}
-                      seat={cell.seat}
-                      zone={cell.zone}
-                      mode={mode}
-                      acting={actingSeatId === cell.seat.seatId}
-                      onClick={onSeatClick ? () => onSeatClick(cell.seat, cell.zone) : undefined}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })}
-
-          {/* Column numbers — bottom */}
-          <div className="mt-1"><ColNumbers /></div>
-        </div>
+      <div className="space-y-8">
+        {zones.map(zone => (
+          <ZoneSeatGrid
+            key={zone.zoneId}
+            zone={zone}
+            mode={mode}
+            actingSeatId={actingSeatId}
+            onSeatClick={onSeatClick}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
-// ── Individual seat cell ──────────────────────────────────────
+function ZoneSeatGrid({ zone, mode, actingSeatId, onSeatClick }) {
+  const rows = [...(zone.rows ?? [])]
+    .filter(row => row.seats?.length)
+    .sort((a, b) => compareRowLabels(a.rowLabel, b.rowLabel));
+
+  const cols = [...new Set(
+    rows.flatMap(row => (row.seats ?? []).map(seat => seat.seatNumber))
+  )].sort((a, b) => a - b);
+
+  if (!rows.length || !cols.length) return null;
+
+  const grid = {};
+  for (const row of rows) {
+    grid[row.rowLabel] = {};
+    for (const seat of row.seats ?? []) {
+      grid[row.rowLabel][seat.seatNumber] = seat;
+    }
+  }
+
+  const counts = countSeats(rows);
+  const zoneColor = zone.colorCode || '#6366f1';
+
+  return (
+    <section>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div
+            className="w-3.5 h-3.5 rounded shrink-0"
+            style={{ backgroundColor: zoneColor }}
+          />
+          <h3 className="font-bold text-sm text-slate-800 truncate">{zone.zoneName}</h3>
+          {zone.price != null && (
+            <span className="text-xs font-semibold text-indigo-600">
+              {formatVnd(zone.price)}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+          <span>{counts.available}/{counts.total} còn trống</span>
+          {counts.locked > 0 && <span>{counts.locked} đang giữ</span>}
+          {counts.sold > 0 && <span>{counts.sold} đã bán</span>}
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <div className="w-fit mx-auto">
+          <div className="mb-1"><ColumnNumbers cols={cols} /></div>
+
+          {rows.map(row => (
+            <div key={`${zone.zoneId}-${row.rowLabel}`} className="flex items-center gap-1 mb-1">
+              <span className="text-[10px] text-slate-400 font-mono w-5 text-center shrink-0 select-none">
+                {row.rowLabel}
+              </span>
+              {cols.map(col => {
+                const seat = grid[row.rowLabel][col];
+                if (!seat) return <div key={col} className="w-6 h-6 shrink-0" />;
+                return (
+                  <SeatCell
+                    key={seat.seatId}
+                    seat={seat}
+                    zone={zone}
+                    mode={mode}
+                    acting={actingSeatId === seat.seatId}
+                    onClick={onSeatClick ? () => onSeatClick(seat, zone) : undefined}
+                  />
+                );
+              })}
+            </div>
+          ))}
+
+          <div className="mt-1"><ColumnNumbers cols={cols} /></div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ColumnNumbers({ cols }) {
+  return (
+    <div className="flex items-center gap-1 select-none">
+      <div className="w-5 shrink-0" />
+      {cols.map(col => (
+        <div key={col} className="w-6 shrink-0 text-center text-[9px] text-slate-400 font-mono leading-none">
+          {col}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function SeatCell({ seat, zone, mode, acting, onClick }) {
   const { status, heldByMe } = seat;
   const zoneColor = zone.colorCode || '#6366f1';
@@ -159,13 +183,37 @@ function SeatCell({ seat, zone, mode, acting, onClick }) {
     <button
       type="button"
       disabled={!interactive || acting}
-      title={tooltip}
+      title={`${zone.zoneName} ${seat.rowLabel}${seat.seatNumber} - ${tooltip}`}
       onClick={interactive ? onClick : undefined}
       className={`w-6 h-6 shrink-0 rounded border-2 transition-all
         ${extraCls} ${acting ? 'opacity-40 animate-pulse' : ''}`}
       style={style}
     />
   );
+}
+
+function countSeats(rows) {
+  const counts = { total: 0, available: 0, locked: 0, sold: 0 };
+  for (const row of rows) {
+    for (const seat of row.seats ?? []) {
+      counts.total += 1;
+      if (seat.status === 'AVAILABLE') counts.available += 1;
+      else if (seat.status === 'LOCKED') counts.locked += 1;
+      else if (seat.status === 'SOLD') counts.sold += 1;
+    }
+  }
+  return counts;
+}
+
+function compareRowLabels(a = '', b = '') {
+  if (a.length !== b.length) return a.length - b.length;
+  return a.localeCompare(b);
+}
+
+function formatVnd(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return '';
+  return amount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 }
 
 function adjustBorder(hex) {
