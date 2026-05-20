@@ -29,25 +29,6 @@ function PositionDisplay({ position }) {
   );
 }
 
-// ── Wait time display ─────────────────────────────────────────
-function WaitTime({ seconds }) {
-  if (!seconds || seconds <= 0) return null;
-  if (seconds < 60) return <span>~{seconds}s</span>;
-  return <span>~{Math.ceil(seconds / 60)} phút</span>;
-}
-
-// ── Pulsing dots loader ───────────────────────────────────────
-function PulsingDots() {
-  return (
-    <div className="flex justify-center gap-1.5 mt-6">
-      {[0, 1, 2].map(i => (
-        <div key={i} className="w-2 h-2 rounded-full bg-indigo-400"
-          style={{ animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
-      ))}
-    </div>
-  );
-}
-
 // ── Main component ─────────────────────────────────────────────
 const SESSION_KEY = (eventId) => `tr_queue_${eventId}`;
 
@@ -222,26 +203,9 @@ export default function VirtualWaitingRoomPage({ eventId }) {
                     <span className="text-indigo-300 font-black">{position}</span>{' '}
                     trong hàng đợi.
                   </p>
-                  <p className="text-slate-400 text-sm mb-5">
+                  <p className="text-slate-400 text-sm">
                     Vui lòng không tải lại trang...
                   </p>
-
-                  {waitSecs > 0 && (
-                    <div className="bg-white/10 rounded-2xl px-4 py-3 mb-5 text-sm">
-                      <span className="text-slate-300">Ước tính: </span>
-                      <span className="text-white font-bold">
-                        <WaitTime seconds={waitSecs} />
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Live updates indicator */}
-                  <div className="flex items-center justify-center gap-2 text-xs text-slate-500 mb-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Cập nhật tự động mỗi 2 giây
-                  </div>
-
-                  <PulsingDots />
                 </>
               )}
 
@@ -272,20 +236,6 @@ export default function VirtualWaitingRoomPage({ eventId }) {
                 </div>
               )}
             </div>
-
-            {/* Info footer */}
-            {phase === 'waiting' && (
-              <div className="mt-6 text-center space-y-2">
-                <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-                  <span className="material-symbols-outlined text-[14px] text-slate-500">info</span>
-                  Hệ thống cấp quyền theo thứ tự — 50 người mỗi lượt
-                </div>
-                <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-                  <span className="material-symbols-outlined text-[14px] text-slate-500">lock</span>
-                  Không tải lại trang — bạn sẽ mất vị trí trong hàng
-                </div>
-              </div>
-            )}
 
             {/* Back link */}
             <div className="mt-8 text-center">

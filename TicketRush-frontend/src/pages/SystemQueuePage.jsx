@@ -25,26 +25,10 @@ function PulsingRing() {
 
 function PositionBadge({ position }) {
   return (
-    <div className="flex flex-col items-center mb-6">
-      <p className="text-indigo-300 text-xs uppercase tracking-widest font-semibold mb-2">
-        Vị trí của bạn
-      </p>
+    <div className="flex flex-col items-center mb-6" aria-hidden="true">
       <div className="text-7xl font-black text-white tabular-nums leading-none">
         {position}
       </div>
-    </div>
-  );
-}
-
-function WaitSeconds({ seconds }) {
-  if (!seconds || seconds <= 0) return null;
-  const display = seconds < 60
-    ? `${seconds} giây`
-    : `${Math.ceil(seconds / 60)} phút`;
-  return (
-    <div className="bg-white/10 rounded-xl px-5 py-2.5 mb-5 text-sm text-center">
-      <span className="text-slate-300">Ước tính: </span>
-      <span className="text-white font-bold">~{display}</span>
     </div>
   );
 }
@@ -59,9 +43,9 @@ export default function SystemQueuePage() {
   // phase: 'joining' | 'waiting' | 'admitted' | 'error'
   const [phase, setPhase]     = useState('joining');
   const [position, setPos]    = useState(null);
-  const [waitSecs, setWait]   = useState(null);
   const [errMsg, setErr]      = useState('');
   const pollRef               = useRef(null);
+  const joinQueueRef          = useRef(null);
   const mountedRef            = useRef(true);
 
   useEffect(() => {
@@ -97,14 +81,13 @@ export default function SystemQueuePage() {
           return;
         }
         setPos(res.position);
-        setWait(res.estimatedWaitSeconds);
         setPhase('waiting');
       } catch (err) {
         if (!mountedRef.current) return;
         if (err.code === 'QUEUE_TOKEN_EXPIRED' || err.code === 'QUEUE_TOKEN_INVALID') {
           sessionStorage.removeItem(SYS_QUEUE_KEY);
           clearInterval(pollRef.current);
-          joinQueue();
+          joinQueueRef.current?.();
         }
         // Ignore transient network errors
       }
@@ -127,7 +110,6 @@ export default function SystemQueuePage() {
       // Lưu token để poll có thể dùng khi trang bị reload giữa chừng
       sessionStorage.setItem(SYS_QUEUE_KEY, token);
       setPos(res.position);
-      setWait(res.estimatedWaitSeconds);
       if (mountedRef.current) startPolling(token);
     } catch (err) {
       if (!mountedRef.current) return;
@@ -136,11 +118,15 @@ export default function SystemQueuePage() {
     }
   }, [startPolling]);
 
+  useEffect(() => {
+    joinQueueRef.current = joinQueue;
+  }, [joinQueue]);
+
   // Auto-join khi mount (user đã authenticated)
   useEffect(() => {
     if (!isAuthenticated) return;
-    joinQueue();
-  }, [isAuthenticated]);
+    queueMicrotask(joinQueue);
+  }, [isAuthenticated, joinQueue]);
 
   // Cảnh báo khi reload trong lúc chờ
   useEffect(() => {
@@ -214,25 +200,7 @@ export default function SystemQueuePage() {
                   <span className="text-indigo-300 font-black">{position}</span>{' '}
                   trong hàng đợi
                 </p>
-                <p className="text-slate-400 text-sm mb-5">Vui lòng không tải lại trang...</p>
-
-                <WaitSeconds seconds={waitSecs} />
-
-                <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Cập nhật mỗi 2 giây · 50 người/lượt
-                </div>
-              </div>
-
-              <div className="space-y-2 text-xs text-slate-600 text-center">
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="material-symbols-outlined text-[14px]">shield</span>
-                  Hệ thống bảo vệ công bằng cho mọi người dùng
-                </div>
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="material-symbols-outlined text-[14px]">lock</span>
-                  Không tải lại — bạn sẽ mất vị trí trong hàng
-                </div>
+                <div className="text-slate-400 text-sm">Vui lòng không tải lại trang...</div>
               </div>
             </div>
           )}

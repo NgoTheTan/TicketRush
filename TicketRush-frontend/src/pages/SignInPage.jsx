@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
-import { Button, showToast } from '../components/ui/index.jsx';
+import { Button } from '../components/ui/index.jsx';
 import GoogleAuthButton from '../components/auth/GoogleAuthButton.jsx';
 
 function modalQuery(params) {
@@ -61,7 +61,6 @@ export default function SignInPage({ modal = false }) {
     setLoading(true);
     try {
       const user = await login(form.email, form.password);
-      showToast('Đăng nhập thành công!', 'success');
       redirectAfterLogin(user);
     } catch (err) {
       setError(err.message || 'Đăng nhập thất bại');
@@ -80,7 +79,6 @@ export default function SignInPage({ modal = false }) {
     setGoogleLoading(true);
     try {
       const user = await loginWithGoogle(response.credential);
-      showToast('Đăng nhập Google thành công!', 'success');
       redirectAfterLogin(user, true);
     } catch (err) {
       setError(err.message || 'Đăng nhập Google thất bại');
