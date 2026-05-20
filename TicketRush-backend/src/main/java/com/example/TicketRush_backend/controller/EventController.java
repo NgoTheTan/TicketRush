@@ -53,6 +53,11 @@ public class EventController {
         return ResponseEntity.ok(ApiResponse.ok(suggestions));
     }
 
+    @GetMapping("/trending")
+    public ResponseEntity<ApiResponse<List<EventResponse>>> getTrendingEvents() {
+        return ResponseEntity.ok(ApiResponse.ok(eventService.getTrendingEvents()));
+    }
+
     @GetMapping("/{eventId}")
     public ResponseEntity<ApiResponse<EventResponse>> getEvent(@PathVariable Long eventId) {
         return ResponseEntity.ok(ApiResponse.ok(eventService.getEventDetail(eventId)));

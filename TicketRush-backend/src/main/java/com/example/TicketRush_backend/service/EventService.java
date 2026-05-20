@@ -167,6 +167,13 @@ public class EventService {
         return toDetailResponse(event);
     }
 
+    public List<EventResponse> getTrendingEvents() {
+        return eventRepository.findTrendingEvents().stream()
+                .map(this::toSummaryResponse)
+                .toList();
+    }
+
+
     // ── Admin ──────────────────────────────────────────────────
 
     public Page<EventResponse> listAllEvents(String search, EventStatus status, Pageable pageable) {

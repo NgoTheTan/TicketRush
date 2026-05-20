@@ -129,6 +129,20 @@ export default function HomePage() {
   const [dateDraft, setDateDraft] = useState({ fromDate: initialFromDate, toDate: initialToDate });
   const [meta, setMeta] = useState(null);
   const [page, setPage] = useState(0);
+  const [trendingEvents, setTrendingEvents] = useState([]);
+  const [trendingLoading, setTrendingLoading] = useState(false);
+
+  const loadTrending = useCallback(async () => {
+    setTrendingLoading(true);
+    try {
+      const data = await eventService.trending();
+      setTrendingEvents(data || []);
+    } catch (err) {
+      console.error('Error loading trending events:', err);
+    } finally {
+      setTrendingLoading(false);
+    }
+  }, []);
 
   const load = useCallback(async (s, p, c, selectedCity, selectedFromDate, selectedToDate) => {
     setLoading(true);
@@ -155,8 +169,13 @@ export default function HomePage() {
   useWebSocket('/topic/events', (msg) => {
     if (msg?.type === 'EVENT_LIST_UPDATED') {
       load(search, page, category, city, fromDate, toDate);
+      loadTrending();
     }
   });
+
+  useEffect(() => {
+    loadTrending();
+  }, [loadTrending]);
 
   useEffect(() => {
     setSearch(params?.search || '');
@@ -263,6 +282,44 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Trending Events Section */}
+      {!hasActiveFilters && trendingEvents.length > 0 && (
+        <div className="max-w-screen-xl mx-auto px-6 pt-10">
+          <div className="flex items-center gap-2 mb-6">
+            <h2 className="text-2xl font-bold text-indigo-600">Sự kiện xu hướng</h2>
+          </div>
+          
+          <div className="relative group">
+            {/* Scroll Container */}
+            <div className="flex overflow-x-auto gap-6 pb-6 pt-1 scroll-smooth snap-x snap-mandatory scrollbar-thin scrollbar-thumb-indigo-200">
+              {trendingEvents.map((event) => (
+                <div 
+                  key={event.id}
+                  onClick={() => navigate(`/events/${event.id}`)}
+                  className="flex-none w-[calc(100%/1.25)] sm:w-[calc(100%/2.2)] md:w-[calc(100%/3.2)] lg:w-[calc(100%/4.2)] snap-start cursor-pointer transition-all duration-300 hover:-translate-y-1.5"
+                >
+                  <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition-all duration-300 group/card bg-slate-50">
+                    {event.imageUrl ? (
+                      <img 
+                        src={toFullUrl(event.imageUrl)} 
+                        alt={event.name} 
+                        className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover/card:scale-105" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
+                        <span className="material-symbols-outlined text-5xl text-indigo-300">event</span>
+                      </div>
+                    )}
+                    {/* Shadow overlay on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-screen-xl mx-auto px-6 pt-8 pb-12">
         <div className="flex flex-col gap-5 mb-8">

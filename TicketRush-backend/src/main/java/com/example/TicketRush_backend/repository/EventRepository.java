@@ -35,4 +35,19 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
         LIMIT 10
     """)
     List<Event> findSuggestions(@Param("keyword") String keyword);
+
+    /**
+     * Top 10 trending events having the highest count of sold tickets (status = 'SOLD' in eventSeats).
+     * Order by sold seat count descending, then by id descending.
+     */
+    @Query("""
+        SELECT e FROM Event e
+        LEFT JOIN e.eventSeats es ON es.status = 'SOLD'
+        WHERE e.status = 'ON_SALE'
+        GROUP BY e
+        ORDER BY COUNT(es) DESC, e.id DESC
+        LIMIT 10
+    """)
+    List<Event> findTrendingEvents();
 }
+

@@ -8,6 +8,7 @@ const eventService = {
     return { data: res.data, meta: res.meta };
   },
 
+
   // Public - autocomplete suggestions
   suggest: async (keyword) => {
     const res = await api.get('/api/v1/events/suggest', { keyword });
@@ -18,6 +19,12 @@ const eventService = {
   get: async (eventId) => {
     const res = await api.get(`/api/v1/events/${eventId}`);
     return res.data;
+  },
+
+  // Public - trending events
+  trending: async () => {
+    const res = await api.get('/api/v1/events/trending');
+    return res.data || [];
   },
 };
 
