@@ -42,16 +42,16 @@ public class EventService {
 
     private static final ZoneId EVENT_FILTER_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final List<String> HCMC_CITY_NAMES = List.of(
-            "thÃ nh phá»‘ há»“ chÃ­ minh",
-            "tp. há»“ chÃ­ minh",
-            "tp há»“ chÃ­ minh",
-            "há»“ chÃ­ minh");
+            "th\u00e0nh ph\u1ed1 h\u1ed3 ch\u00ed minh",
+            "tp. h\u1ed3 ch\u00ed minh",
+            "tp h\u1ed3 ch\u00ed minh",
+            "h\u1ed3 ch\u00ed minh");
     private static final List<String> KNOWN_CITY_NAMES = List.of(
-            "hÃ  ná»™i",
-            "thÃ nh phá»‘ há»“ chÃ­ minh",
-            "tp. há»“ chÃ­ minh",
-            "tp há»“ chÃ­ minh",
-            "há»“ chÃ­ minh");
+            "h\u00e0 n\u1ed9i",
+            "th\u00e0nh ph\u1ed1 h\u1ed3 ch\u00ed minh",
+            "tp. h\u1ed3 ch\u00ed minh",
+            "tp h\u1ed3 ch\u00ed minh",
+            "h\u1ed3 ch\u00ed minh");
 
     private final EventRepository eventRepository;
     private final SeatZoneRepository seatZoneRepository;
@@ -126,7 +126,7 @@ public class EventService {
             if (cityMode != null) {
                 Expression<String> normalizedCity = cb.lower(cb.trim(root.get("city")));
                 Predicate cityPredicate = switch (cityMode) {
-                    case "HANOI" -> cb.equal(normalizedCity, "hÃ  ná»™i");
+                    case "HANOI" -> cb.equal(normalizedCity, "h\u00e0 n\u1ed9i");
                     case "HCMC" -> normalizedCity.in(HCMC_CITY_NAMES);
                     case "OTHER" -> cb.or(
                             cb.isNull(root.get("city")),
