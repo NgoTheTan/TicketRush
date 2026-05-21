@@ -19,6 +19,8 @@ const authService = {
 
   logout: async () => {
     await api.post('/api/v1/auth/logout', {}).catch(() => {});
+    sessionStorage.removeItem('tr_token');
+    sessionStorage.removeItem('tr_user');
     localStorage.removeItem('tr_token');
     localStorage.removeItem('tr_user');
   },

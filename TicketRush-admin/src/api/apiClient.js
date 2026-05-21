@@ -5,7 +5,7 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 function getToken() {
-  return localStorage.getItem('tr_token');
+  return sessionStorage.getItem('tr_token');
 }
 
 function buildHeaders(extra = {}) {

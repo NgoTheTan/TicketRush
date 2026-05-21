@@ -30,11 +30,16 @@ const eventService = {
     return res.data;
   },
 
+  adminCreateWithSeatZones: async (payload) => {
+    const res = await api.post('/api/v1/admin/events/with-seat-zones', payload);
+    return res.data;
+  },
+
   adminUploadImage: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
     // apiClient needs to be able to handle FormData without setting Content-Type to application/json
-    const token = localStorage.getItem('tr_token');
+    const token = sessionStorage.getItem('tr_token');
     const res = await fetch('http://localhost:8080/api/v1/admin/upload', {
       method: 'POST',
       headers: {

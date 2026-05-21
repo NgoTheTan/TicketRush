@@ -81,11 +81,6 @@ export default function SignInPage() {
               </Button>
             </div>
           </form>
-
-          <div className="mt-8 flex items-center justify-center gap-2 text-xs text-slate-400 font-medium">
-            <span className="material-symbols-outlined text-[14px]">lock</span>
-            Kết nối mã hóa đầu cuối 256-bit
-          </div>
         </div>
 
       </main>

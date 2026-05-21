@@ -3,27 +3,37 @@ import { createContext, useContext, useState, useCallback } from 'react';
 import authService from '../api/authService.js';
 
 const AuthContext = createContext(null);
+const TOKEN_KEY = 'tr_token';
+const USER_KEY = 'tr_user';
+
+function clearPersistedAuth() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
+    clearPersistedAuth();
     try {
-      const saved = localStorage.getItem('tr_user');
+      const saved = sessionStorage.getItem(USER_KEY);
       return saved ? JSON.parse(saved) : null;
     } catch { return null; }
   });
-  const [token, setToken] = useState(() => localStorage.getItem('tr_token'));
+  const [token, setToken] = useState(() => sessionStorage.getItem(TOKEN_KEY));
   const [loading, setLoading] = useState(false);
 
   const saveAuth = useCallback((tokenValue, userData) => {
-    localStorage.setItem('tr_token', tokenValue);
-    localStorage.setItem('tr_user', JSON.stringify(userData));
+    clearPersistedAuth();
+    sessionStorage.setItem(TOKEN_KEY, tokenValue);
+    sessionStorage.setItem(USER_KEY, JSON.stringify(userData));
     setToken(tokenValue);
     setUser(userData);
   }, []);
 
   const clearAuth = useCallback(() => {
-    localStorage.removeItem('tr_token');
-    localStorage.removeItem('tr_user');
+    clearPersistedAuth();
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
     setToken(null);
     setUser(null);
   }, []);
@@ -32,9 +42,9 @@ export function AuthProvider({ children }) {
     setUser((current) => {
       const next = typeof updater === 'function' ? updater(current) : updater;
       if (next) {
-        localStorage.setItem('tr_user', JSON.stringify(next));
+        sessionStorage.setItem(USER_KEY, JSON.stringify(next));
       } else {
-        localStorage.removeItem('tr_user');
+        sessionStorage.removeItem(USER_KEY);
       }
       return next;
     });

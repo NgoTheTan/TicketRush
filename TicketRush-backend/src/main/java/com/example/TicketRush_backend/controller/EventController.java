@@ -32,7 +32,7 @@ public class EventController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<EventResponse>>> listEvents(
             @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "category", required = false) String category,
+            @RequestParam(name = "category", required = false) List<String> categories,
             @RequestParam(name = "city", required = false) String city,
             @RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(name = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
@@ -40,7 +40,7 @@ public class EventController {
             @RequestParam(name = "size", defaultValue = "12") int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
-        Page<EventResponse> result = eventService.listPublicEvents(search, category, city, fromDate, toDate, pageable);
+        Page<EventResponse> result = eventService.listPublicEvents(search, categories, city, fromDate, toDate, pageable);
 
         return ResponseEntity.ok(ApiResponse.ok(result.getContent(),
                 ApiResponse.PageMeta.of(result)));

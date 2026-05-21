@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -75,5 +76,60 @@ class EventControllerDateFilterTests {
 
         assertEquals(1, insideRange.getTotalElements());
         assertEquals(eventName, insideRange.getContent().getFirst().getName());
+    }
+
+    @Test
+    void listEventsFiltersByMultipleCategories() {
+        String suffix = UUID.randomUUID().toString();
+        String eventPrefix = "Category Filter Test " + suffix;
+
+        User admin = userRepository.save(User.builder()
+                .email("category-filter-" + suffix + "@example.com")
+                .password("password")
+                .fullName("Category Filter Admin")
+                .role(UserRole.ADMIN)
+                .build());
+
+        eventRepository.save(Event.builder()
+                .name(eventPrefix + " Music")
+                .category("Ca nhạc")
+                .venue("Test Venue")
+                .city("Hà Nội")
+                .eventDate(LocalDate.of(2026, 6, 1).atTime(20, 0).atZone(EVENT_ZONE).toInstant())
+                .status(EventStatus.ON_SALE)
+                .createdBy(admin)
+                .build());
+
+        eventRepository.save(Event.builder()
+                .name(eventPrefix + " Sport")
+                .category("Thể thao")
+                .venue("Test Venue")
+                .city("Hà Nội")
+                .eventDate(LocalDate.of(2026, 6, 2).atTime(20, 0).atZone(EVENT_ZONE).toInstant())
+                .status(EventStatus.ON_SALE)
+                .createdBy(admin)
+                .build());
+
+        eventRepository.save(Event.builder()
+                .name(eventPrefix + " Other")
+                .category("Khác")
+                .venue("Test Venue")
+                .city("Hà Nội")
+                .eventDate(LocalDate.of(2026, 6, 3).atTime(20, 0).atZone(EVENT_ZONE).toInstant())
+                .status(EventStatus.ON_SALE)
+                .createdBy(admin)
+                .build());
+
+        Page<EventResponse> result = eventService.listPublicEvents(
+                eventPrefix,
+                List.of("Ca nhạc", "Thể thao"),
+                null,
+                null,
+                null,
+                PageRequest.of(0, 12));
+
+        assertEquals(2, result.getTotalElements());
+        assertEquals(List.of("Ca nhạc", "Thể thao"),
+                result.getContent().stream().map(EventResponse::getCategory).toList());
     }
 }

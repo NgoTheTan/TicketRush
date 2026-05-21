@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
-import { Button, CustomSelect, showToast, Spinner, ErrorState } from '../components/ui/index.jsx';
+import { Button, CustomSelect, DatePicker, showToast, Spinner, ErrorState } from '../components/ui/index.jsx';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
@@ -17,6 +17,23 @@ const CATEGORY_OPTIONS = [
   { value: 'Tham quan & Trải nghiệm', label: 'Tham quan & Trải nghiệm' },
   { value: 'Khác', label: 'Khác' },
 ];
+
+const CITY_OPTIONS = [
+  { value: '', label: 'Chọn thành phố' },
+  { value: 'Hà Nội', label: 'Hà Nội' },
+  { value: 'Thành phố Hồ Chí Minh', label: 'Thành phố Hồ Chí Minh' },
+  { value: 'Vị trí khác', label: 'Vị trí khác' },
+];
+
+const normalizeCityOption = (city) => {
+  const normalized = (city || '').trim().toLowerCase();
+  if (!normalized) return '';
+  if (normalized === 'hà nội') return 'Hà Nội';
+  if (['thành phố hồ chí minh', 'tp. hồ chí minh', 'tp hồ chí minh', 'hồ chí minh'].includes(normalized)) {
+    return 'Thành phố Hồ Chí Minh';
+  }
+  return 'Vị trí khác';
+};
 
 const Field = ({ label, name, required, errors, children }) => (
   <div>
@@ -54,7 +71,7 @@ export default function EditEventPage({ eventId }) {
           description: data.description || '',
           category: data.category || '',
           venue: data.venue || '',
-          city: data.city || '',
+          city: normalizeCityOption(data.city),
           eventDate: toDatetimeLocal(data.eventDate),
           locationUrl: data.locationUrl || '',
           imageUrl: data.imageUrl || ''
@@ -134,6 +151,7 @@ export default function EditEventPage({ eventId }) {
                 value={form.category}
                 onChange={e => set('category', e.target.value)}
                 options={CATEGORY_OPTIONS}
+                placeholderValue=""
                 className={errors.category ? 'rounded-xl ring-1 ring-red-400' : ''}
               />
             </Field>
@@ -145,14 +163,23 @@ export default function EditEventPage({ eventId }) {
             </Field>
 
             <Field label="Thành phố" name="city" required errors={errors}>
-              <input value={form.city} onChange={e => set('city', e.target.value)}
-                placeholder="Hà Nội"
-                className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.city ? 'border-red-400' : 'border-slate-200'}`} />
+              <CustomSelect
+                value={form.city}
+                onChange={e => set('city', e.target.value)}
+                options={CITY_OPTIONS}
+                placeholderValue=""
+                className={errors.city ? 'rounded-xl ring-1 ring-red-400' : ''}
+              />
             </Field>
 
             <Field label="Ngày & giờ tổ chức" name="eventDate" required errors={errors}>
-              <input type="datetime-local" value={form.eventDate} onChange={e => set('eventDate', e.target.value)}
-                className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${errors.eventDate ? 'border-red-400' : 'border-slate-200'}`} />
+              <DatePicker
+                mode="datetime"
+                value={form.eventDate}
+                onChange={(value) => set('eventDate', value)}
+                error={Boolean(errors.eventDate)}
+                placeholder="Chọn ngày và giờ tổ chức"
+              />
             </Field>
 
             <Field label="URL địa chỉ (Google Maps)" name="locationUrl" errors={errors}>

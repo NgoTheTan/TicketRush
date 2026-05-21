@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
-import { Button, showToast } from '../components/ui/index.jsx';
+import { Button, DatePicker, showToast } from '../components/ui/index.jsx';
 import GoogleAuthButton from '../components/auth/GoogleAuthButton.jsx';
 
 const SignUpFieldContext = createContext(null);
@@ -16,6 +16,11 @@ const PASSWORD_RULES = [
 
 function modalQuery(params) {
   return params?.returnUrl ? { returnUrl: params.returnUrl } : undefined;
+}
+
+function toLocalDateValue(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 function RequirementItem({ complete, children }) {
@@ -118,6 +123,7 @@ export default function SignUpPage({ modal = false }) {
   const confirmMatches = form.password.length > 0 && form.confirmPassword === form.password;
   const showPasswordCriteria = passwordTouched && form.password.length > 0;
   const showConfirmCriteria = confirmPasswordTouched;
+  const maxBirthDate = toLocalDateValue();
 
   const validate = () => {
     const e = {};
@@ -307,7 +313,16 @@ export default function SignUpPage({ modal = false }) {
           <Field label="Số điện thoại (tùy chọn)" name="phone" type="tel" placeholder="09xxxxxxxx" />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Ngày sinh" name="dateOfBirth" type="date" />
+            <Field label="Ngày sinh" name="dateOfBirth">
+              <DatePicker
+                value={form.dateOfBirth}
+                onChange={(value) => set('dateOfBirth', value)}
+                error={Boolean(errors.dateOfBirth)}
+                min="1900-01-01"
+                max={maxBirthDate}
+                placeholder="Chọn ngày sinh"
+              />
+            </Field>
             <Field label="Giới tính" name="gender">
               <select value={form.gender} onChange={e => set('gender', e.target.value)}
                 className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">

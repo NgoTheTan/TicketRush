@@ -5,7 +5,7 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 function getToken() {
-  return localStorage.getItem('tr_token');
+  return sessionStorage.getItem('tr_token');
 }
 
 function buildHeaders(extra = {}) {
@@ -13,6 +13,19 @@ function buildHeaders(extra = {}) {
   const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
+}
+
+function buildQueryString(params = {}) {
+  const qs = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value == null || value === '') return;
+    if (Array.isArray(value)) {
+      value.filter(v => v != null && v !== '').forEach(v => qs.append(key, v));
+      return;
+    }
+    qs.append(key, value);
+  });
+  return qs.toString();
 }
 
 async function handleResponse(res) {
@@ -35,9 +48,7 @@ const api = {
   get: async (path, params) => {
     let url = `${BASE_URL}${path}`;
     if (params) {
-      const qs = new URLSearchParams(
-        Object.fromEntries(Object.entries(params).filter(([, v]) => v != null))
-      ).toString();
+      const qs = buildQueryString(params);
       if (qs) url += `?${qs}`;
     }
     const res = await fetch(url, { headers: buildHeaders() });

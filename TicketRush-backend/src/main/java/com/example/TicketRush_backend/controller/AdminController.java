@@ -2,6 +2,7 @@ package com.example.TicketRush_backend.controller;
 
 import com.example.TicketRush_backend.common.ApiResponse;
 import com.example.TicketRush_backend.dto.event.CreateEventRequest;
+import com.example.TicketRush_backend.dto.event.CreateEventWithSeatZonesRequest;
 import com.example.TicketRush_backend.dto.event.EventResponse;
 import com.example.TicketRush_backend.dto.event.UpdateEventRequest;
 import com.example.TicketRush_backend.dto.order.OrderResponse;
@@ -78,6 +79,14 @@ public class AdminController {
             @Valid @RequestBody CreateEventRequest req) {
         Long adminId = SecurityUtils.getCurrentUserId();
         EventResponse created = eventService.createEvent(req, adminId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(created));
+    }
+
+    @PostMapping("/events/with-seat-zones")
+    public ResponseEntity<ApiResponse<EventResponse>> createEventWithSeatZones(
+            @Valid @RequestBody CreateEventWithSeatZonesRequest req) {
+        Long adminId = SecurityUtils.getCurrentUserId();
+        EventResponse created = eventService.createEventWithSeatZones(req, adminId);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(created));
     }
 

@@ -1,9 +1,13 @@
 // src/App.jsx — Main app with hash router and auth guards
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import { BookingProvider } from './contexts/BookingContext.jsx';
 import { RouterProvider, useRouter, matchRoute } from './contexts/RouterContext.jsx';
 import { ToastContainer } from './components/ui/index.jsx';
+import EventCancelledModal from './components/ui/EventCancelledModal.jsx';
 import CustomerLayout from './components/layout/CustomerLayout.jsx';
+import { useWebSocket } from './hooks/useWebSocket.js';
+import eventService from './api/eventService.js';
 
 // Pages
 import SignInPage from './pages/SignInPage.jsx';
@@ -31,8 +35,64 @@ function RequireAuth({ children }) {
   return children;
 }
 
+// ── Event Cancellation Watcher ─────────────────────────────────────────────
+// Theo dõi trạng thái sự kiện hiện tại người dùng đang xem.
+// Khi admin huỷ sự kiện, hiện popup chặn tương tác.
+function EventCancellationWatcher({ eventId, eventName, onCancelled }) {
+  const fetchedRef = useRef(false);
+
+  const handleWsMessage = useCallback((msg) => {
+    if (msg?.type !== 'EVENT_LIST_UPDATED') return;
+    // Nhận thông báo cập nhật → kiểm tra trạng thái sự kiện hiện tại
+    eventService.get(eventId)
+      .then(data => {
+        if (data?.status === 'CANCELLED') {
+          onCancelled(data?.name || eventName);
+        }
+      })
+      .catch(() => {/* ignore */});
+  }, [eventId, eventName, onCancelled]);
+
+  useWebSocket('/topic/events', handleWsMessage, !!eventId);
+
+  // Cũng kiểm tra ngay khi mount (phòng trường hợp sự kiện đã bị huỷ từ trước)
+  useEffect(() => {
+    if (!eventId || fetchedRef.current) return;
+    fetchedRef.current = true;
+    eventService.get(eventId)
+      .then(data => {
+        if (data?.status === 'CANCELLED') {
+          onCancelled(data?.name || eventName);
+        }
+      })
+      .catch(() => {});
+  }, [eventId, eventName, onCancelled]);
+
+  return null;
+}
+
+// Trích eventId từ path (chạy đồng bộ, không cần effect)
+function getEventIdFromPath(p) {
+  const m1 = matchRoute('/events/:id', p);
+  const m2 = matchRoute('/events/:id/seats', p);
+  const m3 = matchRoute('/events/:id/checkout', p);
+  if (m1) return m1.id;
+  if (m2) return m2.id;
+  if (m3) return m3.id;
+  return null;
+}
+
 function Router() {
   const { path } = useRouter();
+  const [cancelledEventName, setCancelledEventName] = useState(null);
+
+  const currentEventId = getEventIdFromPath(path);
+
+  // Reset popup khi chuyển sang sự kiện khác hoặc rời khỏi trang sự kiện
+  useEffect(() => {
+    setCancelledEventName(null);
+  }, [currentEventId]);
+
   const customer = (page) => <CustomerLayout>{page}</CustomerLayout>;
   const authModal = (modal) => customer(
     <>
@@ -40,6 +100,10 @@ function Router() {
       {modal}
     </>
   );
+
+  const handleCancelled = useCallback((name) => {
+    setCancelledEventName(name || 'Sự kiện này');
+  }, []);
 
   // Static routes
   if (path === '/' || path === '') return customer(<HomePage />);
@@ -56,13 +120,31 @@ function Router() {
   let m;
 
   m = matchRoute('/events/:id', path);
-  if (m) return customer(<EventDetailsPage eventId={m.id} />);
+  if (m) return (
+    <>
+      {customer(<EventDetailsPage eventId={m.id} />)}
+      <EventCancellationWatcher eventId={m.id} onCancelled={handleCancelled} />
+      {cancelledEventName && <EventCancelledModal eventName={cancelledEventName} />}
+    </>
+  );
 
   m = matchRoute('/events/:id/seats', path);
-  if (m) return <RequireAuth>{customer(<SeatSelectionPage eventId={m.id} />)}</RequireAuth>;
+  if (m) return (
+    <>
+      <RequireAuth>{customer(<SeatSelectionPage eventId={m.id} />)}</RequireAuth>
+      <EventCancellationWatcher eventId={m.id} onCancelled={handleCancelled} />
+      {cancelledEventName && <EventCancelledModal eventName={cancelledEventName} />}
+    </>
+  );
 
   m = matchRoute('/events/:id/checkout', path);
-  if (m) return <RequireAuth>{customer(<OrderConfirmationPage eventId={m.id} />)}</RequireAuth>;
+  if (m) return (
+    <>
+      <RequireAuth>{customer(<OrderConfirmationPage eventId={m.id} />)}</RequireAuth>
+      <EventCancellationWatcher eventId={m.id} onCancelled={handleCancelled} />
+      {cancelledEventName && <EventCancelledModal eventName={cancelledEventName} />}
+    </>
+  );
 
   m = matchRoute('/tickets/:id', path);
   if (m) return <RequireAuth>{customer(<TicketDetailsPage ticketId={m.id} />)}</RequireAuth>;

@@ -4,10 +4,15 @@ import { useRouter } from '../contexts/RouterContext.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import authService from '../api/authService.js';
 import api from '../api/apiClient.js';
-import { Button, showToast } from '../components/ui/index.jsx';
+import { Button, DatePicker, showToast } from '../components/ui/index.jsx';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
+
+function toLocalDateValue(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
 
 export default function ProfilePage() {
   const { navigate, params } = useRouter();
@@ -25,6 +30,7 @@ export default function ProfilePage() {
   const [showPasswords, setShowPasswords] = useState({ currentPassword: false, newPassword: false, confirmPassword: false });
   const [errors, setErrors] = useState({});
   const completingProfile = params.completeProfile === '1';
+  const maxBirthDate = toLocalDateValue();
 
   useEffect(() => {
     authService.me().then(data => {
@@ -265,12 +271,17 @@ export default function ProfilePage() {
                       ${errors.phone ? 'border-red-400' : 'border-slate-200'}`} />
                   {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Ngày sinh</label>
-                    <input type="date" value={form.dateOfBirth} onChange={e => set('dateOfBirth', e.target.value)}
-                      className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
-                        ${errors.dateOfBirth ? 'border-red-400' : 'border-slate-200'}`} />
+                    <DatePicker
+                      value={form.dateOfBirth}
+                      onChange={(value) => set('dateOfBirth', value)}
+                      error={Boolean(errors.dateOfBirth)}
+                      min="1900-01-01"
+                      max={maxBirthDate}
+                      placeholder="Chọn ngày sinh"
+                    />
                     {errors.dateOfBirth && <p className="text-xs text-red-600 mt-1">{errors.dateOfBirth}</p>}
                   </div>
                   <div>

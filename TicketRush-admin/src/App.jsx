@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import { RouterProvider, useRouter, matchRoute } from './contexts/RouterContext.jsx';
 import { DashboardStateProvider } from './contexts/DashboardStateContext.jsx';
+import { CreateEventDraftProvider } from './contexts/CreateEventDraftContext.jsx';
 import { ToastContainer } from './components/ui/index.jsx';
 
 // Pages
@@ -42,6 +43,7 @@ function Router() {
   if (path === '/admin/dashboard') return <RequireAdmin><AdminDashboardPage /></RequireAdmin>;
   if (path === '/admin/events') return <RequireAdmin><EventManagementPage /></RequireAdmin>;
   if (path === '/admin/events/new') return <RequireAdmin><CreateEventPage /></RequireAdmin>;
+  if (path === '/admin/events/new/seats') return <RequireAdmin><SeatLayoutConfigPage createMode /></RequireAdmin>;
   if (path === '/admin/orders') return <RequireAdmin><OrderManagementPage /></RequireAdmin>;
 
   // Dynamic routes
@@ -70,8 +72,10 @@ export default function App() {
     <RouterProvider>
       <AuthProvider>
         <DashboardStateProvider>
-          <Router />
-          <ToastContainer />
+          <CreateEventDraftProvider>
+            <Router />
+            <ToastContainer />
+          </CreateEventDraftProvider>
         </DashboardStateProvider>
       </AuthProvider>
     </RouterProvider>

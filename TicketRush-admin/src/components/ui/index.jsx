@@ -1,5 +1,6 @@
 // src/components/ui/index.jsx
 // Shared reusable UI primitives
+export { DatePicker } from './DatePicker.jsx';
 
 // ── Spinner ───────────────────────────────────────────────────
 export function Spinner({ size = 'md', className = '' }) {
@@ -321,7 +322,7 @@ export function orderStatusLabel(status) {
 }
 
 // ── Custom Select Dropdown ─────────────────────────────────────
-export function CustomSelect({ value, onChange, options = [], className = '' }) {
+export function CustomSelect({ value, onChange, options = [], placeholderValue, className = '' }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -337,6 +338,10 @@ export function CustomSelect({ value, onChange, options = [], className = '' }) 
   }, []);
 
   const selectedOption = options.find(o => o.value === value) || options[0];
+  const isPlaceholder = placeholderValue !== undefined && value === placeholderValue;
+  const selectableOptions = placeholderValue === undefined
+    ? options
+    : options.filter(opt => opt.value !== placeholderValue);
 
   const handleSelect = (val) => {
     onChange?.({ target: { value: val } }); // Mock event object to keep compatibility
@@ -349,7 +354,9 @@ export function CustomSelect({ value, onChange, options = [], className = '' }) 
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full min-w-[160px] px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-medium text-slate-700 shadow-sm"
+        className={`flex items-center justify-between w-full min-w-[160px] px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-medium shadow-sm ${
+          isPlaceholder ? 'text-slate-400' : 'text-slate-700'
+        }`}
       >
         <span className="truncate">{selectedOption?.label || 'Chọn...'}</span>
         <span className={`material-symbols-outlined text-[18px] text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180 text-indigo-500' : ''}`}>
@@ -365,7 +372,7 @@ export function CustomSelect({ value, onChange, options = [], className = '' }) 
             : 'opacity-0 scale-95 pointer-events-none -translate-y-2'}`}
       >
         <div className="py-1 max-h-60 overflow-y-auto">
-          {options.map((opt) => {
+          {selectableOptions.map((opt) => {
             const isSelected = opt.value === value;
             return (
               <button

@@ -3,6 +3,7 @@ package com.example.TicketRush_backend.service;
 import com.example.TicketRush_backend.common.AppException;
 import com.example.TicketRush_backend.common.ErrorCode;
 import com.example.TicketRush_backend.dto.event.CreateEventRequest;
+import com.example.TicketRush_backend.dto.event.CreateEventWithSeatZonesRequest;
 import com.example.TicketRush_backend.dto.event.EventResponse;
 import com.example.TicketRush_backend.dto.event.UpdateEventRequest;
 import com.example.TicketRush_backend.dto.ws.DashboardUpdateMessage;
@@ -68,13 +69,13 @@ public class EventService {
 
     public Page<EventResponse> listPublicEvents(
             String search,
-            String category,
+            List<String> categories,
             String city,
             LocalDate fromDate,
             LocalDate toDate,
             Pageable pageable) {
         String searchPattern = toSearchPattern(search);
-        String categoryLower = toLowerFilter(category);
+        List<String> categoryLower = toLowerFilters(categories);
         String cityMode = toCityMode(city);
         LocalDate normalizedFromDate = fromDate;
         LocalDate normalizedToDate = toDate;
@@ -103,7 +104,7 @@ public class EventService {
 
     private Specification<Event> publicEventsSpec(
             String searchPattern,
-            String categoryLower,
+            List<String> categoryLower,
             Instant fromInstant,
             Instant toInstantExclusive,
             String cityMode) {
@@ -114,8 +115,9 @@ public class EventService {
             if (searchPattern != null) {
                 predicates.add(cb.like(cb.lower(root.get("name")), searchPattern));
             }
-            if (categoryLower != null) {
-                predicates.add(cb.equal(cb.lower(root.get("category")), categoryLower));
+            if (categoryLower != null && !categoryLower.isEmpty()) {
+                Expression<String> normalizedCategory = cb.lower(cb.trim(root.get("category")));
+                predicates.add(normalizedCategory.in(categoryLower));
             }
             if (fromInstant != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("eventDate"), fromInstant));
@@ -212,6 +214,36 @@ public class EventService {
     }
 
     @Transactional
+    public EventResponse createEventWithSeatZones(CreateEventWithSeatZonesRequest req, Long adminUserId) {
+        User admin = userRepository.findById(adminUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.AUTH_USER_NOT_FOUND));
+        CreateEventRequest eventReq = req.getEvent();
+
+        Event event = Event.builder()
+                .name(eventReq.getName())
+                .description(eventReq.getDescription())
+                .category(eventReq.getCategory())
+                .venue(eventReq.getVenue())
+                .city(eventReq.getCity())
+                .eventDate(eventReq.getEventDate())
+                .imageUrl(eventReq.getImageUrl())
+                .locationUrl(eventReq.getLocationUrl())
+                .status(EventStatus.UPCOMING)
+                .createdBy(admin)
+                .build();
+
+        Event saved = eventRepository.save(event);
+
+        CreateSeatZonesRequest seatReq = new CreateSeatZonesRequest();
+        seatReq.setZones(req.getZones());
+        ensureSeatZonesNotEmpty(seatReq);
+        persistSeatZones(saved, seatReq);
+
+        seatBroadcastService.broadcastEventListUpdate();
+        return toAdminSummaryResponse(saved);
+    }
+
+    @Transactional
     public EventResponse updateEvent(Long eventId, UpdateEventRequest req) {
         Event event = findOrThrow(eventId);
 
@@ -289,11 +321,22 @@ public class EventService {
             throw new AppException(ErrorCode.SEAT_CONFIG_LOCKED,
                     Map.of("eventStatus", event.getStatus()));
         }
+        ensureSeatZonesNotEmpty(req);
 
-        // Delete existing config for this event
         eventSeatRepository.deleteAll(eventSeatRepository.findByEventId(eventId));
         seatZoneRepository.deleteByEventId(eventId);
 
+        return persistSeatZones(event, req);
+    }
+
+    private void ensureSeatZonesNotEmpty(CreateSeatZonesRequest req) {
+        if (req.getZones() == null || req.getZones().isEmpty()) {
+            throw new AppException(ErrorCode.VALIDATION_FAILED,
+                    Map.of("reason", "Sự kiện phải có ít nhất một ghế"));
+        }
+    }
+
+    private Map<String, Object> persistSeatZones(Event event, CreateSeatZonesRequest req) {
         List<SeatZone> createdZones = new ArrayList<>();
         int totalSeats = 0;
 
@@ -316,7 +359,7 @@ public class EventService {
         }
 
         return Map.of(
-                "eventId", eventId,
+                "eventId", event.getId(),
                 "zonesCreated", createdZones.size(),
                 "totalSeatsGenerated", totalSeats,
                 "zones", createdZones.stream().map(z ->
@@ -534,6 +577,17 @@ public class EventService {
     private String toLowerFilter(String value) {
         String normalized = normalizeFilter(value);
         return normalized == null ? null : normalized.toLowerCase(Locale.ROOT);
+    }
+
+    private List<String> toLowerFilters(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        return values.stream()
+                .map(this::toLowerFilter)
+                .filter(v -> v != null && !v.isBlank())
+                .distinct()
+                .toList();
     }
 
     private String toCityMode(String city) {

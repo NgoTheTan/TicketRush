@@ -1,13 +1,22 @@
 import { memo, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
+import { useCreateEventDraft } from '../contexts/CreateEventDraftContext.jsx';
 import eventService from '../api/eventService.js';
-import { Button, Spinner, showToast } from '../components/ui/index.jsx';
+import { Button, Spinner, showToast, useConfirm } from '../components/ui/index.jsx';
 
-const GRID_ROWS = 25;
-const GRID_COLS = 40;
-const CELL_SIZE = 28;
-const CELL_CENTER_OFFSET = 12;
+const INITIAL_GRID_ROWS = 25;
+const INITIAL_GRID_COLS = 40;
+const GRID_EXPAND_ROWS = 8;
+const GRID_EXPAND_COLS = 10;
+const MAX_GRID_ROWS = 120;
+const MAX_GRID_COLS = 180;
+const BASE_SEAT_SIZE = 24;
+const BASE_CELL_GAP = 4;
+const CANVAS_PADDING = 40;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 1.5;
+const ZOOM_STEP = 0.1;
 const EDGE_LABEL_OFFSET = 13;
 const RECTANGLE_RESIZE_HANDLES = [
   { key: 'nw', label: 'góc trên trái', cursor: 'nwse-resize', style: { left: -7, top: -7 } },
@@ -23,6 +32,11 @@ const ZONE_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06
 
 // Generate a random ID for zones
 const generateId = () => Math.random().toString(36).substr(2, 9);
+const createEmptyGrid = (rows, cols) => Array.from({ length: rows }, () => Array(cols).fill(null));
+const getGridDimensions = (grid) => ({
+  rowCount: grid.length,
+  colCount: grid[0]?.length || 0,
+});
 
 // Point-in-polygon algorithm (Ray-Casting)
 const isPointInPolygon = (pt, vs) => {
@@ -65,21 +79,21 @@ const getPolygonBoundary = (vs) => {
   return boundary;
 };
 
-const getPointBounds = (points) => points.reduce((bounds, point) => ({
+const getPointBounds = (points, rowCount, colCount) => points.reduce((bounds, point) => ({
   minRow: Math.min(bounds.minRow, point.row),
   maxRow: Math.max(bounds.maxRow, point.row),
   minCol: Math.min(bounds.minCol, point.col),
   maxCol: Math.max(bounds.maxCol, point.col),
 }), {
-  minRow: GRID_ROWS - 1,
+  minRow: rowCount - 1,
   maxRow: 0,
-  minCol: GRID_COLS - 1,
+  minCol: colCount - 1,
   maxCol: 0,
 });
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-const getResizedRectangleFrame = (frame, handle, point) => {
+const getResizedRectangleFrame = (frame, handle, point, rowCount, colCount) => {
   const currentTop = frame.row;
   const currentLeft = frame.col;
   const currentBottom = frame.row + frame.rows - 1;
@@ -91,9 +105,9 @@ const getResizedRectangleFrame = (frame, handle, point) => {
   let right = currentRight;
 
   if (handle.includes('n')) top = clamp(point.row, 0, currentBottom);
-  if (handle.includes('s')) bottom = clamp(point.row, currentTop, GRID_ROWS - 1);
+  if (handle.includes('s')) bottom = clamp(point.row, currentTop, rowCount - 1);
   if (handle.includes('w')) left = clamp(point.col, 0, currentRight);
-  if (handle.includes('e')) right = clamp(point.col, currentLeft, GRID_COLS - 1);
+  if (handle.includes('e')) right = clamp(point.col, currentLeft, colCount - 1);
 
   return {
     row: top,
@@ -144,9 +158,9 @@ const getReadableTextColor = (hex) => {
 
 const isSamePoint = (a, b) => a?.row === b?.row && a?.col === b?.col;
 
-const getPointCenter = (point) => ({
-  x: point.col * CELL_SIZE + CELL_CENTER_OFFSET,
-  y: point.row * CELL_SIZE + CELL_CENTER_OFFSET,
+const getPointCenter = (point, metrics) => ({
+  x: point.col * metrics.cellStep + metrics.seatSize / 2,
+  y: point.row * metrics.cellStep + metrics.seatSize / 2,
 });
 
 const getEdgeLengthText = (start, end) => {
@@ -158,12 +172,12 @@ const getEdgeLengthText = (start, end) => {
   return dx === 0 || dy === 0 ? String(length) : length.toFixed(1);
 };
 
-const getEdgeLabel = (start, end) => {
+const getEdgeLabel = (start, end, rowCount, colCount, metrics) => {
   const text = getEdgeLengthText(start, end);
   if (!text) return null;
 
-  const startCenter = getPointCenter(start);
-  const endCenter = getPointCenter(end);
+  const startCenter = getPointCenter(start, metrics);
+  const endCenter = getPointCenter(end, metrics);
   const dx = endCenter.x - startCenter.x;
   const dy = endCenter.y - startCenter.y;
   const length = Math.sqrt(dx * dx + dy * dy);
@@ -178,14 +192,16 @@ const getEdgeLabel = (start, end) => {
   }
 
   const width = Math.max(18, text.length * 6 + 8);
-  const x = Math.min(Math.max((startCenter.x + endCenter.x) / 2 + nx * EDGE_LABEL_OFFSET, width / 2), GRID_COLS * CELL_SIZE - width / 2);
-  const y = Math.min(Math.max((startCenter.y + endCenter.y) / 2 + ny * EDGE_LABEL_OFFSET, 8), GRID_ROWS * CELL_SIZE - 8);
+  const canvasWidth = colCount * metrics.cellStep - metrics.gapSize;
+  const canvasHeight = rowCount * metrics.cellStep - metrics.gapSize;
+  const x = Math.min(Math.max((startCenter.x + endCenter.x) / 2 + nx * EDGE_LABEL_OFFSET, width / 2), canvasWidth - width / 2);
+  const y = Math.min(Math.max((startCenter.y + endCenter.y) / 2 + ny * EDGE_LABEL_OFFSET, 8), canvasHeight - 8);
 
   return { text, x, y, width };
 };
 
-function EdgeLengthLabel({ edge, muted = false }) {
-  const label = getEdgeLabel(edge.start, edge.end);
+function EdgeLengthLabel({ edge, muted = false, rowCount, colCount, metrics }) {
+  const label = getEdgeLabel(edge.start, edge.end, rowCount, colCount, metrics);
   if (!label) return null;
 
   return (
@@ -221,9 +237,15 @@ const PolygonOverlay = memo(function PolygonOverlay({
   polygonEdges,
   previewEdge,
   drawingStrokeColor,
+  rowCount,
+  colCount,
+  metrics,
 }) {
+  const width = colCount * metrics.cellStep - metrics.gapSize;
+  const height = rowCount * metrics.cellStep - metrics.gapSize;
+
   return (
-    <svg className="absolute pointer-events-none" style={{ left: 24, top: 24, width: GRID_COLS * CELL_SIZE, height: GRID_ROWS * CELL_SIZE, zIndex: 10 }}>
+    <svg className="absolute pointer-events-none" style={{ left: CANVAS_PADDING, top: CANVAS_PADDING, width, height, zIndex: 10 }}>
       {polygonPoints.length > 0 && (
         <polyline
           points={polygonLinePoints}
@@ -236,10 +258,10 @@ const PolygonOverlay = memo(function PolygonOverlay({
       )}
       {previewEdge && (
         <line
-          x1={getPointCenter(previewEdge.start).x}
-          y1={getPointCenter(previewEdge.start).y}
-          x2={getPointCenter(previewEdge.end).x}
-          y2={getPointCenter(previewEdge.end).y}
+          x1={getPointCenter(previewEdge.start, metrics).x}
+          y1={getPointCenter(previewEdge.start, metrics).y}
+          x2={getPointCenter(previewEdge.end, metrics).x}
+          y2={getPointCenter(previewEdge.end, metrics).y}
           stroke={drawingStrokeColor}
           strokeWidth="3"
           strokeDasharray="6,6"
@@ -248,14 +270,14 @@ const PolygonOverlay = memo(function PolygonOverlay({
         />
       )}
       {polygonEdges.map(edge => (
-        <EdgeLengthLabel key={edge.key} edge={edge} />
+        <EdgeLengthLabel key={edge.key} edge={edge} rowCount={rowCount} colCount={colCount} metrics={metrics} />
       ))}
-      {previewEdge && <EdgeLengthLabel edge={previewEdge} muted />}
+      {previewEdge && <EdgeLengthLabel edge={previewEdge} muted rowCount={rowCount} colCount={colCount} metrics={metrics} />}
       {polygonPoints.map((p, i) => (
         <circle
           key={i}
-          cx={getPointCenter(p).x}
-          cy={getPointCenter(p).y}
+          cx={getPointCenter(p, metrics).x}
+          cy={getPointCenter(p, metrics).y}
           r={i === 0 && polygonPoints.length >= 3 ? '6' : '5'}
           fill="#fff"
           stroke={drawingStrokeColor}
@@ -269,25 +291,54 @@ const PolygonOverlay = memo(function PolygonOverlay({
 const SeatGrid = memo(function SeatGrid({
   gridRef,
   grid,
-  zonesById,
+  zoneColorById,
   canEdit,
   drawMode,
+  metrics,
   onCellMouseDown,
   onCellMouseEnter,
   onGridMouseLeave,
 }) {
+  const getEventCell = (event) => {
+    const cell = event.target.closest('[data-seat-cell="true"]');
+    if (!cell || !gridRef.current?.contains(cell)) return null;
+    return {
+      row: Number(cell.dataset.row),
+      col: Number(cell.dataset.col),
+    };
+  };
+
+  const handleMouseDown = (event) => {
+    if (!canEdit) return;
+    const cell = getEventCell(event);
+    if (!cell) return;
+    event.preventDefault();
+    onCellMouseDown(cell.row, cell.col);
+  };
+
+  const handleMouseOver = (event) => {
+    if (!canEdit) return;
+    const cell = getEventCell(event);
+    if (!cell) return;
+    onCellMouseEnter(cell.row, cell.col);
+  };
+
   return (
-    <div ref={gridRef} className="flex flex-col gap-1" onMouseLeave={onGridMouseLeave}>
+    <div
+      ref={gridRef}
+      className={`flex flex-col ${drawMode === 'RECTANGLE' ? 'cursor-default' : 'cursor-crosshair'}`}
+      style={{ gap: metrics.gapSize, contain: 'layout paint style' }}
+      onMouseDown={handleMouseDown}
+      onMouseOver={handleMouseOver}
+      onMouseLeave={onGridMouseLeave}
+    >
       {grid.map((row, rowIndex) => (
         <SeatRow
           key={rowIndex}
           row={row}
           rowIndex={rowIndex}
-          zonesById={zonesById}
-          canEdit={canEdit}
-          drawMode={drawMode}
-          onCellMouseDown={onCellMouseDown}
-          onCellMouseEnter={onCellMouseEnter}
+          zoneColorById={zoneColorById}
+          metrics={metrics}
         />
       ))}
     </div>
@@ -297,28 +348,25 @@ const SeatGrid = memo(function SeatGrid({
 const SeatRow = memo(function SeatRow({
   row,
   rowIndex,
-  zonesById,
-  canEdit,
-  drawMode,
-  onCellMouseDown,
-  onCellMouseEnter,
+  zoneColorById,
+  metrics,
 }) {
   return (
-    <div className="flex gap-1">
+    <div
+      className="flex"
+      style={{ gap: metrics.gapSize, contentVisibility: 'auto', containIntrinsicSize: `${metrics.seatSize}px` }}
+    >
       {row.map((cell, colIndex) => {
-        const zone = cell ? zonesById.get(cell) : null;
+        const zoneColor = cell ? zoneColorById.get(cell) : null;
 
         return (
           <SeatDraftCell
             key={`${rowIndex}-${colIndex}`}
             cell={cell}
-            zoneColor={zone?.colorCode}
+            zoneColor={zoneColor}
             rowIndex={rowIndex}
             colIndex={colIndex}
-            canEdit={canEdit}
-            drawMode={drawMode}
-            onCellMouseDown={onCellMouseDown}
-            onCellMouseEnter={onCellMouseEnter}
+            metrics={metrics}
           />
         );
       })}
@@ -331,27 +379,30 @@ const SeatDraftCell = memo(function SeatDraftCell({
   zoneColor,
   rowIndex,
   colIndex,
-  canEdit,
-  drawMode,
-  onCellMouseDown,
-  onCellMouseEnter,
+  metrics,
 }) {
-  const isPolygonMode = drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON';
-  const cursorClass = isPolygonMode ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400' : drawMode === 'RECTANGLE' ? 'cursor-default' : 'cursor-crosshair';
   const emptyClass = !cell ? 'bg-slate-100 border-slate-200 hover:bg-slate-200' : 'shadow-sm';
 
   return (
     <div
-      onMouseDown={() => canEdit && onCellMouseDown(rowIndex, colIndex)}
-      onMouseEnter={() => canEdit && onCellMouseEnter(rowIndex, colIndex)}
-      className={`w-6 h-6 rounded-t-lg rounded-b-sm border-b-2 transition-transform active:scale-90 ${cursorClass} ${emptyClass}`}
-      style={zoneColor ? { backgroundColor: zoneColor, borderColor: 'rgba(0,0,0,0.2)' } : undefined}
+      data-seat-cell="true"
+      data-row={rowIndex}
+      data-col={colIndex}
+      className={`shrink-0 rounded-t-lg rounded-b-sm border-b-2 hover:ring-2 hover:ring-indigo-300 active:scale-95 ${emptyClass}`}
+      style={{
+        width: metrics.seatSize,
+        height: metrics.seatSize,
+        ...(zoneColor ? { backgroundColor: zoneColor, borderColor: 'rgba(0,0,0,0.2)' } : {}),
+      }}
     />
   );
 });
 
-export default function SeatLayoutConfigPage({ eventId }) {
+export default function SeatLayoutConfigPage({ eventId, createMode = false }) {
   const { navigate, goBack } = useRouter();
+  const { draft, clearDraft } = useCreateEventDraft();
+  const [confirmDialog, confirm] = useConfirm();
+  const isCreating = createMode || !eventId;
   const gridRef = useRef(null);
   const isMouseDownRef = useRef(false);
   const brushPaintQueueRef = useRef(new Map());
@@ -365,11 +416,12 @@ export default function SeatLayoutConfigPage({ eventId }) {
   const [activeZone, setActiveZone] = useState(zones[0].id);
   
   // Grid: 2D array [row][col] storing zoneId
-  const [grid, setGrid] = useState(() => Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null)));
+  const [grid, setGrid] = useState(() => createEmptyGrid(INITIAL_GRID_ROWS, INITIAL_GRID_COLS));
   
   // App States
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [zoom, setZoom] = useState(1);
 
   // Polygon Draw Mode States
   const [drawMode, setDrawMode] = useState('BRUSH'); // 'BRUSH' | 'POLYGON' | 'RECTANGLE' | 'ERASE_BRUSH' | 'ERASE_POLYGON'
@@ -379,9 +431,33 @@ export default function SeatLayoutConfigPage({ eventId }) {
   const [rectangleFrame, setRectangleFrame] = useState(null); // {row, col, rows, cols}
   const [rectangleDrag, setRectangleDrag] = useState(null); // {rowOffset, colOffset}
   const [rectangleResize, setRectangleResize] = useState(null); // {handle, frame}
+  const { rowCount, colCount } = getGridDimensions(grid);
+  const gridMetrics = useMemo(() => {
+    const seatSize = BASE_SEAT_SIZE * zoom;
+    const gapSize = BASE_CELL_GAP * zoom;
+    return {
+      seatSize,
+      gapSize,
+      cellStep: seatSize + gapSize,
+    };
+  }, [zoom]);
+  const gridCanvasWidth = colCount * gridMetrics.cellStep - gridMetrics.gapSize;
+  const gridCanvasHeight = rowCount * gridMetrics.cellStep - gridMetrics.gapSize;
 
   // Load existing data
   useEffect(() => {
+    if (isCreating) {
+      if (!draft?.form) {
+        showToast('Vui lòng nhập thông tin sự kiện trước khi cấu hình ghế', 'error');
+        navigate('/admin/events/new');
+        return;
+      }
+
+      setEvent({ ...draft.form, status: 'UPCOMING' });
+      setLoading(false);
+      return;
+    }
+
     Promise.all([
       eventService.get(eventId),
       eventService.getSeatMap(eventId).catch(() => null),
@@ -389,7 +465,6 @@ export default function SeatLayoutConfigPage({ eventId }) {
       setEvent(ev);
       if (mapRes && mapRes.zones && mapRes.zones.length > 0) {
         const loadedZones = [];
-        const newGrid = Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null));
         
         let maxR = 0, maxC = 0;
         mapRes.zones.forEach(z => {
@@ -407,8 +482,11 @@ export default function SeatLayoutConfigPage({ eventId }) {
           });
         });
 
-        const rOffset = Math.max(0, Math.floor((GRID_ROWS - (maxR + 1)) / 2));
-        const cOffset = Math.max(0, Math.floor((GRID_COLS - (maxC + 1)) / 2));
+        const nextRowCount = Math.min(MAX_GRID_ROWS, Math.max(INITIAL_GRID_ROWS, maxR + 1));
+        const nextColCount = Math.min(MAX_GRID_COLS, Math.max(INITIAL_GRID_COLS, maxC + 1));
+        const newGrid = createEmptyGrid(nextRowCount, nextColCount);
+        const rOffset = Math.max(0, Math.floor((nextRowCount - (maxR + 1)) / 2));
+        const cOffset = Math.max(0, Math.floor((nextColCount - (maxC + 1)) / 2));
 
         mapRes.zones.forEach((z, i) => {
           const zId = generateId();
@@ -432,7 +510,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
                 const cIdx = s.seatNumber - 1;
                 const finalR = rIdx + rOffset;
                 const finalC = cIdx + cOffset;
-                if (finalR >= 0 && finalR < GRID_ROWS && finalC >= 0 && finalC < GRID_COLS) {
+                if (finalR >= 0 && finalR < nextRowCount && finalC >= 0 && finalC < nextColCount) {
                   newGrid[finalR][finalC] = zId;
                 }
               });
@@ -446,9 +524,9 @@ export default function SeatLayoutConfigPage({ eventId }) {
       }
     }).catch(err => showToast(err.message, 'error'))
       .finally(() => setLoading(false));
-  }, [eventId]);
+  }, [draft, eventId, isCreating, navigate]);
 
-  const canEdit = !event || event.status === 'UPCOMING';
+  const canEdit = isCreating || !event || event.status === 'UPCOMING';
 
   const flushBrushPaintQueue = useCallback(() => {
     if (brushPaintFrameRef.current !== null) {
@@ -499,7 +577,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
   const paintPolygon = useCallback((points, shouldErase) => {
     const boundaryPoints = getPolygonBoundary(points);
     const boundarySet = new Set(boundaryPoints.map(p => `${p.row}-${p.col}`));
-    const bounds = getPointBounds(points);
+    const bounds = getPointBounds(points, rowCount, colCount);
     const value = shouldErase ? null : activeZone;
 
     setGrid(prev => {
@@ -531,7 +609,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
       }
       return changed ? next : prev;
     });
-  }, [activeZone]);
+  }, [activeZone, colCount, rowCount]);
 
   const finishPolygon = useCallback((pointsOverride) => {
     const points = Array.isArray(pointsOverride) ? pointsOverride : polygonPoints;
@@ -555,19 +633,19 @@ export default function SeatLayoutConfigPage({ eventId }) {
 
   const clampRectangleFrame = useCallback((frame) => ({
     ...frame,
-    row: clamp(frame.row, 0, GRID_ROWS - frame.rows),
-    col: clamp(frame.col, 0, GRID_COLS - frame.cols),
-  }), []);
+    row: clamp(frame.row, 0, rowCount - frame.rows),
+    col: clamp(frame.col, 0, colCount - frame.cols),
+  }), [colCount, rowCount]);
 
   const getGridPointFromClient = useCallback((clientX, clientY) => {
     const rect = gridRef.current?.getBoundingClientRect();
     if (!rect) return null;
 
     return {
-      row: clamp(Math.floor((clientY - rect.top) / CELL_SIZE), 0, GRID_ROWS - 1),
-      col: clamp(Math.floor((clientX - rect.left) / CELL_SIZE), 0, GRID_COLS - 1),
+      row: clamp(Math.floor((clientY - rect.top) / gridMetrics.cellStep), 0, rowCount - 1),
+      col: clamp(Math.floor((clientX - rect.left) / gridMetrics.cellStep), 0, colCount - 1),
     };
-  }, []);
+  }, [colCount, gridMetrics.cellStep, rowCount]);
 
   const createRectangleFrame = () => {
     const cols = Number(rectangleSize.cols);
@@ -578,8 +656,8 @@ export default function SeatLayoutConfigPage({ eventId }) {
       return;
     }
 
-    if (cols > GRID_COLS || rows > GRID_ROWS) {
-      showToast(`Kích thước tối đa là ${GRID_COLS} x ${GRID_ROWS}`, 'error');
+    if (cols > colCount || rows > rowCount) {
+      showToast(`Kích thước tối đa là ${colCount} x ${rowCount}`, 'error');
       return;
     }
 
@@ -589,8 +667,8 @@ export default function SeatLayoutConfigPage({ eventId }) {
     setRectangleFrame({
       cols,
       rows,
-      row: Math.floor((GRID_ROWS - rows) / 2),
-      col: Math.floor((GRID_COLS - cols) / 2),
+      row: Math.floor((rowCount - rows) / 2),
+      col: Math.floor((colCount - cols) / 2),
     });
   };
 
@@ -705,6 +783,43 @@ export default function SeatLayoutConfigPage({ eventId }) {
     setPolygonPoints([]);
     setHoverPoint(null);
   };
+
+  const expandGrid = (direction) => {
+    if (!canEdit) return;
+    if ((direction === 'LEFT' || direction === 'RIGHT') && colCount >= MAX_GRID_COLS) {
+      showToast(`Sơ đồ đã đạt tối đa ${MAX_GRID_COLS} cột`, 'error');
+      return;
+    }
+    if (direction === 'DOWN' && rowCount >= MAX_GRID_ROWS) {
+      showToast(`Sơ đồ đã đạt tối đa ${MAX_GRID_ROWS} hàng`, 'error');
+      return;
+    }
+
+    flushBrushPaintQueue();
+    cancelPolygon();
+    cancelRectangle();
+
+    setGrid(prev => {
+      const currentRows = prev.length;
+      const currentCols = prev[0]?.length || INITIAL_GRID_COLS;
+
+      if (direction === 'LEFT') {
+        const addedCols = Math.min(GRID_EXPAND_COLS, MAX_GRID_COLS - currentCols);
+        return prev.map(row => [...Array(addedCols).fill(null), ...row]);
+      }
+      if (direction === 'RIGHT') {
+        const addedCols = Math.min(GRID_EXPAND_COLS, MAX_GRID_COLS - currentCols);
+        return prev.map(row => [...row, ...Array(addedCols).fill(null)]);
+      }
+
+      const addedRows = Math.min(GRID_EXPAND_ROWS, MAX_GRID_ROWS - currentRows);
+      return [...prev, ...createEmptyGrid(addedRows, currentCols)];
+    });
+  };
+
+  const updateZoom = (delta) => {
+    setZoom(prev => Number(clamp(prev + delta, MIN_ZOOM, MAX_ZOOM).toFixed(2)));
+  };
   
   useEffect(() => {
     const handleMouseUp = () => {
@@ -759,7 +874,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
       const point = getGridPointFromClient(event.clientX, event.clientY);
       if (!point) return;
 
-      const nextFrame = getResizedRectangleFrame(rectangleResize.frame, rectangleResize.handle, point);
+      const nextFrame = getResizedRectangleFrame(rectangleResize.frame, rectangleResize.handle, point, rowCount, colCount);
       setRectangleFrame(prev => isSameRectangleFrame(prev, nextFrame) ? prev : nextFrame);
       setRectangleSize(prev => {
         const nextSize = { cols: String(nextFrame.cols), rows: String(nextFrame.rows) };
@@ -776,7 +891,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [getGridPointFromClient, rectangleResize]);
+  }, [colCount, getGridPointFromClient, rectangleResize, rowCount]);
 
   const addZone = () => {
     const newId = generateId();
@@ -798,10 +913,10 @@ export default function SeatLayoutConfigPage({ eventId }) {
       let next = prev;
       let changed = false;
 
-      for (let r = 0; r < GRID_ROWS; r++) {
+      for (let r = 0; r < prev.length; r++) {
         let nextRow = null;
 
-        for (let c = 0; c < GRID_COLS; c++) {
+        for (let c = 0; c < prev[r].length; c++) {
           if (prev[r][c] !== id) continue;
 
           if (!changed) {
@@ -822,9 +937,40 @@ export default function SeatLayoutConfigPage({ eventId }) {
     });
   };
 
-  const clearGrid = () => {
-    if (confirm('Bạn có chắc chắn muốn xóa toàn bộ ghế trên sơ đồ?')) {
-      setGrid(Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null)));
+  const clearGrid = async () => {
+    const ok = await confirm({
+      title: 'Xóa toàn bộ lưới',
+      message: 'Tất cả ghế đã vẽ trên sơ đồ hiện tại sẽ bị xóa. Khu vực vé và giá vẫn được giữ lại.',
+      confirmLabel: 'Xóa lưới',
+      cancelLabel: 'Giữ lại',
+      variant: 'warning',
+    });
+    if (!ok) return;
+
+    setGrid(prev => createEmptyGrid(prev.length, prev[0]?.length || INITIAL_GRID_COLS));
+    cancelPolygon();
+    cancelRectangle();
+  };
+
+  const handleCancelConfig = async () => {
+    const ok = await confirm({
+      title: isCreating ? 'Hủy tạo sự kiện' : 'Hủy chỉnh sửa sơ đồ',
+      message: isCreating
+        ? 'Bản nháp sự kiện và sơ đồ ghế đang vẽ sẽ bị bỏ.'
+        : 'Các thay đổi trên sơ đồ ghế chưa lưu sẽ bị bỏ.',
+      confirmLabel: isCreating ? 'Hủy tạo' : 'Bỏ thay đổi',
+      cancelLabel: 'Tiếp tục vẽ',
+      variant: 'warning',
+    });
+    if (!ok) return;
+
+    cancelPolygon();
+    cancelRectangle();
+    if (isCreating) {
+      clearDraft();
+      navigate('/admin/events');
+    } else {
+      navigate(eventId ? `/admin/events/${eventId}/view` : '/admin/events');
     }
   };
 
@@ -832,11 +978,11 @@ export default function SeatLayoutConfigPage({ eventId }) {
     const invalid = zones.find(z => !z.name || z.price === '' || z.price === null);
     if (invalid) { showToast('Vui lòng nhập tên và giá cho tất cả các loại ghế', 'error'); return; }
 
-    let minR = GRID_ROWS, maxR = -1;
-    let minC = GRID_COLS, maxC = -1;
+    let minR = rowCount, maxR = -1;
+    let minC = colCount, maxC = -1;
 
-    for (let r = 0; r < GRID_ROWS; r++) {
-      for (let c = 0; c < GRID_COLS; c++) {
+    for (let r = 0; r < grid.length; r++) {
+      for (let c = 0; c < grid[r].length; c++) {
         if (grid[r][c] !== null) {
           if (r < minR) minR = r;
           if (r > maxR) maxR = r;
@@ -869,20 +1015,51 @@ export default function SeatLayoutConfigPage({ eventId }) {
     }).filter(z => z.customSeats.length > 0);
 
     if (payloadZones.length === 0) {
-      if (!confirm('Sơ đồ hiện tại đang trống. Xác nhận lưu?')) return;
+      showToast(isCreating
+        ? 'Vui lòng vẽ ít nhất một ghế trước khi tạo sự kiện'
+        : 'Vui lòng vẽ ít nhất một ghế trước khi lưu cấu hình', 'error');
+      return;
     }
 
     setSaving(true);
     try {
-      await eventService.saveSeatZones(eventId, payloadZones);
-      showToast('Đã lưu cấu hình sơ đồ ghế thành công!', 'success');
-      navigate('/admin/events');
+      if (isCreating) {
+        if (!draft?.form) {
+          showToast('Bản nháp sự kiện không còn tồn tại. Vui lòng nhập lại thông tin sự kiện.', 'error');
+          navigate('/admin/events/new');
+          return;
+        }
+
+        let finalImageUrl = null;
+        if (draft.imageFile) {
+          const uploadResult = await eventService.adminUploadImage(draft.imageFile);
+          finalImageUrl = uploadResult.url;
+        }
+
+        const created = await eventService.adminCreateWithSeatZones({
+          event: {
+            ...draft.form,
+            imageUrl: finalImageUrl,
+            eventDate: new Date(draft.form.eventDate).toISOString(),
+          },
+          zones: payloadZones,
+        });
+        clearDraft();
+        showToast('Đã tạo sự kiện và lưu cấu hình ghế thành công!', 'success');
+        navigate(`/admin/events/${created.id}/view`);
+      } else {
+        await eventService.saveSeatZones(eventId, payloadZones);
+        showToast('Đã lưu cấu hình sơ đồ ghế thành công!', 'success');
+        navigate('/admin/events');
+      }
     } catch (err) {
       if (err.code === 'SEAT_CONFIG_LOCKED') showToast('Không thể thay đổi cấu hình khi sự kiện đang mở bán', 'error');
       else showToast(err.message, 'error');
     } finally { setSaving(false); }
   };
 
+  const zoneColorKey = zones.map(z => `${z.id}:${z.colorCode}`).join('|');
+  const zoneColorById = useMemo(() => new Map(zones.map(z => [z.id, z.colorCode])), [zoneColorKey]);
   const zonesById = useMemo(() => new Map(zones.map(z => [z.id, z])), [zones]);
   const zoneCounts = useMemo(() => {
     const counts = new Map();
@@ -906,8 +1083,8 @@ export default function SeatLayoutConfigPage({ eventId }) {
       : null
   ), [hoverPoint, polygonPoints]);
   const polygonLinePoints = useMemo(() => (
-    polygonPoints.map(p => `${getPointCenter(p).x},${getPointCenter(p).y}`).join(' ')
-  ), [polygonPoints]);
+    polygonPoints.map(p => `${getPointCenter(p, gridMetrics).x},${getPointCenter(p, gridMetrics).y}`).join(' ')
+  ), [gridMetrics, polygonPoints]);
 
   if (loading) return <AdminLayout><div className="flex justify-center py-20"><Spinner size="lg" /></div></AdminLayout>;
   const activeZoneConfig = zonesById.get(activeZone);
@@ -917,6 +1094,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
 
   return (
     <AdminLayout>
+      {confirmDialog}
       <div className="p-8 max-w-7xl mx-auto flex gap-8 flex-col xl:flex-row">
         
         {/* Left Sidebar - Settings */}
@@ -925,7 +1103,9 @@ export default function SeatLayoutConfigPage({ eventId }) {
             <button onClick={goBack} className="text-sm text-indigo-600 flex items-center gap-1 mb-4 hover:text-indigo-700">
               <span className="material-symbols-outlined text-[16px]">arrow_back</span> Quay lại
             </button>
-            <h1 className="text-2xl font-black text-slate-900">Thiết kế sơ đồ</h1>
+            <h1 className="text-2xl font-black text-slate-900">
+              {isCreating ? 'Cấu hình ghế sự kiện mới' : 'Thiết kế sơ đồ'}
+            </h1>
             {event && <p className="text-sm text-slate-500 mt-1 line-clamp-2">{event.name}</p>}
           </div>
 
@@ -1006,7 +1186,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
                   <input
                     type="number"
                     min="1"
-                    max={GRID_COLS}
+                    max={colCount}
                     value={rectangleSize.cols}
                     disabled={!canEdit}
                     onChange={e => setRectangleSize(prev => ({ ...prev, cols: e.target.value }))}
@@ -1018,7 +1198,7 @@ export default function SeatLayoutConfigPage({ eventId }) {
                   <input
                     type="number"
                     min="1"
-                    max={GRID_ROWS}
+                    max={rowCount}
                     value={rectangleSize.rows}
                     disabled={!canEdit}
                     onChange={e => setRectangleSize(prev => ({ ...prev, rows: e.target.value }))}
@@ -1086,100 +1266,176 @@ export default function SeatLayoutConfigPage({ eventId }) {
           {canEdit && (
             <div className="flex flex-col gap-3">
               <Button onClick={handleSave} loading={saving} fullWidth>
-                <span className="material-symbols-outlined text-[18px]">save</span> Lưu cấu hình
+                <span className="material-symbols-outlined text-[18px]">{isCreating ? 'event_available' : 'save'}</span>
+                {isCreating ? 'Tạo sự kiện' : 'Lưu cấu hình'}
               </Button>
               <Button variant="secondary" onClick={clearGrid} fullWidth>Xóa toàn bộ lưới</Button>
+              <Button variant="ghost" onClick={handleCancelConfig} fullWidth>Hủy</Button>
             </div>
           )}
         </div>
 
         {/* Right - Canvas */}
-        <div className="flex-1 overflow-auto bg-slate-50 rounded-2xl border border-slate-200 flex flex-col items-center justify-center p-8 min-h-[600px] shadow-inner relative select-none">
-          
-          <div className="mb-10 text-center">
-            <div className="w-64 h-12 bg-slate-800 text-white flex items-center justify-center rounded-b-3xl mx-auto shadow-lg relative">
-              <span className="font-black tracking-[0.2em] text-sm opacity-50 uppercase">Stage</span>
-              {/* Lights effect */}
-              <div className="absolute -bottom-4 w-full flex justify-center gap-8 opacity-40 blur-md">
-                <div className="w-10 h-10 bg-indigo-500 rounded-full"></div>
-                <div className="w-10 h-10 bg-pink-500 rounded-full"></div>
-              </div>
+        <div className="flex-1 overflow-auto bg-slate-50 rounded-2xl border border-slate-200 p-8 min-h-[600px] shadow-inner relative select-none">
+          <div className="sticky top-0 left-0 z-40 flex justify-end pointer-events-none mb-4">
+            <div className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-sm">
+              <button
+                type="button"
+                onClick={() => updateZoom(-ZOOM_STEP)}
+                disabled={zoom <= MIN_ZOOM}
+                title="Thu nhỏ"
+                aria-label="Thu nhỏ sơ đồ ghế"
+                className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span className="material-symbols-outlined text-[18px]">remove</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoom(1)}
+                title="Đặt lại zoom"
+                className="min-w-14 px-2 h-8 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100"
+              >
+                {Math.round(zoom * 100)}%
+              </button>
+              <button
+                type="button"
+                onClick={() => updateZoom(ZOOM_STEP)}
+                disabled={zoom >= MAX_ZOOM}
+                title="Phóng to"
+                aria-label="Phóng to sơ đồ ghế"
+                className="w-8 h-8 inline-flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+              </button>
             </div>
           </div>
-
-          {/* Grid Canvas Wrapper */}
-          <div className="inline-block bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative">
-            
-            {/* SVG Overlay for Polygon Drawing */}
-            {(drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON') && (
-              <PolygonOverlay
-                polygonLinePoints={polygonLinePoints}
-                polygonPoints={polygonPoints}
-                polygonEdges={polygonEdges}
-                previewEdge={previewEdge}
-                drawingStrokeColor={drawingStrokeColor}
-              />
-            )}
-
-            {drawMode === 'RECTANGLE' && rectangleFrame && (
-              <div
-                onMouseDown={startRectangleDrag}
-                className={`absolute z-20 rounded-md border-2 ${canEdit ? 'cursor-move' : 'cursor-not-allowed'}`}
-                style={{
-                  left: 24 + rectangleFrame.col * CELL_SIZE,
-                  top: 24 + rectangleFrame.row * CELL_SIZE,
-                  width: Math.max(8, rectangleFrame.cols * CELL_SIZE - 4),
-                  height: Math.max(8, rectangleFrame.rows * CELL_SIZE - 4),
-                  borderColor: activeZoneColor,
-                  backgroundColor: colorWithAlpha(activeZoneColor, 0.1),
-                  boxShadow: `0 0 0 2px ${colorWithAlpha(activeZoneColor, 0.18)}`,
-                }}
-              >
-                <div
-                  className="pointer-events-none absolute -top-7 left-0 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm whitespace-nowrap"
-                  style={{ backgroundColor: activeZoneColor, color: rectangleTextColor }}
-                >
-                  {rectangleFrame.cols} x {rectangleFrame.rows}
+          <div className="w-max min-w-full flex flex-col items-center">
+            <div className="mb-10 text-center">
+              <div className="w-64 h-12 bg-slate-800 text-white flex items-center justify-center rounded-b-3xl mx-auto shadow-lg relative">
+                <span className="font-black tracking-[0.2em] text-sm opacity-50 uppercase">Stage</span>
+                {/* Lights effect */}
+                <div className="absolute -bottom-4 w-full flex justify-center gap-8 opacity-40 blur-md">
+                  <div className="w-10 h-10 bg-indigo-500 rounded-full"></div>
+                  <div className="w-10 h-10 bg-pink-500 rounded-full"></div>
                 </div>
-                {canEdit && RECTANGLE_RESIZE_HANDLES.map(handle => (
-                  <button
-                    key={handle.key}
-                    type="button"
-                    aria-label={`Kéo ${handle.label} để đổi kích thước`}
-                    onMouseDown={(event) => startRectangleResize(event, handle.key)}
-                    className="absolute w-3.5 h-3.5 rounded-full border-2 border-white transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-offset-1"
-                    style={{
-                      ...handle.style,
-                      cursor: handle.cursor,
-                      backgroundColor: activeZoneColor,
-                      boxShadow: `0 1px 4px ${colorWithAlpha(activeZoneColor, 0.35)}`,
-                    }}
-                  />
-                ))}
               </div>
-            )}
+            </div>
 
-            <SeatGrid
-              gridRef={gridRef}
-              grid={grid}
-              zonesById={zonesById}
-              canEdit={canEdit}
-              drawMode={drawMode}
-              onCellMouseDown={onMouseDown}
-              onCellMouseEnter={onMouseEnter}
-              onGridMouseLeave={handleGridMouseLeave}
-            />
+            {/* Grid Canvas Wrapper */}
+            <div
+              className="inline-block bg-white p-10 rounded-xl shadow-sm border border-slate-200 relative"
+              style={{ minWidth: gridCanvasWidth + CANVAS_PADDING * 2, minHeight: gridCanvasHeight + CANVAS_PADDING * 2 }}
+            >
+              {canEdit && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => expandGrid('LEFT')}
+                    disabled={colCount >= MAX_GRID_COLS}
+                    title={`Mở rộng sang trái thêm ${GRID_EXPAND_COLS} cột`}
+                    aria-label="Mở rộng sơ đồ sang trái"
+                    className="absolute left-2 top-1/2 z-30 w-8 h-8 -translate-y-1/2 inline-flex items-center justify-center rounded-full border border-indigo-100 bg-white text-indigo-600 shadow-md hover:bg-indigo-50 hover:border-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => expandGrid('RIGHT')}
+                    disabled={colCount >= MAX_GRID_COLS}
+                    title={`Mở rộng sang phải thêm ${GRID_EXPAND_COLS} cột`}
+                    aria-label="Mở rộng sơ đồ sang phải"
+                    className="absolute right-2 top-1/2 z-30 w-8 h-8 -translate-y-1/2 inline-flex items-center justify-center rounded-full border border-indigo-100 bg-white text-indigo-600 shadow-md hover:bg-indigo-50 hover:border-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => expandGrid('DOWN')}
+                    disabled={rowCount >= MAX_GRID_ROWS}
+                    title={`Mở rộng xuống dưới thêm ${GRID_EXPAND_ROWS} hàng`}
+                    aria-label="Mở rộng sơ đồ xuống dưới"
+                    className="absolute bottom-2 left-1/2 z-30 w-8 h-8 -translate-x-1/2 inline-flex items-center justify-center rounded-full border border-indigo-100 bg-white text-indigo-600 shadow-md hover:bg-indigo-50 hover:border-indigo-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">expand_more</span>
+                  </button>
+                </>
+              )}
+              
+              {/* SVG Overlay for Polygon Drawing */}
+              {(drawMode === 'POLYGON' || drawMode === 'ERASE_POLYGON') && (
+                <PolygonOverlay
+                  polygonLinePoints={polygonLinePoints}
+                  polygonPoints={polygonPoints}
+                  polygonEdges={polygonEdges}
+                  previewEdge={previewEdge}
+                  drawingStrokeColor={drawingStrokeColor}
+                  rowCount={rowCount}
+                  colCount={colCount}
+                  metrics={gridMetrics}
+                />
+              )}
+
+              {drawMode === 'RECTANGLE' && rectangleFrame && (
+                <div
+                  onMouseDown={startRectangleDrag}
+                  className={`absolute z-20 rounded-md border-2 ${canEdit ? 'cursor-move' : 'cursor-not-allowed'}`}
+                  style={{
+                    left: CANVAS_PADDING + rectangleFrame.col * gridMetrics.cellStep,
+                    top: CANVAS_PADDING + rectangleFrame.row * gridMetrics.cellStep,
+                    width: Math.max(8, rectangleFrame.cols * gridMetrics.cellStep - gridMetrics.gapSize),
+                    height: Math.max(8, rectangleFrame.rows * gridMetrics.cellStep - gridMetrics.gapSize),
+                    borderColor: activeZoneColor,
+                    backgroundColor: colorWithAlpha(activeZoneColor, 0.1),
+                    boxShadow: `0 0 0 2px ${colorWithAlpha(activeZoneColor, 0.18)}`,
+                  }}
+                >
+                  <div
+                    className="pointer-events-none absolute -top-7 left-0 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm whitespace-nowrap"
+                    style={{ backgroundColor: activeZoneColor, color: rectangleTextColor }}
+                  >
+                    {rectangleFrame.cols} x {rectangleFrame.rows}
+                  </div>
+                  {canEdit && RECTANGLE_RESIZE_HANDLES.map(handle => (
+                    <button
+                      key={handle.key}
+                      type="button"
+                      aria-label={`Kéo ${handle.label} để đổi kích thước`}
+                      onMouseDown={(event) => startRectangleResize(event, handle.key)}
+                      className="absolute w-3.5 h-3.5 rounded-full border-2 border-white transition-transform hover:scale-125 focus:outline-none focus:ring-2 focus:ring-offset-1"
+                      style={{
+                        ...handle.style,
+                        cursor: handle.cursor,
+                        backgroundColor: activeZoneColor,
+                        boxShadow: `0 1px 4px ${colorWithAlpha(activeZoneColor, 0.35)}`,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <SeatGrid
+                gridRef={gridRef}
+                grid={grid}
+                zoneColorById={zoneColorById}
+                canEdit={canEdit}
+                drawMode={drawMode}
+                metrics={gridMetrics}
+                onCellMouseDown={onMouseDown}
+                onCellMouseEnter={onMouseEnter}
+                onGridMouseLeave={handleGridMouseLeave}
+              />
+            </div>
+            
+            <p className="text-xs text-slate-400 mt-6 text-center">
+              {drawMode === 'BRUSH' || drawMode === 'ERASE_BRUSH' ? (
+                <>Kéo chuột (Drag) để vẽ hoặc xóa nhanh nhiều ghế.</>
+              ) : drawMode === 'RECTANGLE' ? (
+                <>Tạo khung, kéo khung để di chuyển, kéo cạnh/góc để đổi kích thước rồi bấm <strong>Xác nhận vẽ</strong>.</>
+              ) : (
+                <>Click để đánh dấu các đỉnh của đa giác. Bấm <strong>Hoàn thành</strong> để tự nối điểm cuối với điểm đầu.</>
+              )}
+            </p>
           </div>
-          
-          <p className="text-xs text-slate-400 mt-6 text-center">
-            {drawMode === 'BRUSH' || drawMode === 'ERASE_BRUSH' ? (
-              <>Kéo chuột (Drag) để vẽ hoặc xóa nhanh nhiều ghế.</>
-            ) : drawMode === 'RECTANGLE' ? (
-              <>Tạo khung, kéo khung để di chuyển, kéo cạnh/góc để đổi kích thước rồi bấm <strong>Xác nhận vẽ</strong>.</>
-            ) : (
-              <>Click để đánh dấu các đỉnh của đa giác. Bấm <strong>Hoàn thành</strong> để tự nối điểm cuối với điểm đầu.</>
-            )}
-          </p>
         </div>
 
       </div>
