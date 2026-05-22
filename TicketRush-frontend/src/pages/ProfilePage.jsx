@@ -4,7 +4,7 @@ import { useRouter } from '../contexts/RouterContext.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import authService from '../api/authService.js';
 import api from '../api/apiClient.js';
-import { Button, DatePicker, showToast } from '../components/ui/index.jsx';
+import { Button, DatePicker, GenderPicker, showToast } from '../components/ui/index.jsx';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
@@ -286,14 +286,11 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1 block">Giới tính</label>
-                    <select value={form.gender} onChange={e => set('gender', e.target.value)}
-                      className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
-                        ${errors.gender ? 'border-red-400' : 'border-slate-200'}`}>
-                      <option value="">-- Chọn --</option>
-                      <option value="MALE">Nam</option>
-                      <option value="FEMALE">Nữ</option>
-                      <option value="OTHER">Khác</option>
-                    </select>
+                    <GenderPicker
+                      value={form.gender}
+                      onChange={(val) => set('gender', val)}
+                      error={Boolean(errors.gender)}
+                    />
                     {errors.gender && <p className="text-xs text-red-600 mt-1">{errors.gender}</p>}
                   </div>
                 </div>

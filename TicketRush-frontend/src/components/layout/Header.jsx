@@ -113,33 +113,48 @@ export default function Header() {
 
   return (
     <header className="bg-white border-b border-sky-100 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] sticky top-0 z-50">
-      <div className="flex items-center gap-6 px-6 lg:px-12 h-20 w-full max-w-screen-2xl mx-auto">
+      <div className="flex items-center gap-2 lg:gap-6 px-4 lg:px-12 h-16 lg:h-20 w-full max-w-screen-2xl mx-auto">
         <button
           onClick={() => navigate('/')}
           className="flex items-center gap-2 text-2xl font-black tracking-tighter text-indigo-600 shrink-0"
         >
           <TicketMark />
-          TicketRush
+          <span className="hidden sm:inline">TicketRush</span>
         </button>
 
-        <nav className="hidden md:flex items-center gap-2 shrink-0">
-          {navLinks.map((link) => (
-            <button
-              key={link.to}
-              onClick={() => navigate(link.to)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                path === link.to
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600'
-              }`}
-            >
-              {link.label} »
-            </button>
-          ))}
+        <nav className="flex items-center gap-1 shrink-0">
+          {navLinks.map((link) => {
+            const isActive = path === link.to;
+            const isTicket = link.to === '/my-tickets';
+            return (
+              <button
+                key={link.to}
+                onClick={() => navigate(link.to)}
+                title={link.label}
+                className={`inline-flex items-center gap-2 rounded-full font-semibold transition-all ${
+                  isActive
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600'
+                } ${
+                  isTicket
+                    ? 'px-2.5 py-2 sm:px-4 sm:py-2 text-sm'
+                    : 'px-4 py-2 text-sm'
+                }`}
+              >
+                {isTicket && (
+                  <span className="material-symbols-outlined text-[18px] leading-none">confirmation_number</span>
+                )}
+                <span className={isTicket ? 'hidden sm:inline' : ''}>{link.label}</span>
+                {!isTicket && <span className="hidden sm:inline">»</span>}
+              </button>
+            );
+          })}
         </nav>
 
-        <form onSubmit={handleSubmit} className="hidden lg:block flex-1 max-w-xl ml-auto relative">
-          <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus-within:border-indigo-300 focus-within:bg-white transition-colors">
+        {/* Search — full bar on lg+, icon-only button on smaller screens */}
+        <form onSubmit={handleSubmit} className="w-auto lg:flex-1 lg:max-w-xl ml-auto relative flex items-center justify-end">
+          {/* Full search bar (lg+) */}
+          <div className="hidden lg:flex w-full items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus-within:border-indigo-300 focus-within:bg-white transition-colors">
             <span className="material-symbols-outlined text-slate-400 text-[20px]">search</span>
             <input
               value={searchInput}
@@ -149,10 +164,19 @@ export default function Header() {
               placeholder="Tìm kiếm sự kiện..."
               className="flex-1 bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400 min-w-0"
             />
-            <button type="submit" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+            <button type="submit" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors shrink-0">
               Tìm
             </button>
           </div>
+
+          {/* Icon-only search button (< lg) */}
+          <button
+            type="submit"
+            className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+            aria-label="Tìm kiếm"
+          >
+            <span className="material-symbols-outlined text-[20px]">search</span>
+          </button>
 
           {showSuggestions && suggestions.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-50">

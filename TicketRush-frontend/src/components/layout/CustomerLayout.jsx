@@ -135,7 +135,7 @@ export default function CustomerLayout({ children }) {
   return (
     <div className="min-h-screen bg-[#fcf8ff] font-[Inter]">
       <header className="sticky top-0 h-20 bg-white border-b border-slate-100 shadow-[0px_4px_20px_rgba(0,0,0,0.04)] z-40">
-        <div className="flex h-full w-full items-center gap-4 px-4 md:px-6 lg:px-8">
+        <div className="flex h-full w-full items-center gap-2 md:gap-4 px-4 md:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => navigate('/')}
@@ -143,22 +143,25 @@ export default function CustomerLayout({ children }) {
             aria-label="Về trang chủ"
           >
             <TicketMark />
-            <RushText className="text-indigo-600" />
+            <span className="hidden sm:inline"><RushText className="text-indigo-600" /></span>
           </button>
 
-          <form onSubmit={handleSubmit} className="hidden md:block flex-1 max-w-2xl relative mx-auto">
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 focus-within:border-indigo-300 focus-within:bg-white transition-colors">
-              <span className="material-symbols-outlined text-slate-400 text-[20px]">search</span>
+          <form
+            onSubmit={handleSubmit}
+            className="flex-1 sm:max-w-md md:max-w-2xl relative mx-2 sm:mx-auto"
+          >
+            <div className="flex items-center gap-1.5 sm:gap-3 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 sm:px-4 sm:py-2.5 focus-within:border-indigo-300 focus-within:bg-white transition-colors w-full">
+              <span className="material-symbols-outlined text-slate-400 text-[18px] sm:text-[20px]">search</span>
               <input
                 value={searchInput}
                 onChange={(e) => handleSearchInput(e.target.value)}
                 onFocus={openSearchSuggestions}
                 onClick={openSearchSuggestions}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                placeholder="Tìm kiếm sự kiện..."
-                className="flex-1 bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400 min-w-0"
+                placeholder="Tìm kiếm..."
+                className="flex-1 bg-transparent outline-none text-xs sm:text-sm text-slate-700 placeholder-slate-400 min-w-0"
               />
-              <button type="submit" className="cursor-pointer text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+              <button type="submit" className="cursor-pointer text-[10px] sm:text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
                 Tìm
               </button>
             </div>
@@ -204,20 +207,21 @@ export default function CustomerLayout({ children }) {
             )}
           </form>
 
-          <div className="flex items-center gap-3 ml-auto shrink-0">
+          <div className="flex items-center gap-3 shrink-0 ml-auto">
             {isAuthenticated ? (
               <>
                 <button
                   type="button"
                   onClick={() => navigate('/my-tickets')}
-                  className={`hidden sm:flex h-10 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors
+                  className={`flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors
                     ${path === '/my-tickets' || path.startsWith('/tickets/')
                       ? 'bg-indigo-50 text-indigo-700'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                     }`}
+                  title="Vé của tôi"
                 >
                   <span className="material-symbols-outlined text-[20px]">confirmation_number</span>
-                  Vé của tôi
+                  <span className="hidden sm:inline">Vé của tôi</span>
                 </button>
 
                 <NotificationCenter />

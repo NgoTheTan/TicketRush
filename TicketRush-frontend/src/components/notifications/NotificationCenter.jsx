@@ -1,8 +1,9 @@
+// src/components/notifications/NotificationCenter.jsx
+// UI component thuần — state và WebSocket được quản lý bởi NotificationContext (global).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import notificationService from '../../api/notificationService.js';
+import { useNotifications } from '../../contexts/NotificationContext.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { useRouter } from '../../contexts/RouterContext.jsx';
-import { useWebSocket } from '../../hooks/useWebSocket.js';
 
 function timeLabel(value) {
   if (!value) return '';
@@ -23,49 +24,23 @@ function iconFor(type) {
 }
 
 export default function NotificationCenter({ variant = 'inline' }) {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { navigate } = useRouter();
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const {
+    notifications,
+    unreadCount,
+    popup,
+    dismissPopup,
+    markRead,
+    markAllRead,
+    deleteSelected,
+  } = useNotifications();
+
   const [open, setOpen] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
-  const [popup, setPopup] = useState(null);
   const rootRef = useRef(null);
-  const popupTimerRef = useRef(null);
-  const notificationReadStateRef = useRef(new Map());
   const floating = variant === 'floating';
-
-  const showPopup = useCallback((notification) => {
-    setPopup(notification);
-    if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
-    popupTimerRef.current = setTimeout(() => setPopup(null), 6000);
-  }, []);
-
-  const load = useCallback(async () => {
-    if (!isAuthenticated) return;
-    try {
-      const [{ data }, count] = await Promise.all([
-        notificationService.list({ page: 0, size: 20 }),
-        notificationService.unreadCount(),
-      ]);
-      const nextNotifications = data || [];
-      notificationReadStateRef.current = new Map(
-        nextNotifications.map((notification) => [notification.id, Boolean(notification.read)])
-      );
-      setNotifications(nextNotifications);
-      setUnreadCount(count);
-    } catch {
-      notificationReadStateRef.current = new Map();
-      setNotifications([]);
-      setUnreadCount(0);
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(load, 0);
-    return () => window.clearTimeout(timer);
-  }, [load]);
 
   useEffect(() => {
     const handlePointerDown = (event) => {
@@ -74,64 +49,16 @@ export default function NotificationCenter({ variant = 'inline' }) {
       }
     };
     document.addEventListener('pointerdown', handlePointerDown);
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-      if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
-    };
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, []);
-
-  const handleRealtimeNotification = useCallback((notification) => {
-    if (!notification?.id) return;
-    const previousRead = notificationReadStateRef.current.get(notification.id);
-    const keepReadState = previousRead === true && !notification.read;
-    const nextRead = keepReadState ? true : Boolean(notification.read);
-    const normalizedNotification = keepReadState
-      ? { ...notification, read: true, readAt: notification.readAt || new Date().toISOString() }
-      : notification;
-
-    notificationReadStateRef.current.set(notification.id, nextRead);
-    setNotifications((current) => [
-      normalizedNotification,
-      ...current.filter((item) => item.id !== notification.id),
-    ].slice(0, 20));
-
-    if (previousRead === undefined) {
-      if (!nextRead) {
-        setUnreadCount((current) => current + 1);
-      }
-      if (!open) {
-        showPopup(normalizedNotification);
-      }
-      return;
-    }
-
-    if (previousRead !== nextRead) {
-      setUnreadCount((current) => (nextRead ? Math.max(0, current - 1) : current + 1));
-    }
-  }, [open, showPopup]);
-
-  useWebSocket(
-    user?.id ? `/topic/notifications/users/${user.id}` : null,
-    handleRealtimeNotification,
-    isAuthenticated && !!user?.id,
-  );
-
-  const markAllRead = async () => {
-    if (unreadCount === 0) return;
-    await notificationService.markAllRead();
-    notificationReadStateRef.current = new Map(
-      Array.from(notificationReadStateRef.current.keys()).map((id) => [id, true])
-    );
-    setUnreadCount(0);
-    setNotifications((current) => current.map((item) => ({ ...item, read: true, readAt: item.readAt || new Date().toISOString() })));
-  };
 
   const closeSelectionMode = () => {
     setSelectionMode(false);
     setSelectedIds(new Set());
   };
 
-  const allVisibleSelected = notifications.length > 0 && notifications.every((item) => selectedIds.has(item.id));
+  const allVisibleSelected =
+    notifications.length > 0 && notifications.every((item) => selectedIds.has(item.id));
 
   const toggleSelectAll = () => {
     setSelectedIds(allVisibleSelected ? new Set() : new Set(notifications.map((item) => item.id)));
@@ -140,47 +67,30 @@ export default function NotificationCenter({ variant = 'inline' }) {
   const toggleSelected = (notificationId) => {
     setSelectedIds((current) => {
       const next = new Set(current);
-      if (next.has(notificationId)) {
-        next.delete(notificationId);
-      } else {
-        next.add(notificationId);
-      }
+      if (next.has(notificationId)) next.delete(notificationId);
+      else next.add(notificationId);
       return next;
     });
   };
 
-  const deleteSelected = async () => {
+  const handleDeleteSelected = async () => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
-    const deletedUnread = notifications.filter((item) => ids.includes(item.id) && !item.read).length;
-    await notificationService.deleteSelected(ids);
-    ids.forEach((id) => notificationReadStateRef.current.delete(id));
-    setNotifications((current) => current.filter((item) => !ids.includes(item.id)));
-    setUnreadCount((current) => Math.max(0, current - deletedUnread));
+    await deleteSelected(ids);
     closeSelectionMode();
   };
 
-  const openNotification = async (notification) => {
-    const wasUnread = notificationReadStateRef.current.get(notification.id) !== true;
-    if (wasUnread && !notification.read) {
-      try {
-        const updated = await notificationService.markRead(notification.id);
-        const readAt = updated?.readAt || new Date().toISOString();
-        notificationReadStateRef.current.set(notification.id, true);
-        setUnreadCount((current) => Math.max(0, current - 1));
-        setNotifications((current) => current.map((item) =>
-          item.id === notification.id ? { ...item, read: true, readAt } : item
-        ));
-      } catch {
-        // The link navigation should still work if marking as read fails.
-      }
+  const openNotification = useCallback(async (notification) => {
+    const wasUnread = !notification.read;
+    if (wasUnread) {
+      await markRead(notification.id);
     }
-    setPopup(null);
+    dismissPopup();
     setOpen(false);
     if (notification.linkUrl) {
       navigate(notification.linkUrl);
     }
-  };
+  }, [markRead, dismissPopup, navigate]);
 
   const handleNotificationClick = (notification) => {
     if (selectionMode) {
@@ -193,7 +103,7 @@ export default function NotificationCenter({ variant = 'inline' }) {
   if (!isAuthenticated) return null;
 
   const toggleOpen = () => {
-    if (!open) setPopup(null);
+    if (!open) dismissPopup();
     setOpen((value) => !value);
   };
 
@@ -246,7 +156,7 @@ export default function NotificationCenter({ variant = 'inline' }) {
                   </button>
                   <button
                     type="button"
-                    onClick={deleteSelected}
+                    onClick={handleDeleteSelected}
                     className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:text-slate-300"
                     disabled={selectedIds.size === 0}
                   >
@@ -338,13 +248,13 @@ export default function NotificationCenter({ variant = 'inline' }) {
               tabIndex={0}
               onClick={(event) => {
                 event.stopPropagation();
-                setPopup(null);
+                dismissPopup();
               }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
                   event.stopPropagation();
-                  setPopup(null);
+                  dismissPopup();
                 }
               }}
               className="text-slate-400 hover:text-slate-600"

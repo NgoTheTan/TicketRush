@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
-import { Spinner, EmptyState, ErrorState, Badge, DatePicker, formatCurrency, eventStatusLabel, eventStatusVariant, formatDate } from '../components/ui/index.jsx';
+import { Spinner, EmptyState, ErrorState, Badge, DatePicker, Pagination, formatCurrency, eventStatusLabel, eventStatusVariant, formatDate } from '../components/ui/index.jsx';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -293,7 +293,9 @@ export default function HomePage() {
   const dateFilterLabel = hasActiveDateFilter
     ? `${formatDateInputLabel(fromDate)} - ${formatDateInputLabel(toDate)}`
     : 'Tất cả các ngày';
-  const isSearchMode = Boolean(search);
+  // isSearchMode: true khi có từ khóa tìm kiếm HOẶC khi click thể loại từ nav bar
+  const isCategoryNavMode = Boolean(!search && categories.length);
+  const isSearchMode = Boolean(search) || isCategoryNavMode;
   const hasActiveListCriteria = Boolean(categories.length || city || fromDate || toDate);
   const activeFilterCount = categories.length + (city ? 1 : 0);
   const activeCriteria = [
@@ -347,7 +349,7 @@ export default function HomePage() {
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => updateFilters({ categories: toggleCategory(categories, option.value) })}
+                  onClick={() => navigate('/', { category: option.value })}
                   className={`px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-colors ${
                     active
                       ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm'
@@ -456,10 +458,11 @@ export default function HomePage() {
         <div className="flex flex-col gap-5 mb-8">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-indigo-600">{search ? `Kết quả cho "${search}"` : 'Sự kiện đang mở bán'}</h2>
+              <h2 className="text-2xl font-bold text-indigo-600">
+                {search ? `Kết quả cho "${search}"` : isSearchMode ? 'Kết quả' : hasActiveListCriteria ? 'Kết quả' : 'Sự kiện đang mở bán'}
+              </h2>
               {meta && <p className="text-sm text-slate-500 mt-1">{meta.totalElements} sự kiện</p>}
             </div>
-            {!isSearchMode && (
             <div className="relative flex flex-wrap items-center justify-start sm:justify-end gap-3 w-full sm:w-auto">
               <div
                 className={`inline-flex items-center rounded-lg border text-sm font-semibold transition-colors ${
@@ -652,7 +655,6 @@ export default function HomePage() {
                 </div>
               )}
             </div>
-            )}
           </div>
         </div>
 
@@ -674,13 +676,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {events.map((e) => <EventCard key={e.id} event={e} onClick={() => navigate(`/events/${e.id}`)} />)}
             </div>
-            {meta && meta.totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-10">
-                <button disabled={!meta.hasPrevious} onClick={() => setPage((p) => p - 1)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm disabled:opacity-40 hover:bg-slate-50">← Trước</button>
-                <span className="px-4 py-2 text-sm text-slate-500">Trang {meta.page + 1} / {meta.totalPages}</span>
-                <button disabled={!meta.hasNext} onClick={() => setPage((p) => p + 1)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm disabled:opacity-40 hover:bg-slate-50">Tiếp →</button>
-              </div>
-            )}
+            <Pagination meta={meta} onPageChange={setPage} />
           </>
         )}
       </div>

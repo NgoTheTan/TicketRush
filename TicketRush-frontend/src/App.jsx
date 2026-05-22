@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import { BookingProvider } from './contexts/BookingContext.jsx';
+import { NotificationProvider } from './contexts/NotificationContext.jsx';
 import { RouterProvider, useRouter, matchRoute } from './contexts/RouterContext.jsx';
 import { ToastContainer } from './components/ui/index.jsx';
 import EventCancelledModal from './components/ui/EventCancelledModal.jsx';
@@ -163,10 +164,12 @@ export default function App() {
   return (
     <RouterProvider>
       <AuthProvider>
-        <BookingProvider>
-          <Router />
-          <ToastContainer />
-        </BookingProvider>
+        <NotificationProvider>
+          <BookingProvider>
+            <Router />
+            <ToastContainer />
+          </BookingProvider>
+        </NotificationProvider>
       </AuthProvider>
     </RouterProvider>
   );

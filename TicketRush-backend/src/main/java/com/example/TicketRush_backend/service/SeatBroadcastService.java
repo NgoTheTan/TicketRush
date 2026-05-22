@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 
@@ -94,14 +96,29 @@ public class SeatBroadcastService {
     /**
      * Broadcast thông báo danh sách hoặc trạng thái sự kiện có thay đổi,
      * để Customer trang chủ tự cập nhật lại danh sách.
+     *
+     * Gửi sau khi transaction commit xong để frontend fetch được data mới nhất.
      */
     public void broadcastEventListUpdate() {
-        try {
-            Object payload = java.util.Map.of("type", "EVENT_LIST_UPDATED");
-            messagingTemplate.convertAndSend("/topic/events", payload);
-            log.debug("[WS] Broadcast event list update → /topic/events");
-        } catch (Exception e) {
-            log.warn("[WS] Failed to broadcast event list update: {}", e.getMessage());
+        Runnable send = () -> {
+            try {
+                Object payload = java.util.Map.of("type", "EVENT_LIST_UPDATED");
+                messagingTemplate.convertAndSend("/topic/events", payload);
+                log.debug("[WS] Broadcast event list update → /topic/events");
+            } catch (Exception e) {
+                log.warn("[WS] Failed to broadcast event list update: {}", e.getMessage());
+            }
+        };
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    send.run();
+                }
+            });
+        } else {
+            send.run();
         }
     }
 
