@@ -2,8 +2,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { orderService } from '../api/services.js';
-import { Spinner, EmptyState, Badge, formatCurrency, formatDate, showToast, CustomSelect } from '../components/ui/index.jsx';
+import { Spinner, EmptyState, Badge, formatCurrency, formatDate, showToast, CustomSelect, Pagination } from '../components/ui/index.jsx';
 import { useWebSocket } from '../hooks/useWebSocket.js';
+import { useRouter } from '../contexts/RouterContext.jsx';
 
 const STATUS_OPTS = [
   { value: '', label: 'Tất cả' },
@@ -33,7 +34,7 @@ function WsIndicator({ connected, newCount }) {
 }
 
 // ── Order Detail Modal ────────────────────────────────────────
-function OrderDetailModal({ orderId, onClose, onStatusChange }) {
+export function OrderDetailModal({ orderId, onClose, onStatusChange }) {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
@@ -158,10 +159,11 @@ function OrderDetailModal({ orderId, onClose, onStatusChange }) {
 
 // ── Main page ─────────────────────────────────────────────────
 export default function OrderManagementPage() {
+  const { params } = useRouter();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState(params?.search || '');
+  const [searchInput, setSearchInput] = useState(params?.search || '');
   const [statusFilter, setStatusFilter] = useState('');
   const [meta, setMeta] = useState(null);
   const [page, setPage] = useState(0);
@@ -307,12 +309,8 @@ export default function OrderManagementPage() {
             </table>
 
             {meta && meta.totalPages > 1 && (
-              <div className="flex justify-center gap-2 p-4 border-t border-slate-100">
-                <button disabled={!meta.hasPrevious} onClick={() => setPage(p => p - 1)}
-                  className="px-3 py-1.5 border border-slate-200 rounded text-xs disabled:opacity-40">← Trước</button>
-                <span className="px-3 py-1.5 text-xs text-slate-500">Trang {meta.page+1}/{meta.totalPages}</span>
-                <button disabled={!meta.hasNext} onClick={() => setPage(p => p + 1)}
-                  className="px-3 py-1.5 border border-slate-200 rounded text-xs disabled:opacity-40">Tiếp →</button>
+              <div className="p-4 border-t border-slate-100">
+                <Pagination meta={meta} onPageChange={setPage} />
               </div>
             )}
           </div>

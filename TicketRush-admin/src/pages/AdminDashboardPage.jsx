@@ -7,6 +7,7 @@ import eventService from '../api/eventService.js';
 import { dashboardService } from '../api/services.js';
 import { formatCurrency, formatDate, Spinner, EmptyState, Badge, eventStatusLabel, eventStatusVariant } from '../components/ui/index.jsx';
 import { useWebSocket } from '../hooks/useWebSocket.js';
+import { OrderDetailModal } from './OrderManagementPage.jsx';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
@@ -89,6 +90,7 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
   const debounceTimer = useRef(null);
 
   // Load event list on mount
@@ -359,19 +361,28 @@ export default function AdminDashboardPage() {
                 <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
                   <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                     <h2 className="font-bold text-slate-900">Đơn hàng gần đây</h2>
-                    <button onClick={() => navigate('/admin/orders')} className="text-sm text-indigo-600 font-medium">Xem tất cả</button>
+                    <button
+                      onClick={() => navigate('/admin/orders', selectedEvent ? { search: selectedEvent.name } : undefined)}
+                      className="text-sm text-indigo-600 font-medium hover:text-indigo-700 transition-colors"
+                    >
+                      Xem tất cả
+                    </button>
                   </div>
                   {dashboard.recentOrders.length === 0
                     ? <p className="text-sm text-slate-400 text-center py-10">Chưa có đơn hàng nào</p>
                     : <div className="divide-y divide-slate-50">
-                      {dashboard.recentOrders.map(o => (
-                        <div key={o.orderId} className="flex items-center justify-between px-6 py-3 hover:bg-slate-50">
+                      {dashboard.recentOrders.slice(0, 3).map(o => (
+                        <div
+                          key={o.orderId}
+                          onClick={() => setSelectedOrderId(o.orderId)}
+                          className="flex items-center justify-between px-6 py-3 hover:bg-slate-50 cursor-pointer transition-colors"
+                        >
                           <div>
-                            <p className="font-mono text-sm font-bold text-slate-700">{o.orderCode}</p>
+                            <p className="font-mono text-sm font-bold text-indigo-600">{o.orderCode}</p>
                             <p className="text-xs text-slate-400">{o.customerName} — {o.customerEmail}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-sm">{formatCurrency(o.totalAmount)}</p>
+                            <p className="font-bold text-sm text-slate-900">{formatCurrency(o.totalAmount)}</p>
                             <p className="text-xs text-slate-400">{o.ticketCount} vé • {formatDate(o.paidAt)}</p>
                           </div>
                         </div>
@@ -417,6 +428,17 @@ export default function AdminDashboardPage() {
           </>
         )}
       </div>
+
+      {/* Order detail modal */}
+      {selectedOrderId && (
+        <OrderDetailModal
+          orderId={selectedOrderId}
+          onClose={() => setSelectedOrderId(null)}
+          onStatusChange={() => {
+            if (selectedEventId) loadDashboard(selectedEventId);
+          }}
+        />
+      )}
     </AdminLayout>
   );
 }

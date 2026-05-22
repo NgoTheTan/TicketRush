@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import { ticketService } from '../api/services.js';
 import { Spinner, EmptyState, ErrorState, Badge, formatDate, formatCurrency } from '../components/ui/index.jsx';
+import { Pagination } from '../components/ui/Pagination.jsx';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const toFullUrl = (url) => (!url ? '' : url.startsWith('http') ? url : `${BACKEND_URL}${url}`);
@@ -140,11 +141,7 @@ export default function MyTicketsPage() {
             ))}
 
             {meta && meta.totalPages > 1 && !selectedEventId && (
-              <div className="flex justify-center gap-2 mt-6">
-                <button disabled={!meta.hasPrevious} onClick={() => setPage(p => p - 1)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm disabled:opacity-40 hover:bg-slate-50">← Trước</button>
-                <span className="px-4 py-2 text-sm text-slate-500">Trang {meta.page + 1} / {meta.totalPages}</span>
-                <button disabled={!meta.hasNext} onClick={() => setPage(p => p + 1)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm disabled:opacity-40 hover:bg-slate-50">Tiếp →</button>
-              </div>
+              <Pagination meta={meta} onPageChange={setPage} />
             )}
           </div>
         )}

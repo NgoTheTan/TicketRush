@@ -50,10 +50,18 @@ public class AdminController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) EventStatus status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        String safeSortBy = sortBy;
+        if (!List.of("name", "eventDate", "createdAt").contains(safeSortBy)) {
+            safeSortBy = "createdAt";
+        }
+        Sort sort = Sort.by(direction.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, safeSortBy);
 
         Page<EventResponse> result = eventService.listAllEvents(search, status,
-                PageRequest.of(page, size, Sort.by("createdAt").descending()));
+                PageRequest.of(page, size, sort));
         return ResponseEntity.ok(ApiResponse.ok(result.getContent(), ApiResponse.PageMeta.of(result)));
     }
 

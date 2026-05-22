@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
-import { Button, DatePicker, showToast } from '../components/ui/index.jsx';
+import { Button, DatePicker, GenderPicker, showToast } from '../components/ui/index.jsx';
 import GoogleAuthButton from '../components/auth/GoogleAuthButton.jsx';
 
 const SignUpFieldContext = createContext(null);
@@ -324,12 +324,11 @@ export default function SignUpPage({ modal = false }) {
               />
             </Field>
             <Field label="Giới tính" name="gender">
-              <select value={form.gender} onChange={e => set('gender', e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="MALE">Nam</option>
-                <option value="FEMALE">Nữ</option>
-                <option value="OTHER">Khác</option>
-              </select>
+              <GenderPicker
+                value={form.gender}
+                onChange={(val) => set('gender', val)}
+                error={Boolean(errors.gender)}
+              />
             </Field>
           </div>
 

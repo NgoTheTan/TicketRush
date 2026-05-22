@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '../components/layout/AdminLayout.jsx';
 import { useRouter } from '../contexts/RouterContext.jsx';
 import eventService from '../api/eventService.js';
-import { Spinner, EmptyState, Badge, eventStatusLabel, eventStatusVariant, formatDate, showToast, useConfirm, CustomSelect } from '../components/ui/index.jsx';
+import { Spinner, EmptyState, Badge, eventStatusLabel, eventStatusVariant, formatDate, showToast, useConfirm, CustomSelect, Pagination } from '../components/ui/index.jsx';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả' },
@@ -43,6 +43,8 @@ export default function EventManagementPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [meta, setMeta] = useState(null);
   const [page, setPage] = useState(0);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDir, setSortDir] = useState('desc');
   const [actingId, setActingId] = useState(null);
   const debounceTimer = useRef(null);
   const [confirmDialog, confirm] = useConfirm();
@@ -50,13 +52,30 @@ export default function EventManagementPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data, meta: m } = await eventService.adminList({ search: search || undefined, status: statusFilter || undefined, page, size: 20 });
+      const { data, meta: m } = await eventService.adminList({
+        search: search || undefined,
+        status: statusFilter || undefined,
+        page,
+        size: 20,
+        sortBy,
+        direction: sortDir
+      });
       setEvents(data || []); setMeta(m);
     } catch (err) { showToast(err.message, 'error'); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, [search, statusFilter, page]);
+  useEffect(() => { load(); }, [search, statusFilter, page, sortBy, sortDir]);
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDir('asc');
+    }
+    setPage(0);
+  };
 
   const handleSearchChange = (value) => {
     setSearchInput(value);
@@ -141,8 +160,22 @@ export default function EventManagementPage() {
             <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="text-left text-xs text-slate-400 uppercase tracking-wide border-b border-slate-100">
-                  <th className="px-6 py-3">Sự kiện</th>
-                  <th className="px-6 py-3">Ngày</th>
+                  <th className="px-6 py-3 cursor-pointer select-none hover:text-indigo-600 transition-colors group" onClick={() => handleSort('name')}>
+                    <div className="flex items-center gap-1">
+                      <span>Sự kiện</span>
+                      <span className={`material-symbols-outlined text-[16px] transition-colors ${sortBy === 'name' ? 'text-indigo-600 font-bold' : 'text-slate-300 group-hover:text-slate-400'}`}>
+                        {sortBy === 'name' ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'swap_vert'}
+                      </span>
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 cursor-pointer select-none hover:text-indigo-600 transition-colors group" onClick={() => handleSort('eventDate')}>
+                    <div className="flex items-center gap-1">
+                      <span>Ngày</span>
+                      <span className={`material-symbols-outlined text-[16px] transition-colors ${sortBy === 'eventDate' ? 'text-indigo-600 font-bold' : 'text-slate-300 group-hover:text-slate-400'}`}>
+                        {sortBy === 'eventDate' ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'swap_vert'}
+                      </span>
+                    </div>
+                  </th>
                   <th className="px-6 py-3">Trạng thái</th>
                   <th className="px-6 py-3">Ghế</th>
                   <th className="px-6 py-3">Thao tác</th>
@@ -158,7 +191,6 @@ export default function EventManagementPage() {
                      <td className="px-6 py-4">
                        <p className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors flex items-center gap-1">
                          {e.name}
-                         <span className="material-symbols-outlined text-[14px] text-slate-300 group-hover:text-indigo-400 transition-colors">open_in_new</span>
                        </p>
                        <p className="text-xs text-slate-400 mt-0.5">{[e.venue, e.city].filter(Boolean).join(' • ')}</p>
                      </td>
@@ -204,10 +236,8 @@ export default function EventManagementPage() {
             </table>
 
             {meta && meta.totalPages > 1 && (
-              <div className="flex justify-center gap-2 p-4 border-t border-slate-100">
-                <button disabled={!meta.hasPrevious} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 border border-slate-200 rounded text-xs disabled:opacity-40">← Trước</button>
-                <span className="px-3 py-1.5 text-xs text-slate-500">Trang {meta.page + 1}/{meta.totalPages}</span>
-                <button disabled={!meta.hasNext} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 border border-slate-200 rounded text-xs disabled:opacity-40">Tiếp →</button>
+              <div className="p-4 border-t border-slate-100">
+                <Pagination meta={meta} onPageChange={setPage} />
               </div>
             )}
           </div>

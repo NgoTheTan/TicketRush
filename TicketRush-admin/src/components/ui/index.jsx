@@ -1,6 +1,7 @@
 // src/components/ui/index.jsx
 // Shared reusable UI primitives
 export { DatePicker } from './DatePicker.jsx';
+export { Pagination } from './Pagination.jsx';
 
 // ── Spinner ───────────────────────────────────────────────────
 export function Spinner({ size = 'md', className = '' }) {

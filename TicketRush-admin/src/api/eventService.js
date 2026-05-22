@@ -15,8 +15,8 @@ const eventService = {
   },
 
   // Admin
-  adminList: async ({ search, status, page = 0, size = 20 } = {}) => {
-    const res = await api.get('/api/v1/admin/events', { search, status, page, size });
+  adminList: async ({ search, status, page = 0, size = 20, sortBy, direction } = {}) => {
+    const res = await api.get('/api/v1/admin/events', { search, status, page, size, sortBy, direction });
     return { data: res.data, meta: res.meta };
   },
 

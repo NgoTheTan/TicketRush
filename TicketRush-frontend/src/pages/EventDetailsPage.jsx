@@ -134,11 +134,10 @@ export default function EventDetailsPage({ eventId }) {
                 <span className="material-symbols-outlined text-indigo-500 text-[20px] mt-0.5">location_on</span>
                 <div>
                   <p className="text-xs text-slate-400 font-medium">Địa điểm</p>
-                  {event.locationUrl ? (
+                   {event.locationUrl ? (
                     <a href={event.locationUrl} target="_blank" rel="noopener noreferrer"
                       className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 transition-colors flex items-center gap-1">
                       {event.venue}
-                      <span className="material-symbols-outlined text-[14px]">open_in_new</span>
                     </a>
                   ) : (
                     <p className="text-sm font-semibold text-slate-700">{event.venue}</p>

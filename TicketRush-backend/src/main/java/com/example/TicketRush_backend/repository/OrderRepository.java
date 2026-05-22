@@ -57,6 +57,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(o.event.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
         )
         ORDER BY o.createdAt DESC
     """)
@@ -72,6 +73,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(o.event.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
         )
         AND o.status = :status
         ORDER BY o.createdAt DESC
@@ -89,6 +91,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(o.event.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
         )
         AND o.event.id = :eventId
         ORDER BY o.createdAt DESC
@@ -106,6 +109,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(o.event.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
         )
         AND o.status = :status
         AND o.event.id = :eventId
@@ -138,7 +142,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query(value = """
         SELECT DATE_TRUNC('hour', o.paid_at) AS hour,
                SUM(o.total_amount)          AS revenue,
-               COUNT(*)                     AS ticket_count
+               CAST(SUM((SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id)) AS bigint) AS ticket_count
         FROM orders o
         WHERE o.event_id = :eventId
           AND o.status   = CAST('PAID' AS order_status)

@@ -430,7 +430,7 @@ export default function HomePage() {
                   onClick={() => navigate(`/events/${event.id}`)}
                   className="group flex flex-none w-[min(86vw,420px)] snap-start items-center text-left outline-none sm:w-[420px] lg:w-[390px] xl:w-[430px]"
                 >
-                  <span className="w-[58px] shrink-0 text-right text-[76px] font-black leading-none text-indigo-600/90 transition-colors group-hover:text-purple-600 sm:w-[72px] sm:text-[96px]">
+                  <span className="w-[76px] sm:w-[100px] mr-[-8px] sm:mr-[-12px] shrink-0 text-right text-[76px] font-black leading-none text-indigo-600/90 transition-colors group-hover:text-purple-600 sm:text-[96px]">
                     {index + 1}
                   </span>
                   <span className="relative block aspect-[16/9] min-w-0 flex-1 overflow-hidden rounded-lg bg-slate-100 shadow-[0_14px_28px_rgba(79,70,229,0.16)] ring-1 ring-indigo-100 transition-transform duration-300 group-hover:scale-[1.02] group-focus-visible:ring-2 group-focus-visible:ring-indigo-400">
