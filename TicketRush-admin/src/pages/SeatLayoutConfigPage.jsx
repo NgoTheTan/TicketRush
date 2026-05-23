@@ -310,6 +310,7 @@ const SeatGrid = memo(function SeatGrid({
 
   const handleMouseDown = (event) => {
     if (!canEdit) return;
+    if (event.button !== 0) return;
     const cell = getEventCell(event);
     if (!cell) return;
     event.preventDefault();
@@ -404,6 +405,7 @@ export default function SeatLayoutConfigPage({ eventId, createMode = false }) {
   const [confirmDialog, confirm] = useConfirm();
   const isCreating = createMode || !eventId;
   const gridRef = useRef(null);
+  const scrollContainerRef = useRef(null);
   const isMouseDownRef = useRef(false);
   const brushPaintQueueRef = useRef(new Map());
   const brushPaintFrameRef = useRef(null);
@@ -714,6 +716,7 @@ export default function SeatLayoutConfigPage({ eventId, createMode = false }) {
 
   const startRectangleDrag = (event) => {
     if (!canEdit || !rectangleFrame) return;
+    if (event.button !== 0) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -730,6 +733,7 @@ export default function SeatLayoutConfigPage({ eventId, createMode = false }) {
 
   const startRectangleResize = (event, handle) => {
     if (!canEdit || !rectangleFrame) return;
+    if (event.button !== 0) return;
 
     event.preventDefault();
     event.stopPropagation();
@@ -819,6 +823,44 @@ export default function SeatLayoutConfigPage({ eventId, createMode = false }) {
 
   const updateZoom = (delta) => {
     setZoom(prev => Number(clamp(prev + delta, MIN_ZOOM, MAX_ZOOM).toFixed(2)));
+  };
+
+  const handleScrollContainerMouseDown = (e) => {
+    if (e.button === 1) { // Middle mouse button
+      e.preventDefault(); // Prevent default autoscroll mode
+
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startScrollLeft = container.scrollLeft;
+      const startScrollTop = container.scrollTop;
+
+      const originalCursor = document.body.style.cursor;
+      const originalUserSelect = document.body.style.userSelect;
+      document.body.style.cursor = 'grabbing';
+      document.body.style.userSelect = 'none';
+
+      const handleMouseMove = (moveEvent) => {
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+        container.scrollLeft = startScrollLeft - dx;
+        container.scrollTop = startScrollTop - dy;
+      };
+
+      const handleMouseUp = (upEvent) => {
+        if (upEvent.button === 1) {
+          document.body.style.cursor = originalCursor;
+          document.body.style.userSelect = originalUserSelect;
+          window.removeEventListener('mousemove', handleMouseMove);
+          window.removeEventListener('mouseup', handleMouseUp);
+        }
+      };
+
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
   };
   
   useEffect(() => {
@@ -1276,7 +1318,11 @@ export default function SeatLayoutConfigPage({ eventId, createMode = false }) {
         </div>
 
         {/* Right - Canvas */}
-        <div className="flex-1 overflow-auto bg-slate-50 rounded-2xl border border-slate-200 p-8 min-h-[600px] shadow-inner relative select-none">
+        <div
+          ref={scrollContainerRef}
+          onMouseDown={handleScrollContainerMouseDown}
+          className="flex-1 overflow-auto bg-slate-50 rounded-2xl border border-slate-200 p-8 min-h-[600px] shadow-inner relative select-none"
+        >
           <div className="sticky top-0 left-0 z-40 flex justify-end pointer-events-none mb-4">
             <div className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-sm">
               <button
